@@ -24,7 +24,7 @@ for (const filepath of new Bun.Glob("*/package.json").scanSync({ cwd: "./dist" }
   binaries[item.name] = item.version
 }
 console.log("binaries", binaries)
-const version = Object.values(binaries)[0]
+const version = pkg.version
 
 await $`mkdir -p ./dist/${pkg.name}/bin`
 await $`cp ./bin/novacode.cjs ./dist/${pkg.name}/bin/novacode`

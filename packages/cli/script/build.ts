@@ -103,7 +103,7 @@ for (const item of targets) {
     JSON.stringify(
       {
         name: `@novacode-cli/${name}`,
-        version: Script.version,
+        version: pkg.version,
         license: "MIT",
         repository: { type: "git", url: "git+https://github.com/Jblixxkyy/NovaCode.git" },
         os: [item.os],
