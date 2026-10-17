@@ -47,22 +47,29 @@ jobs:
           $current = $pkg.version
           $bump = "${{ inputs.bump }}"
           $override = "${{ inputs.version }}"
+
           if ($override) {
             $next = $override
           } else {
             $parts = $current.Split('.')
-            $major = [int]$parts[0]; $minor = [int]$parts[1]; $patch = [int]$parts[2]
+            $major = [int]$parts[0]
+            $minor = [int]$parts[1]
+            $patch = [int]$parts[2]
+
             if ($bump -eq "major") { $major++; $minor=0; $patch=0 }
             elseif ($bump -eq "minor") { $minor++; $patch=0 }
             else { $patch++ }
             $next = "$major.$minor.$patch"
           }
+
           Write-Host "Bumping $current -> $next"
           $pkg.version = $next
           $pkg | ConvertTo-Json -Depth 10 | Set-Content $pkgPath -Encoding utf8
+
           git add $pkgPath
           git commit -m "chore(desktop): bump to $next" --no-verify
-          git push origin HEAD:main --no-verify
+          git tag "v$next"
+          git push origin HEAD:main --tags --no-verify
           echo "VERSION=$next" >> $env:GITHUB_ENV
 
       - name: Install node-gyp
@@ -74,54 +81,9 @@ jobs:
           NOVACODE_CHANNEL: prod
           NODE_OPTIONS: --max-old-space-size=4096
 
-      - name: Package Windows
+      - name: Package & Publish Windows
         working-directory: packages/desktop
-        run: npx electron-builder --win --config electron-builder.config.ts --publish never
+        run: npx electron-builder --win --config electron-builder.config.ts --publish always
         env:
           NOVACODE_CHANNEL: prod
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create GitHub Release
-        working-directory: packages/desktop
-        shell: pwsh
-        run: |
-          $ver = $env:VERSION
-          if (-not $ver) { $ver = (Get-Content package.json | ConvertFrom-Json).version }
-          Write-Host "Creating release v$ver"
-          $files = @(
-            "dist/novacode-desktop-win-x64.exe",
-            "dist/novacode-desktop-win-x64.exe.blockmap"
-          )
-          gh release create "v$ver" --title "v$ver" --generate-notes --repo Jblixxkyy/NovaCode $files
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload latest.yml
-        working-directory: packages/desktop
-        shell: pwsh
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ env.VERSION }}
-        run: |
-          $tag = "v${env:VERSION}"
-          $exePath = "dist/novacode-desktop-win-x64.exe"
-          $url = "https://github.com/Jblixxkyy/NovaCode/releases/download/${tag}/novacode-desktop-win-x64.exe"
-
-          $sha = [System.Security.Cryptography.SHA512]::Create()
-          $hash = $sha.ComputeHash([System.IO.File]::ReadAllBytes($exePath))
-          $base64Hash = [Convert]::ToBase64String($hash)
-          $size = (Get-Item $exePath).Length
-          $date = Get-Date -Format "yyyy-MM-ddTHH:mm:ss.fffZ"
-
-          $yml = @"
-version: ${env:VERSION}
-files:
-  - url: ${url}
-    sha512: ${base64Hash}
-    size: ${size}
-path: novacode-desktop-win-x64.exe
-releaseDate: '${date}'
-"@
-
-          $yml | Set-Content -Path "$env:TEMP/latest.yml" -Encoding utf8
-          gh release upload "${tag}" "$env:TEMP/latest.yml" --clobber --repo Jblixxkyy/NovaCode
