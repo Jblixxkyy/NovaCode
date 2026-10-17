@@ -13,6 +13,7 @@
   "scripts": {
     "build": "bun run script/build.ts",
     "dev": "bun run src/index.ts",
+    "release": "bun run script/publish.ts",
     "typecheck": "tsgo --noEmit"
   },
   "dependencies": {

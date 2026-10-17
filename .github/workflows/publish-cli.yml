@@ -1,0 +1,53 @@
+name: publish-cli
+run-name: "cli ${{ inputs.version || inputs.bump }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Version bump when no explicit version is given"
+        required: false
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+        default: patch
+      version:
+        description: "Override version (optional, e.g. 1.18.23)"
+        required: false
+        type: string
+
+concurrency: publish-cli-${{ github.ref }}
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-bun
+
+      - name: Build CLI binaries
+        run: bun run ./packages/cli/script/build.ts
+        env:
+          NOVACODE_CHANNEL: latest
+          NOVACODE_BUMP: ${{ inputs.bump }}
+          NOVACODE_VERSION: ${{ inputs.version }}
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Publish to npm
+        run: bun run ./packages/cli/script/publish.ts
+        env:
+          NOVACODE_CHANNEL: latest
+          NOVACODE_BUMP: ${{ inputs.bump }}
+          NOVACODE_VERSION: ${{ inputs.version }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "false"
