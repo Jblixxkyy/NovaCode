@@ -1,11 +1,11 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "name": "@novacode-ai/cli",
+  "name": "@novacode-cli/cli",
   "version": "1.18.21",
   "type": "module",
   "license": "MIT",
   "bin": {
-    "lildax": "./bin/lildax.cjs"
+    "novacode": "./bin/novacode.cjs"
   },
   "files": [
     "bin"

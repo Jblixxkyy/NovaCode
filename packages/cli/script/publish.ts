@@ -27,12 +27,12 @@ console.log("binaries", binaries)
 const version = Object.values(binaries)[0]
 
 await $`mkdir -p ./dist/${pkg.name}/bin`
-await $`cp ./bin/lildax.cjs ./dist/${pkg.name}/bin/lildax`
+await $`cp ./bin/novacode.cjs ./dist/${pkg.name}/bin/novacode`
 await Bun.file(`./dist/${pkg.name}/package.json`).write(
   JSON.stringify(
     {
       name: pkg.name,
-      bin: { lildax: "./bin/lildax" },
+      bin: { novacode: "./bin/novacode" },
       version,
       license: pkg.license,
       repository: { type: "git", url: "git+https://github.com/Jblixxkyy/NovaCode.git" },
@@ -47,7 +47,7 @@ await Bun.file(`./dist/${pkg.name}/package.json`).write(
 
 await Promise.all(
   Object.entries(binaries).map(([name, version]) =>
-    publish(`./dist/${name.replace("@novacode-ai/", "")}`, name, version),
+    publish(`./dist/${name.replace("@novacode-cli/", "")}`, name, version),
   ),
 )
 await publish(`./dist/${pkg.name}`, pkg.name, version)

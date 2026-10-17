@@ -9,7 +9,7 @@ import pkg from "../package.json"
 import { modelsData } from "./generate"
 
 const dir = path.resolve(import.meta.dirname, "..")
-const binary = "lildax"
+const binary = "novacode"
 process.chdir(dir)
 
 await rm("dist", { recursive: true, force: true })
@@ -102,7 +102,7 @@ for (const item of targets) {
     `./dist/${name}/package.json`,
     JSON.stringify(
       {
-        name: `@novacode-ai/${name}`,
+        name: `@novacode-cli/${name}`,
         version: Script.version,
         license: "MIT",
         repository: { type: "git", url: "git+https://github.com/Jblixxkyy/NovaCode.git" },
