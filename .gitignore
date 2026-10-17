@@ -33,3 +33,22 @@ logs/
 *.bun-build
 tsconfig.tsbuildinfo
 .bun-cache/
+
+# Local-only junk (not needed to build or run)
+.freebuff/
+tmp_cli_test/
+*.bak
+*.orig
+*.rej
+*.log
+Thumbs.db
+Desktop.ini
+
+# Test runner output (any depth)
+**/test-results/
+**/playwright-report/
+
+# Stray local files
+/screenshot-uk.png
+/novacode.psd
+/bun run desktop.bat
