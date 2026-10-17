@@ -129,10 +129,10 @@ async function showRemovalSummary(targets: RemovalTargets, method: Installation.
 
   if (method !== "curl" && method !== "unknown") {
     const cmds: Record<string, string> = {
-      npm: "npm uninstall -g opencode-ai",
-      pnpm: "pnpm uninstall -g opencode-ai",
-      bun: "bun remove -g opencode-ai",
-      yarn: "yarn global remove opencode-ai",
+      npm: "npm uninstall -g @novacode-cli/cli",
+      pnpm: "pnpm uninstall -g @novacode-cli/cli",
+      bun: "bun remove -g @novacode-cli/cli",
+      yarn: "yarn global remove @novacode-cli/cli",
       brew: "brew uninstall opencode",
       choco: "choco uninstall opencode",
       scoop: "scoop uninstall opencode",
@@ -180,10 +180,10 @@ async function executeUninstall(method: Installation.Method, targets: RemovalTar
 
   if (method !== "curl" && method !== "unknown") {
     const cmds: Record<string, string[]> = {
-      npm: ["npm", "uninstall", "-g", "opencode-ai"],
-      pnpm: ["pnpm", "uninstall", "-g", "opencode-ai"],
-      bun: ["bun", "remove", "-g", "opencode-ai"],
-      yarn: ["yarn", "global", "remove", "opencode-ai"],
+      npm: ["npm", "uninstall", "-g", "@novacode-cli/cli"],
+      pnpm: ["pnpm", "uninstall", "-g", "@novacode-cli/cli"],
+      bun: ["bun", "remove", "-g", "@novacode-cli/cli"],
+      yarn: ["yarn", "global", "remove", "@novacode-cli/cli"],
       brew: ["brew", "uninstall", "opencode"],
       choco: ["choco", "uninstall", "opencode"],
       scoop: ["scoop", "uninstall", "opencode"],
