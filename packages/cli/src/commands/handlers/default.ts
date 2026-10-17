@@ -6,7 +6,9 @@ import { Daemon } from "../../services/daemon"
 export default Runtime.handler(Commands, () =>
   Effect.gen(function* () {
     const daemon = yield* Daemon.Service
-    const transport = yield* daemon.transport()
+    const transport = yield* daemon.transport().pipe(
+      Effect.mapError(() => new Error("Failed to start the NovaCode background server")),
+    )
     const { runTui } = yield* Effect.promise(() => import("../../tui"))
     yield* runTui(transport)
   }),
