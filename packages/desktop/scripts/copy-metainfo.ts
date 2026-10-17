@@ -31,13 +31,13 @@ const xml = `<?xml version="1.0" encoding="UTF-8"?>
 
   <content_rating type="oars-1.1" />
 
-  <url type="bugtracker">https://github.com/anomalyco/novacode/issues</url>
+  <url type="bugtracker">https://github.com/Jblixxkyy/NovaCode/issues</url>
   <url type="homepage">https://novacode.ai</url>
-  <url type="vcs-browser">https://github.com/anomalyco/novacode</url>
+  <url type="vcs-browser">https://github.com/Jblixxkyy/NovaCode</url>
 
   <screenshots>
     <screenshot type="default">
-      <image>https://raw.githubusercontent.com/anomalyco/novacode/b75d4d1c5ec449585d515c756fc81f080a157a9a/packages/web/src/assets/lander/screenshot.png</image>
+      <image>https://raw.githubusercontent.com/Jblixxkyy/NovaCode/main/packages/web/src/assets/lander/screenshot.png</image>
     </screenshot>
   </screenshots>
 </component>

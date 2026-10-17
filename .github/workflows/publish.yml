@@ -85,6 +85,6 @@ jobs:
           $ver = $env:VERSION
           if (-not $ver) { $ver = (Get-Content package.json | ConvertFrom-Json).version }
           Write-Host "Creating release v$ver"
-          gh release create "v$ver" --title "v$ver" --generate-notes --repo jbixxkyy/NovaCode dist/latest.yml dist/novacode-desktop-win-x64.exe dist/novacode-desktop-win-x64.exe.blockmap --clobber
+          gh release create "v$ver" --title "v$ver" --generate-notes --repo Jblixxkyy/NovaCode dist/latest.yml dist/novacode-desktop-win-x64.exe dist/novacode-desktop-win-x64.exe.blockmap --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
