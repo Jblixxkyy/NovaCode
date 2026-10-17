@@ -89,10 +89,18 @@ jobs:
           if (-not $ver) { $ver = (Get-Content package.json | ConvertFrom-Json).version }
           Write-Host "Creating release v$ver"
           $files = @(
-            "dist/latest.yml",
             "dist/novacode-desktop-win-x64.exe",
             "dist/novacode-desktop-win-x64.exe.blockmap"
           )
           gh release create "v$ver" --title "v$ver" --generate-notes --repo Jblixxkyy/NovaCode $files
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Finalize latest.yml
+        working-directory: packages/desktop
+        shell: bash
+        env:
+          LATEST_YML_DIR: ${{ github.workspace }}/packages/desktop/dist
+          GH_REPO: Jblixxkyy/NovaCode
+          NOVACODE_VERSION: ${{ env.VERSION }}
+        run: bun ./scripts/finalize-latest-yml.ts
