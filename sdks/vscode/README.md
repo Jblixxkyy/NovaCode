@@ -15,7 +15,7 @@ This extension requires the NovaCode CLI to be installed on your system. Visit [
 
 ## Support
 
-This is an early release. If you encounter issues or have feedback, please create an issue at https://github.com/anomalyco/opencode/issues.
+This is an early release. If you encounter issues or have feedback, please create an issue at https://github.com/Jblixxkyy/NovaCode/issues.
 
 ## Development
 

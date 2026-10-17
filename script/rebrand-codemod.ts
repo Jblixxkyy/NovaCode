@@ -11,8 +11,8 @@ import { $ } from "bun"
 const protectedExact = new Set<string>([
   "OpenCode Zen",
   "opencode.ai",
-  "anomalyco/opencode",
-  "opencode-ai", // npm publish scope for platform packages, handled separately
+  "Jblixxkyy/NovaCode",
+  "@novacode-cli/cli", // npm publish scope for platform packages, handled separately
 ])
 
 type Rule = {

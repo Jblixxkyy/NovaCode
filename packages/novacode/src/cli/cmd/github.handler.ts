@@ -1,4 +1,4 @@
-﻿import path from "path"
+import path from "path"
 import { exec } from "child_process"
 import { Filesystem } from "@/util/filesystem"
 import * as prompts from "@clack/prompts"
@@ -364,7 +364,7 @@ jobs:
           persist-credentials: false
 
       - name: Run opencode
-        uses: anomalyco/opencode/github@latest${envStr}
+        uses: Jblixxkyy/NovaCode/github@latest${envStr}
         with:
           model: ${provider}/${model}`,
         )
