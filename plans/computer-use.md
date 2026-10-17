@@ -22,7 +22,7 @@ These determine the architecture. Pick before writing code.
 ## 2. Architecture (fits existing layout)
 
 ```
-packages/opencode/src/
+packages/novacode/src/
   computer/
     index.ts          # ComputerService, exported via module pattern
     screen.ts         # screenshot capture
@@ -63,7 +63,7 @@ export interface ComputerProvider {
 }
 ```
 
-Tool registration in `packages/opencode/src/tool/` adds `computer` as a built-in tool, gated by config flag `experimental.computer_use: true`.
+Tool registration in `packages/novacode/src/tool/` adds `computer` as a built-in tool, gated by config flag `experimental.computer_use: true`.
 
 ## 4. Screen capture
 
@@ -115,7 +115,7 @@ await keyboard.press(Key.Enter)
 
 ## 7. Permission model
 
-Reuse `packages/opencode/src/permission/` exactly the way other tools do. Each `computer.act` call hits `PermissionNext.ask` with:
+Reuse `packages/novacode/src/permission/` exactly the way other tools do. Each `computer.act` call hits `PermissionNext.ask` with:
 
 ```ts
 {
@@ -156,7 +156,7 @@ Mirror OpenClaw's `gateway.nodes.commands.allow`/`deny` pattern. Deny always win
 - Map response `output` items to `ComputerAction`.
 - Same loop.
 
-The loop itself lives in `packages/opencode/src/computer/loop.ts` — a small `while (!done) { action = await nextAction(); obs = await execute(action); ... }`. ~80 lines.
+The loop itself lives in `packages/novacode/src/computer/loop.ts` — a small `while (!done) { action = await nextAction(); obs = await execute(action); ... }`. ~80 lines.
 
 ## 9. UX additions worth shipping
 
@@ -211,8 +211,8 @@ The loop itself lives in `packages/opencode/src/computer/loop.ts` — a small `w
 ## 13. Phase 1 starting point
 
 Begin with:
-- `packages/opencode/src/computer/types.ts` — `ComputerAction`, `ComputerObservation`, provider enum
-- `packages/opencode/src/computer/screen.ts` — Electron-side capture wrapper
+- `packages/novacode/src/computer/types.ts` — `ComputerAction`, `ComputerObservation`, provider enum
+- `packages/novacode/src/computer/screen.ts` — Electron-side capture wrapper
 - `packages/llm/src/provider/anthropic.ts` — wire `computer-use` tool when model supports it
 - Stub `permission` integration that reuses existing `permission-next` flow
 - Demo: agent books a calendar slot in a browser end-to-end

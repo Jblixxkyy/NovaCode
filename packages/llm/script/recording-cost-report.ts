@@ -1,4 +1,4 @@
-import * as fs from "node:fs/promises"
+﻿import * as fs from "node:fs/promises"
 import * as path from "node:path"
 
 const RECORDINGS_DIR = path.resolve(import.meta.dir, "..", "test", "fixtures", "recordings")

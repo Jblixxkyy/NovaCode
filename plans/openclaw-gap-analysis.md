@@ -50,7 +50,7 @@ OpenClaw serves Canvas widget docs at `/__openclaw__/canvas/` and A2UI renderer 
 
 OpenClaw has a `memory-host-sdk` plugin contract with multiple backends (lancedb, wiki, active-memory), single-active-at-a-time, with user-memory capture on session departure and lazy companion tables.
 
-NovaCode has no equivalent memory plugin surface in `packages/opencode/src` (no `memory/` directory). Sessions exist but no swappable memory plugin slot.
+NovaCode has no equivalent memory plugin surface in `packages/novacode/src` (no `memory/` directory). Sessions exist but no swappable memory plugin slot.
 
 ## 7. Cron / Heartbeat / Webhooks / Workboard
 
@@ -126,7 +126,7 @@ NovaCode has no equivalent migration flow for foreign session history.
 
 OpenClaw has autonomous skill creation/apply/quarantine + history review.
 
-NovaCode's `packages/opencode/src/skill/` is a loader, not a workshop.
+NovaCode's `packages/novacode/src/skill/` is a loader, not a workshop.
 
 ## 21. macOS app profiles
 
@@ -144,7 +144,7 @@ NovaCode has no equivalent supervisor handoff.
 
 OpenClaw's paired Chrome + browser extension serves DevTools-style `/json/list` and `openclaw browser extension cdp` for external CDP clients.
 
-NovaCode has `packages/opencode/src/browser/` but it's a built-in browser automation tool, not an externally-controllable CDP endpoint. (Note: directory may not exist yet — verify before relying on this claim.)
+NovaCode has `packages/novacode/src/browser/` but it's a built-in browser automation tool, not an externally-controllable CDP endpoint. (Note: directory may not exist yet — verify before relying on this claim.)
 
 ## 24. Per-method rate limiting (30/min buckets) + runaway-loop protection
 

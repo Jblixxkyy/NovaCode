@@ -1,10 +1,10 @@
 import { Component, Show, createMemo, createResource } from "solid-js"
 import { createMediaQuery } from "@solid-primitives/media"
-import { ButtonV2 } from "@opencode-ai/ui/v2/button-v2"
-import { SelectV2 } from "@opencode-ai/ui/v2/select-v2"
-import { Switch } from "@opencode-ai/ui/v2/switch-v2"
-import { TextInputV2 } from "@opencode-ai/ui/v2/text-input-v2"
-import { useDialog } from "@opencode-ai/ui/context/dialog"
+import { ButtonV2 } from "@novacode-ai/ui/v2/button-v2"
+import { SelectV2 } from "@novacode-ai/ui/v2/select-v2"
+import { Switch } from "@novacode-ai/ui/v2/switch-v2"
+import { TextInputV2 } from "@novacode-ai/ui/v2/text-input-v2"
+import { useDialog } from "@novacode-ai/ui/context/dialog"
 import { useLanguage } from "@/context/language"
 import { usePlatform } from "@/context/platform"
 import { useUpdaterAction } from "../updater-action"
@@ -180,6 +180,7 @@ const AppearanceSection: Component<{ controller: AppearanceSettingsController }>
         <FontSetting kind="code" fonts={props.controller.fonts} />
         <FontSetting kind="terminal" fonts={props.controller.fonts} />
         <FontSetting kind="wordmark" fonts={props.controller.fonts} />
+        <ToolTitleColorSetting />
       </SettingsListV2>
     </div>
   )
@@ -208,6 +209,33 @@ const FontSetting: Component<{
           aria-label={language.t(config().title)}
           style={{ "font-family": props.fonts[config().font]().family }}
         />
+      </div>
+    </SettingsRowV2>
+  )
+}
+
+const ToolTitleColorSetting: Component = () => {
+  const language = useLanguage()
+  const settings = useSettings()
+  const title = () => language.t("settings.general.row.toolTitleColor.title")
+  return (
+    <SettingsRowV2
+      title={title()}
+      description={language.t("settings.general.row.toolTitleColor.description")}
+    >
+      <div class="flex items-center gap-2" data-action="settings-tool-title-color">
+        <input
+          type="color"
+          class="settings-v2-color-input"
+          value={settings.appearance.toolTitleColor() || "#00ff41"}
+          onInput={(event) => settings.appearance.setToolTitleColor(event.currentTarget.value)}
+          aria-label={title()}
+        />
+        <Show when={settings.appearance.toolTitleColor()}>
+          <ButtonV2 size="normal" variant="neutral" onClick={() => settings.appearance.setToolTitleColor("")}>
+            {language.t("common.reset")}
+          </ButtonV2>
+        </Show>
       </div>
     </SettingsRowV2>
   )
@@ -377,7 +405,7 @@ export const SettingsGeneralV2: Component<{
           </div>
         </SettingsRowV2>
 
-        <Show when={mobile() && import.meta.env.VITE_OPENCODE_CHANNEL !== "prod"}>
+        <Show when={mobile() && import.meta.env.VITE_NOVACODE_CHANNEL !== "prod"}>
           <SettingsRowV2
             title={language.t("settings.general.row.mobileTitlebarBottom.title")}
             description={language.t("settings.general.row.mobileTitlebarBottom.description")}

@@ -193,8 +193,8 @@ export const dict = {
   "dialog.provider.group.other": "Дигар",
   "dialog.provider.custom.label": "Фармоишгар OpenAI-провайдери мувофиқ",
   "dialog.provider.tag.recommended": "Тавсия дода мешавад",
-  "dialog.provider.opencode.note": "Моделҳои интихобшуда, аз ҷумла Claude, GPT, Gemini ва ғайра",
-  "dialog.provider.opencode.tagline": "Моделҳои боэътимоди оптимизатсияшуда",
+  "dialog.provider.novacode.note": "Моделҳои интихобшуда, аз ҷумла Claude, GPT, Gemini ва ғайра",
+  "dialog.provider.novacode.tagline": "Моделҳои боэътимоди оптимизатсияшуда",
   "dialog.provider.opencodeGo.tagline": "Обунаи арзон барои ҳама",
   "dialog.provider.anthropic.note": "Дастрасии мустақим ба моделҳои Claude, аз ҷумла Pro ва Max",
   "dialog.provider.copilot.note": "Моделҳои AI барои кӯмаки рамзгузорӣ тавассути GitHub Copilot",
@@ -450,7 +450,7 @@ export const dict = {
   "wsl.server.retryStart": "Оғози дубора кӯшиш кунед",
   "wsl.server.updating": "Навсозӣ...",
   "wsl.onboarding.step.distro": "Дистро интихоб кунед",
-  "wsl.onboarding.step.opencode": "NovaCode",
+  "wsl.onboarding.step.novacode": "NovaCode",
   "wsl.onboarding.checkingRuntime": "Санҷиш WSL...",
   "wsl.onboarding.restartRequired": "Windows барои анҷом додани насби WSL аз нав оғоз кардан лозим аст.",
   "wsl.onboarding.ready": "WSL тайёр аст.",
@@ -951,6 +951,8 @@ export const dict = {
 
   "settings.general.row.uiFont.title": "Шрифти UI",
   "settings.general.row.uiFont.description": "Ҳарферо, ки дар тамоми интерфейс истифода мешавад, танзим кунед",
+  "settings.general.row.toolTitleColor.title": "Ранги сарлавҳаи абзор",
+  "settings.general.row.toolTitleColor.description": "Ранги сарлавҳаҳои абзорҳоро дар сессияҳо танзим кунед",
   "settings.general.row.followup.title": "Рафтори пайгирӣ",
   "settings.general.row.followup.description":
     "Интихоб кунед, ки паёмҳои пайгирӣ фавран идора мешаванд ё дар навбат интизор мешаванд",

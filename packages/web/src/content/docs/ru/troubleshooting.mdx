@@ -57,9 +57,9 @@ opencode Desktop запускает локальный сервер opencode (с
 
 Откройте файл глобальной конфигурации и найдите ключ `plugin`.
 
-- **macOS/Linux**: `~/.config/opencode/opencode.jsonc` (или `~/.config/opencode/opencode.json`)
-- **macOS/Linux** (более ранние версии): `~/.local/share/opencode/opencode.jsonc`
-- **Windows**: нажмите `WIN+R` и вставьте `%USERPROFILE%\.config\opencode\opencode.jsonc`.
+- **macOS/Linux**: `~/.config/opencode/novacode.jsonc` (или `~/.config/opencode/novacode.json`)
+- **macOS/Linux** (более ранние версии): `~/.local/share/opencode/novacode.jsonc`
+- **Windows**: нажмите `WIN+R` и вставьте `%USERPROFILE%\.config\opencode\novacode.jsonc`.
 
 Если у вас настроены плагины, временно отключите их, удалив ключ или установив для него пустой массив:
 
@@ -111,13 +111,13 @@ opencode Desktop может либо запустить собственный �
 
 #### Удалите `server.port`/`server.hostname` из вашей конфигурации.
 
-Если ваш `opencode.json(c)` содержит раздел `server`, временно удалите его и перезапустите настольное приложение.
+Если ваш `novacode.json(c)` содержит раздел `server`, временно удалите его и перезапустите настольное приложение.
 
 #### Проверьте переменные среды
 
-Если в вашей среде установлен `OPENCODE_PORT`, настольное приложение попытается использовать этот порт для локального сервера.
+Если в вашей среде установлен `NOVACODE_PORT`, настольное приложение попытается использовать этот порт для локального сервера.
 
-- Отмените настройку `OPENCODE_PORT` (или выберите свободный порт) и перезапустите.
+- Отмените настройку `NOVACODE_PORT` (или выберите свободный порт) и перезапустите.
 
 ---
 

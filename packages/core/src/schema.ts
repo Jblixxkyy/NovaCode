@@ -7,7 +7,7 @@ import {
   PositiveInt,
   RelativePath,
   statics,
-} from "@opencode-ai/schema/schema"
+} from "@novacode-ai/schema/schema"
 
 export { AbsolutePath, DateTimeUtcFromMillis, NonNegativeInt, optional, PositiveInt, RelativePath, statics }
 

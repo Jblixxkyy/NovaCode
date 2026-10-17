@@ -193,8 +193,8 @@ export const dict = {
   "dialog.provider.group.other": "Të tjera",
   "dialog.provider.custom.label": "Ofrues i personalizuar i përputhshëm me OpenAI",
   "dialog.provider.tag.recommended": "Rekomanduar",
-  "dialog.provider.opencode.note": "Modele të kuruara duke përfshirë Claude, GPT, Gemini dhe më shumë",
-  "dialog.provider.opencode.tagline": "Modele të besueshme të optimizuara",
+  "dialog.provider.novacode.note": "Modele të kuruara duke përfshirë Claude, GPT, Gemini dhe më shumë",
+  "dialog.provider.novacode.tagline": "Modele të besueshme të optimizuara",
   "dialog.provider.opencodeGo.tagline": "Abonim me kosto të ulët për të gjithë",
   "dialog.provider.anthropic.note": "Qasje e drejtpërdrejtë në modelet Claude, duke përfshirë Pro dhe Max",
   "dialog.provider.copilot.note": "Modele të AI për ndihmë kodimi përmes GitHub Copilot",
@@ -449,7 +449,7 @@ export const dict = {
   "wsl.server.retryStart": "Riprovo fillimin",
   "wsl.server.updating": "Po përditësohet...",
   "wsl.onboarding.step.distro": "Zgjidhni shpërndarjen",
-  "wsl.onboarding.step.opencode": "NovaCode",
+  "wsl.onboarding.step.novacode": "NovaCode",
   "wsl.onboarding.checkingRuntime": "Po kontrollon WSL...",
   "wsl.onboarding.restartRequired": "Windows ka nevojë për një rinisje për të përfunduar instalimin e WSL.",
   "wsl.onboarding.ready": "WSL është gati.",
@@ -950,6 +950,8 @@ export const dict = {
 
   "settings.general.row.uiFont.title": "Fonti UI",
   "settings.general.row.uiFont.description": "Personalizoni fontin e përdorur në të gjithë ndërfaqen",
+  "settings.general.row.toolTitleColor.title": "Ngjyra e titullit të veglës",
+  "settings.general.row.toolTitleColor.description": "Përshtatni ngjyrën e titujve të veglave në sesione",
   "settings.general.row.followup.title": "Sjellja pasuese",
   "settings.general.row.followup.description":
     "Zgjidhni nëse kërkesat e ndjekjes drejtohen menjëherë ose prisni në një radhë",

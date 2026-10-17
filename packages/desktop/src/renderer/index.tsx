@@ -14,8 +14,8 @@ import {
   useCommand,
   useWslServers,
   useLanguage,
-} from "@opencode-ai/app"
-import type { UpdaterState } from "@opencode-ai/app/updater"
+} from "@novacode-ai/app"
+import type { UpdaterState } from "@novacode-ai/app/updater"
 import * as Sentry from "@sentry/solid"
 import type { AsyncStorage } from "@solid-primitives/storage"
 import { createMemoryHistory, MemoryRouter, type BaseRouterProps } from "@solidjs/router"
@@ -29,8 +29,8 @@ import { resetZoom, setPinchZoomEnabled, webviewZoom, zoomIn, zoomOut } from "./
 import { windowFullscreen } from "./window-fullscreen"
 import { availableStartupServer, readyWslConnections } from "./wsl/connections"
 import "./styles.css"
-import { Splash } from "@opencode-ai/ui/logo"
-import { useTheme } from "@opencode-ai/ui/theme/context"
+import { Splash } from "@novacode-ai/ui/logo"
+import { useTheme } from "@novacode-ai/ui/theme/context"
 
 const root = document.getElementById("root")
 if (import.meta.env.DEV && !(root instanceof HTMLElement)) {

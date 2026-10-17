@@ -71,9 +71,9 @@ If the desktop app is crashing on launch, hanging, or behaving strangely, start 
 
 Open your global config file and look for a `plugin` key.
 
-- **macOS/Linux**: `~/.config/opencode/opencode.jsonc` (or `~/.config/opencode/opencode.json`)
-- **macOS/Linux** (older installs): `~/.local/share/opencode/opencode.jsonc`
-- **Windows**: Press `WIN+R` and paste `%USERPROFILE%\.config\opencode\opencode.jsonc`
+- **macOS/Linux**: `~/.config/opencode/novacode.jsonc` (or `~/.config/opencode/novacode.json`)
+- **macOS/Linux** (older installs): `~/.local/share/opencode/novacode.jsonc`
+- **Windows**: Press `WIN+R` and paste `%USERPROFILE%\.config\opencode\novacode.jsonc`
 
 If you have plugins configured, temporarily disable them by removing the key or setting it to an empty array:
 
@@ -125,13 +125,13 @@ From the Home screen, click the server name (with the status dot) to open the Se
 
 #### Remove `server.port` / `server.hostname` from your config
 
-If your `opencode.json(c)` contains a `server` section, temporarily remove it and restart the desktop app.
+If your `novacode.json(c)` contains a `server` section, temporarily remove it and restart the desktop app.
 
 #### Check environment variables
 
-If you have `OPENCODE_PORT` set in your environment, the desktop app will try to use that port for the local server.
+If you have `NOVACODE_PORT` set in your environment, the desktop app will try to use that port for the local server.
 
-- Unset `OPENCODE_PORT` (or pick a free port) and restart.
+- Unset `NOVACODE_PORT` (or pick a free port) and restart.
 
 ---
 

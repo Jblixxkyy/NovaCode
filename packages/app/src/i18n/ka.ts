@@ -192,8 +192,8 @@ export const dict = {
   "dialog.provider.group.other": "სხვა",
   "dialog.provider.custom.label": "მორგებული OpenAI-თავსებადი პროვაიდერი",
   "dialog.provider.tag.recommended": "რეკომენდებულია",
-  "dialog.provider.opencode.note": "კურირებული მოდელები, მათ შორის Claude, GPT, Gemini და სხვა",
-  "dialog.provider.opencode.tagline": "სანდო ოპტიმიზებული მოდელები",
+  "dialog.provider.novacode.note": "კურირებული მოდელები, მათ შორის Claude, GPT, Gemini და სხვა",
+  "dialog.provider.novacode.tagline": "სანდო ოპტიმიზებული მოდელები",
   "dialog.provider.opencodeGo.tagline": "დაბალფასიანი გამოწერა ყველასთვის",
   "dialog.provider.anthropic.note": "პირდაპირი წვდომა Claude მოდელზე, მათ შორის Pro და Max",
   "dialog.provider.copilot.note": "AI მოდელები კოდირების დახმარებისთვის GitHub Copilot",
@@ -448,7 +448,7 @@ export const dict = {
   "wsl.server.retryStart": "სცადეთ ხელახლა დაწყება",
   "wsl.server.updating": "განახლება...",
   "wsl.onboarding.step.distro": "აირჩიე დისტრო",
-  "wsl.onboarding.step.opencode": "NovaCode",
+  "wsl.onboarding.step.novacode": "NovaCode",
   "wsl.onboarding.checkingRuntime": "შემოწმებულია WSL...",
   "wsl.onboarding.restartRequired": "Windows საჭიროებს გადატვირთვას WSL-ის ინსტალაციის დასასრულებლად.",
   "wsl.onboarding.ready": "WSL მზად არის.",
@@ -945,6 +945,8 @@ export const dict = {
 
   "settings.general.row.uiFont.title": "UI ფონტი",
   "settings.general.row.uiFont.description": "დააყენეთ ინტერფეისში გამოყენებული შრიფტის მორგება",
+  "settings.general.row.toolTitleColor.title": "ხელსაწყოს სათაურის ფერი",
+  "settings.general.row.toolTitleColor.description": "მოირგეთ ხელსაწყოების სათაურების ფერი სესიებში",
   "settings.general.row.followup.title": "შემდეგი ქცევა",
   "settings.general.row.followup.description":
     "აირჩიეთ, შემდგომი დაკვირვების მოთხოვნა მყისიერად იხელმძღვანელეთ თუ დაელოდეთ რიგში",

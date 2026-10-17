@@ -1,6 +1,6 @@
 import { createStore, reconcile } from "solid-js/store"
 import { batch, createEffect, createMemo, createSignal, onCleanup } from "solid-js"
-import { createSimpleContext } from "@opencode-ai/ui/context"
+import { createSimpleContext } from "@novacode-ai/ui/context"
 import { persisted } from "@/utils/persist"
 import { usePlatform } from "@/context/platform"
 
@@ -46,6 +46,7 @@ export interface Settings {
     sans: string
     terminal: string
     wordmark: string
+    toolTitleColor: string
   }
   keybinds: Record<string, string>
   permissions: {
@@ -59,7 +60,7 @@ export const monoDefault = "System Mono"
 export const sansDefault = "System Sans"
 export const terminalDefault = "JetBrainsMono Nerd Font Mono"
 export const wordmarkDefault = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
-const legacyNewLayoutDesignsDefault = import.meta.env.VITE_OPENCODE_CHANNEL !== "prod"
+const legacyNewLayoutDesignsDefault = import.meta.env.VITE_NOVACODE_CHANNEL !== "prod"
 export const newLayoutDesignsDefault = true
 // Existing users can switch layouts until local midnight on this date. Set new Date(YYYY, M-1, D) to show.
 export const oldInterfaceSunset = new Date(2026, 8, 14)
@@ -215,6 +216,7 @@ const defaultSettings: Settings = {
     sans: "",
     terminal: "",
     wordmark: "",
+    toolTitleColor: "",
   },
   keybinds: {},
   permissions: {
@@ -233,6 +235,11 @@ const defaultSettings: Settings = {
     errorsEnabled: true,
     errors: "nope-03",
   },
+}
+
+// Invalid custom property values would silently drop the color instead of using the CSS fallback, so only valid hex passes through.
+function toolTitleColorVar(value: string | undefined) {
+  return value && /^#[0-9a-f]{6}$/i.test(value) ? value : ""
 }
 
 function withFallback<T>(read: () => T | undefined, fallback: T) {
@@ -363,6 +370,7 @@ export const { use: useSettings, provider: SettingsProvider } = createSimpleCont
       root.style.setProperty("--font-family-mono", monoFontFamily(store.appearance?.mono))
       root.style.setProperty("--font-family-sans", sansFontFamily(store.appearance?.sans))
       root.style.setProperty("--font-family-wordmark", wordmarkFontFamily(store.appearance?.wordmark))
+      root.style.setProperty("--tool-title-color", toolTitleColorVar(store.appearance?.toolTitleColor))
     })
 
     return {
@@ -485,6 +493,10 @@ export const { use: useSettings, provider: SettingsProvider } = createSimpleCont
         wordmarkFont: withFallback(() => store.appearance?.wordmark, defaultSettings.appearance.wordmark),
         setWordmarkFont(value: string) {
           setStore("appearance", "wordmark", value.trim() ? value : "")
+        },
+        toolTitleColor: withFallback(() => store.appearance?.toolTitleColor, defaultSettings.appearance.toolTitleColor),
+        setToolTitleColor(value: string) {
+          setStore("appearance", "toolTitleColor", toolTitleColorVar(value.trim()))
         },
       },
       keybinds: {

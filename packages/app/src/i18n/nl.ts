@@ -193,8 +193,8 @@ export const dict = {
   "dialog.provider.group.other": "Anders",
   "dialog.provider.custom.label": "Aangepaste OpenAI-compatibele aanbieder",
   "dialog.provider.tag.recommended": "Aanbevolen",
-  "dialog.provider.opencode.note": "Samengestelde modellen, waaronder Claude, GPT, Gemini en meer",
-  "dialog.provider.opencode.tagline": "Betrouwbare geoptimaliseerde modellen",
+  "dialog.provider.novacode.note": "Samengestelde modellen, waaronder Claude, GPT, Gemini en meer",
+  "dialog.provider.novacode.tagline": "Betrouwbare geoptimaliseerde modellen",
   "dialog.provider.opencodeGo.tagline": "Goedkoop abonnement voor iedereen",
   "dialog.provider.anthropic.note": "Directe toegang tot Claude-modellen, inclusief Pro en Max",
   "dialog.provider.copilot.note": "AI-modellen voor codeerondersteuning via GitHub Copilot",
@@ -449,7 +449,7 @@ export const dict = {
   "wsl.server.retryStart": "Opnieuw proberen te starten",
   "wsl.server.updating": "Updaten...",
   "wsl.onboarding.step.distro": "Kies distro",
-  "wsl.onboarding.step.opencode": "NovaCode",
+  "wsl.onboarding.step.novacode": "NovaCode",
   "wsl.onboarding.checkingRuntime": "WSL controleren...",
   "wsl.onboarding.restartRequired": "Windows moet opnieuw worden opgestart om de installatie van WSL te voltooien.",
   "wsl.onboarding.ready": "WSL is klaar.",
@@ -956,6 +956,8 @@ export const dict = {
 
   "settings.general.row.uiFont.title": "UI-lettertype",
   "settings.general.row.uiFont.description": "Pas het lettertype aan dat in de hele interface wordt gebruikt",
+  "settings.general.row.toolTitleColor.title": "Kleur van tooltitels",
+  "settings.general.row.toolTitleColor.description": "Pas de kleur van tooltitels in sessies aan",
   "settings.general.row.followup.title": "Vervolggedrag",
   "settings.general.row.followup.description":
     "Kies of vervolgprompts de sessie direct bijsturen of in een wachtrij wachten",

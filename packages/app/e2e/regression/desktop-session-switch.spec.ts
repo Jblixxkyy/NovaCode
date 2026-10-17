@@ -1,5 +1,5 @@
 import { expect, test, type Page, type Route } from "@playwright/test"
-import { base64Encode } from "@opencode-ai/core/util/encode"
+import { base64Encode } from "@novacode-ai/core/util/encode"
 import { currentSession } from "../utils/mock-server"
 
 const webServer = "http://localhost:4096"

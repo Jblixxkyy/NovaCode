@@ -1,10 +1,11 @@
 import type { Bot } from "grammy"
-import type { OpencodeClient } from "@opencode-ai/sdk/v2"
+import type { OpencodeClient } from "@novacode-ai/sdk/v2"
 import type { Config } from "./config"
 import type { Store } from "./store"
 import type { SessionMap } from "./session"
 import type { AuthPolicy, ChatContext } from "./auth"
 import type { Logger } from "./logging"
+import path from "node:path"
 
 export interface CommandContext {
   config: Config
@@ -28,6 +29,8 @@ const NATIVE_COMMANDS: NativeCommand[] = [
   { command: "status", description: "Show bot status and session stats" },
   { command: "whoami", description: "Show your user id, chat id, and active agent/model" },
   { command: "new", description: "Clear the current session for this chat" },
+  { command: "stop", description: "Stop the current session task" },
+  { command: "dir", description: "Show or set working directory for this chat (e.g. /dir /path/to/project)" },
   { command: "model", description: "Set model for this chat (e.g. /model anthropic/claude-sonnet-4-5)" },
   { command: "agent", description: "Set agent for this chat (e.g. /agent build)" },
   { command: "activation", description: "Re-check pairing (DM only)" },
@@ -115,6 +118,41 @@ export function registerCommands(bot: Bot, ctx: CommandContext): void {
     await c.reply(had ? "Session cleared." : "No active session.")
   })
 
+  bot.command("stop", async (c) => {
+    const chatId = c.chat?.id
+    if (chatId === undefined) return
+    const threadId = c.message?.message_thread_id
+    const chatCtx = describeChat(threadId)
+    const sess = ctx.sessionMap.get(chatId, threadId, chatCtx)
+    if (!sess?.sessionId) {
+      await c.reply("No active session to stop.")
+      return
+    }
+    await (ctx.novacode.session as any).interrupt({ sessionID: sess.sessionId }).catch((err: unknown) => {
+      ctx.log.debug("stop interrupt failed:", err)
+    })
+    await c.reply("Task stopped.")
+  })
+
+  bot.command("dir", async (c) => {
+    const chatId = c.chat?.id
+    if (chatId === undefined) return
+    const text = c.message?.text ?? ""
+    const arg = text.replace(/^\/dir(?:@\w+)?\s*/, "").trim()
+    const threadId = c.message?.message_thread_id
+    const chatCtx = describeChat(threadId)
+
+    if (!arg) {
+      const currentDir = ctx.sessionMap.getDirectory(chatId, threadId, chatCtx) ?? ctx.config.projectDir
+      await c.reply(`Current working directory: ${currentDir}\nUsage: /dir <path>`)
+      return
+    }
+
+    const resolved = path.resolve(ctx.config.projectDir, arg)
+    ctx.sessionMap.setDirectory(chatId, threadId, resolved, chatCtx)
+    await c.reply(`Working directory set to: ${resolved}`)
+  })
+
   bot.command("model", async (c) => {
     const chatId = c.chat?.id
     if (chatId === undefined) return
@@ -124,7 +162,7 @@ export function registerCommands(bot: Bot, ctx: CommandContext): void {
     const chatCtx = describeChat(threadId)
     if (!arg) {
       const currentModel = ctx.sessionMap.get(chatId, threadId, chatCtx)?.model ?? ctx.sessionMap.resolveModel(chatId, threadId, chatCtx) ?? "(default)"
-      const res = await ctx.opencode.config.providers().catch(() => undefined)
+      const res = await ctx.novacode.config.providers().catch(() => undefined)
       const providers = res?.data?.providers ?? []
 
       const lines = [
@@ -203,7 +241,7 @@ export function registerCommands(bot: Bot, ctx: CommandContext): void {
       await c.reply("No active session. Send a message first.")
       return
     }
-    const share = await (ctx.novacode ?? ctx.opencode!).session.share({ sessionID: sess.sessionId }).catch(() => undefined)
+    const share = await (ctx.novacode ?? ctx.novacode!).session.share({ sessionID: sess.sessionId }).catch(() => undefined)
     const url = share?.data?.share?.url
     const lines = [`session: ${sess.sessionId}`]
     if (url) lines.push(url)

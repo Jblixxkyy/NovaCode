@@ -1,30 +1,23 @@
 import { describe, expect, test } from "bun:test"
-import { APP_NAME, appEnv, appEnvTruthy, isAppConfigDir, novaKey } from "@opencode-ai/core/identity"
+import { APP_NAME, appEnv, appEnvTruthy, isAppConfigDir } from "@novacode-ai/core/identity"
 
 describe("identity", () => {
   test("product name is novacode", () => {
     expect(APP_NAME).toBe("novacode")
-    expect(novaKey("OPENCODE_DB")).toBe("NOVACODE_DB")
   })
 
-  test("appEnv prefers NOVACODE_ over OPENCODE_", () => {
-    const previousNova = process.env.NOVACODE_CONFIG
-    const previousOpen = process.env.OPENCODE_CONFIG
-    process.env.OPENCODE_CONFIG = "/old"
+  test("appEnv reads NOVACODE_ variables only", () => {
+    const previous = process.env.NOVACODE_CONFIG
     process.env.NOVACODE_CONFIG = "/new"
-    expect(appEnv("OPENCODE_CONFIG")).toBe("/new")
-    delete process.env.NOVACODE_CONFIG
-    expect(appEnv("OPENCODE_CONFIG")).toBe("/old")
-    if (previousNova === undefined) delete process.env.NOVACODE_CONFIG
-    else process.env.NOVACODE_CONFIG = previousNova
-    if (previousOpen === undefined) delete process.env.OPENCODE_CONFIG
-    else process.env.OPENCODE_CONFIG = previousOpen
+    expect(appEnv("NOVACODE_CONFIG")).toBe("/new")
+    if (previous === undefined) delete process.env.NOVACODE_CONFIG
+    else process.env.NOVACODE_CONFIG = previous
   })
 
   test("appEnvTruthy and config dir detection", () => {
-    expect(appEnvTruthy("OPENCODE_PURE")).toBe(false)
+    expect(appEnvTruthy("NOVACODE_PURE")).toBe(false)
     expect(isAppConfigDir("/repo/.novacode")).toBe(true)
-    expect(isAppConfigDir("/repo/.opencode")).toBe(true)
+    expect(isAppConfigDir("/repo/.novacode")).toBe(false)
     expect(isAppConfigDir("/repo/src")).toBe(false)
   })
 })

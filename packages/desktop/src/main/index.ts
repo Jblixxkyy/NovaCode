@@ -169,7 +169,7 @@ const main = Effect.gen(function* () {
     process.chdir(homedir())
   } catch {}
 
-  process.env.OPENCODE_DISABLE_EMBEDDED_WEB_UI = "true"
+  process.env.NOVACODE_DISABLE_EMBEDDED_WEB_UI = "true"
 
   const appId = app.isPackaged ? APP_IDS[CHANNEL] : "ai.novacode.desktop.dev"
   const onboardingTestRoot = ((): string | undefined => {
@@ -180,7 +180,7 @@ const main = Effect.gen(function* () {
     ;["data", "config", "cache", "state", "desktop", "session"].forEach((dir) =>
       mkdirSync(join(root, dir), { recursive: true }),
     )
-    process.env.OPENCODE_DB = ":memory:"
+    process.env.NOVACODE_DB = ":memory:"
     process.env.XDG_DATA_HOME = join(root, "data")
     process.env.XDG_CONFIG_HOME = join(root, "config")
     process.env.XDG_CACHE_HOME = join(root, "cache")
@@ -194,6 +194,7 @@ const main = Effect.gen(function* () {
     onboardingTestRoot ? join(onboardingTestRoot, "desktop") : join(app.getPath("appData"), appId),
   )
   if (onboardingTestRoot) app.setPath("sessionData", join(onboardingTestRoot, "session"))
+
   initializeOldLayoutEligibility(app.getPath("userData"))
   logger = initLogging()
   initCrashReporter()

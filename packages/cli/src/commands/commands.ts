@@ -1,9 +1,9 @@
 import { Argument, Flag } from "effect/unstable/cli"
 import { Spec } from "../framework/spec"
 
-declare const OPENCODE_CLI_NAME: string | undefined
+declare const NOVACODE_CLI_NAME: string | undefined
 
-export const Commands = Spec.make(typeof OPENCODE_CLI_NAME === "string" ? OPENCODE_CLI_NAME : "novacode", {
+export const Commands = Spec.make(typeof NOVACODE_CLI_NAME === "string" ? NOVACODE_CLI_NAME : "novacode", {
   description: "NovaCode command line interface",
   commands: [
     Spec.make("api", {

@@ -10,6 +10,6 @@
     "typescript": "^7"
   },
   "dependencies": {
-    "@opencode-ai/cli-windows-x64-baseline": "0.0.0-next-16350"
+    "@novacode-ai/cli-windows-x64-baseline": "0.0.0-next-16350"
   }
 }

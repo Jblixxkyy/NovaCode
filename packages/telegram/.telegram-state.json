@@ -32,12 +32,17 @@
   "updateOffsets": [
     [
       "8896679023:AAFUG8dCtV5N9OmuHfEZvGguR17ohyLLOXE",
-      293192468
+      293192508
     ]
   ],
-  "sentMessages": [],
+  "sentMessages": [
+    [
+      "7527277539:main",
+      390
+    ]
+  ],
   "audit": {
-    "lastConfigLoad": 1788206814819,
+    "lastConfigLoad": 1788208902623,
     "transport": "polling"
   }
 }

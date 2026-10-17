@@ -192,8 +192,8 @@ export const dict: Record<string, string> = {
   "dialog.provider.group.other": "වෙනත්",
   "dialog.provider.custom.label": "අභිරුචි OpenAI-අනුකූල සැපයුම්කරු",
   "dialog.provider.tag.recommended": "නිර්දේශ කර ඇත",
-  "dialog.provider.opencode.note": "Claude, GPT, Gemini සහ තවත් දේ ඇතුළුව සංවෘත ආකෘති",
-  "dialog.provider.opencode.tagline": "විශ්වසනීය ප්රශස්ත මාදිලි",
+  "dialog.provider.novacode.note": "Claude, GPT, Gemini සහ තවත් දේ ඇතුළුව සංවෘත ආකෘති",
+  "dialog.provider.novacode.tagline": "විශ්වසනීය ප්රශස්ත මාදිලි",
   "dialog.provider.opencodeGo.tagline": "සෑම කෙනෙකුටම අඩු වියදම් දායකත්වයක්",
   "dialog.provider.anthropic.note": "Pro සහ Max ඇතුළුව Claude මාදිලි වෙත සෘජු ප්‍රවේශය",
   "dialog.provider.copilot.note": "GitHub Copilot හරහා කේතීකරණ සහාය සඳහා AI ආකෘති",
@@ -447,7 +447,7 @@ export const dict: Record<string, string> = {
   "wsl.server.retryStart": "නැවත ආරම්භ කිරීමට උත්සාහ කරන්න",
   "wsl.server.updating": "යාවත්කාලීන කරමින්...",
   "wsl.onboarding.step.distro": "ඩිස්ට්‍රෝ තෝරන්න",
-  "wsl.onboarding.step.opencode": "NovaCode",
+  "wsl.onboarding.step.novacode": "NovaCode",
   "wsl.onboarding.checkingRuntime": "WSL පරීක්ෂා කරමින්...",
   "wsl.onboarding.restartRequired": "WSL ස්ථාපනය අවසන් කිරීමට Windows හට නැවත ආරම්භයක් අවශ්‍ය වේ.",
   "wsl.onboarding.ready": "WSL සූදානම්.",
@@ -942,6 +942,8 @@ export const dict: Record<string, string> = {
 
   "settings.general.row.uiFont.title": "UI අකුරු",
   "settings.general.row.uiFont.description": "අතුරු මුහුණත පුරා භාවිතා කරන අකුරු අභිරුචිකරණය කරන්න",
+  "settings.general.row.toolTitleColor.title": "මෙවලම් මාතෘකා පැහැය",
+  "settings.general.row.toolTitleColor.description": "සැසිවල මෙවලම් මාතෘකාවල පැහැය අභිරුචිකරණය කරන්න",
   "settings.general.row.followup.title": "පසු විපරම් හැසිරීම",
   "settings.general.row.followup.description":
     "පසු විපරම් ප්‍රේරක ක්ෂණිකව ගමන් කරනවාද නැතිනම් පෝලිමක රැඳී සිටිනවාද යන්න තෝරන්න",

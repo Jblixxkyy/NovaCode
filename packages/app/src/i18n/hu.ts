@@ -196,8 +196,8 @@ export const dict = {
   "dialog.provider.group.other": "Más",
   "dialog.provider.custom.label": "Egyedi OpenAI-kompatibilis szolgáltató",
   "dialog.provider.tag.recommended": "Ajánlott",
-  "dialog.provider.opencode.note": "Összeválogatott modellek, köztük Claude, GPT, Gemini és még sok más",
-  "dialog.provider.opencode.tagline": "Megbízható optimalizált modellek",
+  "dialog.provider.novacode.note": "Összeválogatott modellek, köztük Claude, GPT, Gemini és még sok más",
+  "dialog.provider.novacode.tagline": "Megbízható optimalizált modellek",
   "dialog.provider.opencodeGo.tagline": "Olcsó előfizetés mindenki számára",
   "dialog.provider.anthropic.note": "Közvetlen hozzáférés a Claude modellekhez, beleértve a Pro és Max modelleket",
   "dialog.provider.copilot.note": "AI modellek a kódoláshoz a GitHub Copilot segítségével",
@@ -452,7 +452,7 @@ export const dict = {
   "wsl.server.retryStart": "Próbálja újra az indítást",
   "wsl.server.updating": "Frissítés...",
   "wsl.onboarding.step.distro": "Válasszon disztrót",
-  "wsl.onboarding.step.opencode": "NovaCode",
+  "wsl.onboarding.step.novacode": "NovaCode",
   "wsl.onboarding.checkingRuntime": "WSL ellenőrzése...",
   "wsl.onboarding.restartRequired": "A Windows készüléket újra kell indítani a WSL telepítésének befejezéséhez.",
   "wsl.onboarding.ready": "A WSL készen áll.",
@@ -955,6 +955,8 @@ export const dict = {
 
   "settings.general.row.uiFont.title": "UI betűtípus",
   "settings.general.row.uiFont.description": "Testreszabhatja a felületen használt betűtípust",
+  "settings.general.row.toolTitleColor.title": "Eszközcímek színe",
+  "settings.general.row.toolTitleColor.description": "A munkamenetekben lévő eszközcímek színének testreszabása",
   "settings.general.row.followup.title": "Nyomon követési viselkedés",
   "settings.general.row.followup.description":
     "Válassza ki, hogy a nyomon követési felszólítások azonnal irányítsák, vagy várakozzanak a sorban",

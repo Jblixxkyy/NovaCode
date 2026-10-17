@@ -30,7 +30,7 @@ description: 編寫自己的外掛來擴展 OpenCode。
 
 在設定檔中指定 npm 套件。
 
-```json title="opencode.json"
+```json title="novacode.json"
 {
   "$schema": "https://opencode.ai/config.json",
   "plugin": ["opencode-helicone-session", "opencode-wakatime", "@my-org/custom-plugin"]
@@ -55,8 +55,8 @@ description: 編寫自己的外掛來擴展 OpenCode。
 
 外掛從所有來源載入，所有鉤子按順序執行。載入順序為：
 
-1. 全域設定 (`~/.config/opencode/opencode.json`)
-2. 專案設定 (`opencode.json`)
+1. 全域設定 (`~/.config/opencode/novacode.json`)
+2. 專案設定 (`novacode.json`)
 3. 全域外掛目錄 (`~/.config/opencode/plugins/`)
 4. 專案外掛目錄 (`.opencode/plugins/`)
 
@@ -127,7 +127,7 @@ export const MyPlugin = async ({ project, client, $, directory, worktree }) => {
 對於 TypeScript 外掛，您可以從外掛套件中匯入類型：
 
 ```ts title="my-plugin.ts" {1}
-import type { Plugin } from "@opencode-ai/plugin"
+import type { Plugin } from "@novacode-ai/plugin"
 
 export const MyPlugin: Plugin = async ({ project, client, $, directory, worktree }) => {
   return {
@@ -279,7 +279,7 @@ export const InjectEnvPlugin = async () => {
 外掛還可以為 OpenCode 新增自訂工具：
 
 ```ts title=".opencode/plugins/custom-tools.ts"
-import { type Plugin, tool } from "@opencode-ai/plugin"
+import { type Plugin, tool } from "@novacode-ai/plugin"
 
 export const CustomToolsPlugin: Plugin = async (ctx) => {
   return {
@@ -339,7 +339,7 @@ export const MyPlugin = async ({ client }) => {
 自訂工作階段壓縮時包含的上下文：
 
 ```ts title=".opencode/plugins/compaction.ts"
-import type { Plugin } from "@opencode-ai/plugin"
+import type { Plugin } from "@novacode-ai/plugin"
 
 export const CompactionPlugin: Plugin = async (ctx) => {
   return {
@@ -363,7 +363,7 @@ Include any state that should persist across compaction:
 您還可以透過設定 `output.prompt` 來完全替換壓縮提示詞：
 
 ```ts title=".opencode/plugins/custom-compaction.ts"
-import type { Plugin } from "@opencode-ai/plugin"
+import type { Plugin } from "@novacode-ai/plugin"
 
 export const CustomCompactionPlugin: Plugin = async (ctx) => {
   return {

@@ -1,4 +1,4 @@
-import { defineConfig } from "vite"
+﻿import { defineConfig } from "vite"
 import solidPlugin from "vite-plugin-solid"
 import { iconsSpritesheet } from "vite-plugin-icons-spritesheet"
 import fs from "fs"
@@ -45,7 +45,7 @@ function providerIconsPlugin() {
 }
 
 async function fetchProviderIcons() {
-  const url = process.env.OPENCODE_MODELS_URL || "https://models.opencode.ai"
+  const url = process.env.NOVACODE_MODELS_URL || "https://models.opencode.ai"
   const providers = await fetch(`${url}/api.json`)
     .then((res) => res.json())
     .then((json) => Object.keys(json))

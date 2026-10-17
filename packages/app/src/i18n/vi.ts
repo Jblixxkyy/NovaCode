@@ -200,8 +200,8 @@ export const dict = {
   "dialog.provider.group.other": "Khác",
   "dialog.provider.custom.label": "Nhà cung cấp tương thích OpenAI tùy chỉnh",
   "dialog.provider.tag.recommended": "Đề xuất",
-  "dialog.provider.opencode.note": "Các mô hình được tuyển chọn, gồm Claude, GPT, Gemini và nhiều mô hình khác",
-  "dialog.provider.opencode.tagline": "Các mô hình tối ưu hóa đáng tin cậy",
+  "dialog.provider.novacode.note": "Các mô hình được tuyển chọn, gồm Claude, GPT, Gemini và nhiều mô hình khác",
+  "dialog.provider.novacode.tagline": "Các mô hình tối ưu hóa đáng tin cậy",
   "dialog.provider.opencodeGo.tagline": "Đăng ký chi phí thấp cho mọi người",
   "dialog.provider.anthropic.note": "Truy cập trực tiếp các mô hình Claude, bao gồm Pro và Max",
   "dialog.provider.copilot.note": "Các mô hình AI hỗ trợ lập trình qua GitHub Copilot",
@@ -455,7 +455,7 @@ export const dict = {
   "wsl.server.retryStart": "Thử khởi động lại",
   "wsl.server.updating": "Đang cập nhật...",
   "wsl.onboarding.step.distro": "Chọn bản phân phối",
-  "wsl.onboarding.step.opencode": "NovaCode",
+  "wsl.onboarding.step.novacode": "NovaCode",
   "wsl.onboarding.checkingRuntime": "Đang kiểm tra WSL...",
   "wsl.onboarding.restartRequired": "Windows cần khởi động lại để hoàn tất cài đặt WSL.",
   "wsl.onboarding.ready": "WSL đã sẵn sàng.",
@@ -957,6 +957,8 @@ export const dict = {
 
   "settings.general.row.uiFont.title": "Phông chữ giao diện",
   "settings.general.row.uiFont.description": "Tùy chỉnh phông chữ dùng trong toàn bộ giao diện",
+  "settings.general.row.toolTitleColor.title": "Màu tiêu đề công cụ",
+  "settings.general.row.toolTitleColor.description": "Tùy chỉnh màu tiêu đề công cụ trong phiên",
   "settings.general.row.followup.title": "Cách xử lý lời nhắc tiếp theo",
   "settings.general.row.followup.description":
     "Chọn để lời nhắc tiếp theo điều hướng phiên ngay lập tức hoặc chờ trong hàng đợi",

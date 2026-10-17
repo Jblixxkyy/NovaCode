@@ -195,8 +195,8 @@ export const dict = {
   "dialog.provider.group.other": "Digər",
   "dialog.provider.custom.label": "Xüsusi OpenAI-a uyğun provayder",
   "dialog.provider.tag.recommended": "Tövsiyə olunan",
-  "dialog.provider.opencode.note": "Claude, GPT, Gemini və daha çoxu daxil olmaqla seçilmiş modellər",
-  "dialog.provider.opencode.tagline": "Etibarlı optimallaşdırılmış modellər",
+  "dialog.provider.novacode.note": "Claude, GPT, Gemini və daha çoxu daxil olmaqla seçilmiş modellər",
+  "dialog.provider.novacode.tagline": "Etibarlı optimallaşdırılmış modellər",
   "dialog.provider.opencodeGo.tagline": "Hamı üçün aşağı qiymətli abunəlik",
   "dialog.provider.anthropic.note": "Pro və Max daxil olmaqla Claude modellərinə birbaşa giriş",
   "dialog.provider.copilot.note": "GitHub Copilot vasitəsilə kodlaşdırma yardımı üçün AI modelləri",
@@ -451,7 +451,7 @@ export const dict = {
   "wsl.server.retryStart": "Yenidən başlamağa cəhd edin",
   "wsl.server.updating": "Yenilənir...",
   "wsl.onboarding.step.distro": "Distribütiv seçin",
-  "wsl.onboarding.step.opencode": "NovaCode",
+  "wsl.onboarding.step.novacode": "NovaCode",
   "wsl.onboarding.checkingRuntime": "WSL yoxlanılır...",
   "wsl.onboarding.restartRequired":
     "WSL-nin quraşdırılmasını başa çatdırmaq üçün Windows-un yenidən başlaması lazımdır.",
@@ -956,6 +956,8 @@ export const dict = {
 
   "settings.general.row.uiFont.title": "İnterfeys şrifti",
   "settings.general.row.uiFont.description": "Bütün interfeysdə istifadə olunan şrifti fərdiləşdirin",
+  "settings.general.row.toolTitleColor.title": "Alət başlığının rəngi",
+  "settings.general.row.toolTitleColor.description": "Sessiyalarda alət başlıqlarının rəngini fərdiləşdirin",
   "settings.general.row.followup.title": "Sonrakı sorğuların davranışı",
   "settings.general.row.followup.description":
     "Sonrakı sorğuların dərhal yönləndirilməsini və ya növbədə gözləməsini seçin",

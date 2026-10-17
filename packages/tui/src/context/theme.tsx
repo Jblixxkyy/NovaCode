@@ -24,8 +24,8 @@ import { createStore, produce } from "solid-js/store"
 import { createSimpleContext } from "./helper"
 import { useKV } from "./kv"
 import { useTuiConfig } from "../config"
-import { Global } from "@opencode-ai/core/global"
-import { Glob } from "@opencode-ai/core/util/glob"
+import { Global } from "@novacode-ai/core/global"
+import { Glob } from "@novacode-ai/core/util/glob"
 import { readFile } from "node:fs/promises"
 import path from "node:path"
 
@@ -38,7 +38,7 @@ const themeSource: ThemeSource = {
   async discover() {
     const directories = [Global.Path.config]
     for (let current = process.cwd(); ; current = path.dirname(current)) {
-      directories.push(path.join(current, ".opencode"))
+      directories.push(path.join(current, ".novacode"))
       if (path.dirname(current) === current) break
     }
     return discoverThemes(directories)
@@ -263,7 +263,7 @@ export const { use: useTheme, provider: ThemeProvider } = createSimpleContext({
         if (theme) return resolveTheme(theme, store.mode)
       }
 
-      return resolveTheme(store.themes.opencode, store.mode)
+      return resolveTheme(store.themes.novacode, store.mode)
     })
 
     createEffect(() => renderer.setBackgroundColor(values().background))

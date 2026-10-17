@@ -104,8 +104,8 @@ export const dict = {
   "dialog.provider.group.other": "Andere",
   "dialog.provider.custom.label": "Benutzerdefinierter OpenAI-kompatibler Anbieter",
   "dialog.provider.tag.recommended": "Empfohlen",
-  "dialog.provider.opencode.note": "Kuratierte Modelle inklusive Claude, GPT, Gemini und mehr",
-  "dialog.provider.opencode.tagline": "Zuverlässige, optimierte Modelle",
+  "dialog.provider.novacode.note": "Kuratierte Modelle inklusive Claude, GPT, Gemini und mehr",
+  "dialog.provider.novacode.tagline": "Zuverlässige, optimierte Modelle",
   "dialog.provider.opencodeGo.tagline": "Kostengünstiges Abo für alle",
   "dialog.provider.anthropic.note": "Direkter Zugriff auf Claude-Modelle, einschließlich Pro und Max",
   "dialog.provider.copilot.note": "KI-Modelle zur Programmierunterstützung über GitHub Copilot",
@@ -355,7 +355,7 @@ export const dict = {
   "wsl.server.retryStart": "Start erneut versuchen",
   "wsl.server.updating": "Wird aktualisiert…",
   "wsl.onboarding.step.distro": "Distribution auswählen",
-  "wsl.onboarding.step.opencode": "NovaCode",
+  "wsl.onboarding.step.novacode": "NovaCode",
   "wsl.onboarding.checkingRuntime": "WSL wird geprüft…",
   "wsl.onboarding.restartRequired": "Windows muss neu gestartet werden, um die WSL-Installation abzuschließen.",
   "wsl.onboarding.ready": "WSL ist bereit.",
@@ -761,6 +761,8 @@ export const dict = {
 
   "settings.general.row.uiFont.title": "UI-Schriftart",
   "settings.general.row.uiFont.description": "Die in der gesamten Benutzeroberfläche verwendete Schriftart anpassen",
+  "settings.general.row.toolTitleColor.title": "Farbe der Tool-Titel",
+  "settings.general.row.toolTitleColor.description": "Die Farbe der Tool-Titel in Sitzungen anpassen",
   "settings.general.row.followup.title": "Verhalten bei Folgeeingaben",
   "settings.general.row.followup.description":
     "Wählen Sie, ob Folgeeingaben die laufende Sitzung sofort steuern oder in einer Warteschlange warten",

@@ -1,5 +1,5 @@
-@import "@opencode-ai/ui/v2/text-input-v2.css";
-@import "@opencode-ai/ui/v2/button-v2.css";
+@import "@novacode-ai/ui/v2/text-input-v2.css";
+@import "@novacode-ai/ui/v2/button-v2.css";
 
 [data-component="tabs-v2"][data-variant="settings"] {
   height: 100%;
@@ -162,6 +162,36 @@
 
 [data-slot="settings-v2-row-control"] [data-component="text-input-v2"] {
   width: 100%;
+}
+
+.settings-v2-color-input {
+  box-sizing: border-box;
+  width: 44px;
+  height: 28px;
+  padding: 2px;
+  border: 0.5px solid var(--v2-border-border-muted);
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.settings-v2-color-input::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.settings-v2-color-input::-webkit-color-swatch {
+  border: none;
+  border-radius: 4px;
+}
+
+.settings-v2-color-input::-moz-color-swatch {
+  border: none;
+  border-radius: 4px;
+}
+
+.settings-v2-color-input:focus-visible {
+  outline: 2px solid var(--v2-border-border-focus);
+  outline-offset: 2px;
 }
 
 [data-component="dialog-v2"][data-variant="settings"] [data-component="select-v2-root"] {

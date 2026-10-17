@@ -1,10 +1,10 @@
-import { Button } from "@opencode-ai/ui/button"
-import { Switch } from "@opencode-ai/ui/switch"
-import { Tag } from "@opencode-ai/ui/v2/badge-v2"
-import { Icon as IconV2 } from "@opencode-ai/ui/v2/icon"
-import { IconButtonV2 } from "@opencode-ai/ui/v2/icon-button-v2"
-import { TextInputV2 } from "@opencode-ai/ui/v2/text-input-v2"
-import { useDialog } from "@opencode-ai/ui/context/dialog"
+import { Button } from "@novacode-ai/ui/button"
+import { Switch } from "@novacode-ai/ui/switch"
+import { Tag } from "@novacode-ai/ui/v2/badge-v2"
+import { Icon as IconV2 } from "@novacode-ai/ui/v2/icon"
+import { IconButtonV2 } from "@novacode-ai/ui/v2/icon-button-v2"
+import { TextInputV2 } from "@novacode-ai/ui/v2/text-input-v2"
+import { useDialog } from "@novacode-ai/ui/context/dialog"
 import fuzzysort from "fuzzysort"
 import { type Component, For, Show, createEffect, createMemo, createResource, createSignal } from "solid-js"
 import { createStore } from "solid-js/store"
@@ -27,7 +27,7 @@ function getWebServerUrl() {
     if (location.hostname.includes("novacode.ai") || location.hostname.includes("opencode.ai"))
       return "http://localhost:4096"
     if (import.meta.env.DEV)
-      return `http://${import.meta.env.VITE_OPENCODE_SERVER_HOST ?? "localhost"}:${import.meta.env.VITE_OPENCODE_SERVER_PORT ?? "4096"}`
+      return `http://${import.meta.env.VITE_NOVACODE_SERVER_HOST ?? "localhost"}:${import.meta.env.VITE_NOVACODE_SERVER_PORT ?? "4096"}`
     return location.origin
   } catch {
     return location.origin

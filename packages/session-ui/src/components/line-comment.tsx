@@ -1,11 +1,11 @@
-import { useFilteredList } from "@opencode-ai/ui/hooks"
-import { getDirectory, getFilename } from "@opencode-ai/core/util/path"
+import { useFilteredList } from "@novacode-ai/ui/hooks"
+import { getDirectory, getFilename } from "@novacode-ai/core/util/path"
 import { createSignal, For, onMount, Show, splitProps, type JSX } from "solid-js"
-import { Button } from "@opencode-ai/ui/button"
-import { FileIcon } from "@opencode-ai/ui/file-icon"
-import { Icon } from "@opencode-ai/ui/icon"
+import { Button } from "@novacode-ai/ui/button"
+import { FileIcon } from "@novacode-ai/ui/file-icon"
+import { Icon } from "@novacode-ai/ui/icon"
 import { installLineCommentStyles } from "./line-comment-styles"
-import { useI18n } from "@opencode-ai/ui/context/i18n"
+import { useI18n } from "@novacode-ai/ui/context/i18n"
 
 installLineCommentStyles()
 

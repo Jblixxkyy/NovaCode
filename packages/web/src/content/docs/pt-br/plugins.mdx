@@ -30,7 +30,7 @@ Os arquivos nesses diretórios são carregados automaticamente na inicializaçã
 
 Especifique pacotes npm no seu arquivo de configuração.
 
-```json title="opencode.json"
+```json title="novacode.json"
 {
   "$schema": "https://opencode.ai/config.json",
   "plugin": ["opencode-helicone-session", "opencode-wakatime", "@my-org/custom-plugin"]
@@ -55,8 +55,8 @@ Navegue pelos plugins disponíveis no [ecossistema](/docs/ecosystem#plugins).
 
 Os plugins são carregados de todas as fontes e todos os hooks são executados em sequência. A ordem de carregamento é:
 
-1. Configuração global (`~/.config/opencode/opencode.json`)
-2. Configuração do projeto (`opencode.json`)
+1. Configuração global (`~/.config/opencode/novacode.json`)
+2. Configuração do projeto (`novacode.json`)
 3. Diretório de plugins global (`~/.config/opencode/plugins/`)
 4. Diretório de plugins do projeto (`.opencode/plugins/`)
 
@@ -127,7 +127,7 @@ A função do plugin recebe:
 Para plugins TypeScript, você pode importar tipos do pacote de plugin:
 
 ```ts title="my-plugin.ts" {1}
-import type { Plugin } from "@opencode-ai/plugin"
+import type { Plugin } from "@novacode-ai/plugin"
 
 export const MyPlugin: Plugin = async ({ project, client, $, directory, worktree }) => {
   return {
@@ -279,7 +279,7 @@ export const InjectEnvPlugin = async () => {
 Plugins também podem adicionar ferramentas personalizadas ao opencode:
 
 ```ts title=".opencode/plugins/custom-tools.ts"
-import { type Plugin, tool } from "@opencode-ai/plugin"
+import { type Plugin, tool } from "@novacode-ai/plugin"
 
 export const CustomToolsPlugin: Plugin = async (ctx) => {
   return {
@@ -339,7 +339,7 @@ Níveis: `debug`, `info`, `warn`, `error`. Veja a [documentação do SDK](https:
 Personalize o contexto incluído quando uma sessão é compactada:
 
 ```ts title=".opencode/plugins/compaction.ts"
-import type { Plugin } from "@opencode-ai/plugin"
+import type { Plugin } from "@novacode-ai/plugin"
 
 export const CompactionPlugin: Plugin = async (ctx) => {
   return {
@@ -363,7 +363,7 @@ O hook `experimental.session.compacting` é acionado antes que o LLM gere um res
 Você também pode substituir o prompt de compactação completamente definindo `output.prompt`:
 
 ```ts title=".opencode/plugins/custom-compaction.ts"
-import type { Plugin } from "@opencode-ai/plugin"
+import type { Plugin } from "@novacode-ai/plugin"
 
 export const CustomCompactionPlugin: Plugin = async (ctx) => {
   return {

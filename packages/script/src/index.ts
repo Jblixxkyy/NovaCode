@@ -9,13 +9,13 @@ if (!expectedBunVersion) {
   throw new Error("packageManager field not found in root package.json")
 }
 
-// NovaCode-native release variables. The OPENCODE_* fallback keeps the existing
+// NovaCode-native release variables. The NOVACODE_* fallback keeps the existing
 // GitHub workflow compatible while the repository is being fully rebranded.
 const env = {
-  NOVACODE_CHANNEL: process.env["NOVACODE_CHANNEL"] ?? process.env["OPENCODE_CHANNEL"],
-  NOVACODE_BUMP: process.env["NOVACODE_BUMP"] ?? process.env["OPENCODE_BUMP"],
-  NOVACODE_VERSION: process.env["NOVACODE_VERSION"] ?? process.env["OPENCODE_VERSION"],
-  NOVACODE_RELEASE: process.env["NOVACODE_RELEASE"] ?? process.env["OPENCODE_RELEASE"],
+  NOVACODE_CHANNEL: process.env["NOVACODE_CHANNEL"] ?? process.env["NOVACODE_CHANNEL"],
+  NOVACODE_BUMP: process.env["NOVACODE_BUMP"] ?? process.env["NOVACODE_BUMP"],
+  NOVACODE_VERSION: process.env["NOVACODE_VERSION"] ?? process.env["NOVACODE_VERSION"],
+  NOVACODE_RELEASE: process.env["NOVACODE_RELEASE"] ?? process.env["NOVACODE_RELEASE"],
 }
 
 const CHANNEL = await (async () => {

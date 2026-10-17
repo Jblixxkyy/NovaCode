@@ -1,5 +1,5 @@
 import type { Bot } from "grammy"
-import type { OpencodeClient, ToolPart } from "@opencode-ai/sdk/v2"
+import type { OpencodeClient, ToolPart } from "@novacode-ai/sdk/v2"
 import type { Logger } from "./logging"
 import type { Store } from "./store"
 

@@ -193,8 +193,8 @@ export const dict = {
   "dialog.provider.group.other": "دیگر",
   "dialog.provider.custom.label": "ارائه دهنده سفارشی سازگار با OpenAI",
   "dialog.provider.tag.recommended": "توصیه می شود",
-  "dialog.provider.opencode.note": "مدل های انتخاب شده از جمله Claude، GPT، Gemini و موارد دیگر",
-  "dialog.provider.opencode.tagline": "مدل های بهینه شده قابل اعتماد",
+  "dialog.provider.novacode.note": "مدل های انتخاب شده از جمله Claude، GPT، Gemini و موارد دیگر",
+  "dialog.provider.novacode.tagline": "مدل های بهینه شده قابل اعتماد",
   "dialog.provider.opencodeGo.tagline": "اشتراک کم هزینه برای همه",
   "dialog.provider.anthropic.note": "دسترسی مستقیم به مدل های Claude، از جمله Pro و Max",
   "dialog.provider.copilot.note": "مدل های AI برای کمک به کدنویسی از طریق GitHub Copilot",
@@ -448,7 +448,7 @@ export const dict = {
   "wsl.server.retryStart": "شروع مجدد امتحان کنید",
   "wsl.server.updating": "در حال به روز رسانی...",
   "wsl.onboarding.step.distro": "توزیع را انتخاب کنید",
-  "wsl.onboarding.step.opencode": "NovaCode",
+  "wsl.onboarding.step.novacode": "NovaCode",
   "wsl.onboarding.checkingRuntime": "در حال بررسی WSL...",
   "wsl.onboarding.restartRequired": "Windows برای اتمام نصب WSL به راه اندازی مجدد نیاز دارد.",
   "wsl.onboarding.ready": "WSL آماده است.",
@@ -943,6 +943,8 @@ export const dict = {
 
   "settings.general.row.uiFont.title": "قلم UI",
   "settings.general.row.uiFont.description": "فونت مورد استفاده در سراسر رابط را سفارشی کنید",
+  "settings.general.row.toolTitleColor.title": "رنگ عنوان ابزار",
+  "settings.general.row.toolTitleColor.description": "رنگ عناوین ابزارها را در جلسات سفارشی کنید",
   "settings.general.row.followup.title": "رفتار پیگیری",
   "settings.general.row.followup.description":
     "انتخاب کنید که آیا درخواست پیگیری فوراً هدایت می شود یا در یک صف منتظر می ماند",

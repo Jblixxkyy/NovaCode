@@ -196,8 +196,8 @@ export const dict = {
   "dialog.provider.group.other": "Kita",
   "dialog.provider.custom.label": "Pasirinktinis su OpenAI suderinamas tiekėjas",
   "dialog.provider.tag.recommended": "Rekomenduojama",
-  "dialog.provider.opencode.note": "Kuruojami modeliai, įskaitant Claude, GPT, Gemini ir kt.",
-  "dialog.provider.opencode.tagline": "Patikimi optimizuoti modeliai",
+  "dialog.provider.novacode.note": "Kuruojami modeliai, įskaitant Claude, GPT, Gemini ir kt.",
+  "dialog.provider.novacode.tagline": "Patikimi optimizuoti modeliai",
   "dialog.provider.opencodeGo.tagline": "Mažos kainos abonementas visiems",
   "dialog.provider.anthropic.note": "Tiesioginė prieiga prie Claude modelių, įskaitant Pro ir Max",
   "dialog.provider.copilot.note": "AI modeliai, skirti kodavimo pagalbai per GitHub Copilot",
@@ -453,7 +453,7 @@ export const dict = {
   "wsl.server.retryStart": "Pabandykite pradėti iš naujo",
   "wsl.server.updating": "Atnaujinama...",
   "wsl.onboarding.step.distro": "Pasirinkite distro",
-  "wsl.onboarding.step.opencode": "NovaCode",
+  "wsl.onboarding.step.novacode": "NovaCode",
   "wsl.onboarding.checkingRuntime": "Tikrinama WSL...",
   "wsl.onboarding.restartRequired": "Windows reikia paleisti iš naujo, kad būtų baigtas WSL diegimas.",
   "wsl.onboarding.ready": "WSL yra paruoštas.",
@@ -960,6 +960,8 @@ export const dict = {
 
   "settings.general.row.uiFont.title": "UI šriftas",
   "settings.general.row.uiFont.description": "Tinkinkite visoje sąsajoje naudojamą šriftą",
+  "settings.general.row.toolTitleColor.title": "Įrankio pavadinimo spalva",
+  "settings.general.row.toolTitleColor.description": "Tinkinkite įrankių pavadinimų spalvą seansuose",
   "settings.general.row.followup.title": "Tolesnis elgesys",
   "settings.general.row.followup.description":
     "Pasirinkite, ar tolesni raginimai bus nukreipti nedelsiant, ar laukti eilėje",

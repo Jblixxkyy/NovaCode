@@ -26,7 +26,7 @@ Postavite JavaScript ili TypeScript datoteke u direktorij dodataka.
 
 Navedite npm pakete u vašoj konfiguracijskoj datoteci.
 
-```json title="opencode.json"
+```json title="novacode.json"
 {
   "$schema": "https://opencode.ai/config.json",
   "plugin": ["opencode-helicone-session", "opencode-wakatime", "@my-org/custom-plugin"]
@@ -49,8 +49,8 @@ Pregledajte dostupne dodatke u [ecosystem](/docs/ecosystem#plugins).
 
 Dodaci se učitavaju iz svih izvora i svi zakačnjaci rade u nizu. Redoslijed učitavanja je:
 
-1. Globalna konfiguracija (`~/.config/opencode/opencode.json`)
-2. Konfiguracija projekta (`opencode.json`)
+1. Globalna konfiguracija (`~/.config/opencode/novacode.json`)
+2. Konfiguracija projekta (`novacode.json`)
 3. Globalni direktorij dodataka (`~/.config/opencode/plugins/`)
 4. Direktorij dodataka projekta (`.opencode/plugins/`)
    Duplicirani npm paketi sa istim imenom i verzijom se učitavaju jednom. Međutim, lokalni dodatak i npm dodatak sa sličnim nazivima se učitavaju odvojeno.
@@ -121,7 +121,7 @@ Funkcija dodatka prima:
 Za TypeScript dodatke, možete uvesti tipove iz paketa dodataka:
 
 ```ts title="my-plugin.ts" {1}
-import type { Plugin } from "@opencode-ai/plugin"
+import type { Plugin } from "@novacode-ai/plugin"
 
 export const MyPlugin: Plugin = async ({ project, client, $, directory, worktree }) => {
   return {
@@ -270,7 +270,7 @@ export const InjectEnvPlugin = async () => {
 Dodaci također mogu dodati prilagođene alate u opencode:
 
 ```ts title=".opencode/plugins/custom-tools.ts"
-import { type Plugin, tool } from "@opencode-ai/plugin"
+import { type Plugin, tool } from "@novacode-ai/plugin"
 
 export const CustomToolsPlugin: Plugin = async (ctx) => {
   return {
@@ -323,7 +323,7 @@ Nivoi su: `debug`, `info`, `warn`, `error`. Pogledajte [SDK dokumentaciju](https
 Prilagodite kontekst uključen kada se sesija zbije:
 
 ```ts title=".opencode/plugins/compaction.ts"
-import type { Plugin } from "@opencode-ai/plugin"
+import type { Plugin } from "@novacode-ai/plugin"
 
 export const CompactionPlugin: Plugin = async (ctx) => {
   return {
@@ -346,7 +346,7 @@ Include any state that should persist across compaction:
 Također možete u potpunosti zamijeniti prompt za sabijanje postavljanjem `output.prompt`:
 
 ```ts title=".opencode/plugins/custom-compaction.ts"
-import type { Plugin } from "@opencode-ai/plugin"
+import type { Plugin } from "@novacode-ai/plugin"
 
 export const CustomCompactionPlugin: Plugin = async (ctx) => {
   return {

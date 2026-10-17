@@ -138,21 +138,33 @@ async function startPolling(bot: Bot, config: Config, log: Logger, store: Store)
   const stallMs = config.polling.stallTimeoutMs
   const checkMs = Math.min(Math.max(stallMs / 4, 10_000), 30_000)
 
+  let restartBackoff = config.polling.initialBackoffMs
+
   watchdog = setInterval(() => {
     if (stopped) return
     const idle = Date.now() - lastUpdateAt
     if (idle > stallMs) {
-      log.warn(`polling stall detected (idle ${Math.round(idle / 1000)}s), restarting`)
+      log.warn(`polling stall detected (idle ${Math.round(idle / 1000)}s), restarting with ${restartBackoff}ms backoff`)
       lastUpdateAt = Date.now()
       void (async () => {
         try {
           await bot.stop()
         } catch {}
         if (stopped) return
+        await new Promise((r) => setTimeout(r, restartBackoff))
+        if (stopped) return
         try {
           await bot.start()
+          restartBackoff = config.polling.initialBackoffMs
         } catch (err) {
+          const kind = classifyError(err)
+          if (kind === "conflict") {
+            restartBackoff = Math.min(restartBackoff * 2, config.polling.maxBackoffMs)
+            log.warn(`polling restart conflict, backing off to ${restartBackoff}ms`)
+            return
+          }
           log.error("polling restart failed:", err)
+          restartBackoff = Math.min(restartBackoff * 2, config.polling.maxBackoffMs)
         }
       })()
     }

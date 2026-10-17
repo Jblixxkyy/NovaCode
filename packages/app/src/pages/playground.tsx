@@ -98,7 +98,7 @@ export default function Playground() {
   const activeSessions = createMemo(() => {
     const info = sync().session.data.info
     const status = sync().session.data.session_status
-    const list = Object.values(info).filter(Boolean) as import("@opencode-ai/sdk/v2/client").Session[]
+    const list = Object.values(info).filter(Boolean) as import("@novacode-ai/sdk/v2/client").Session[]
     return list.filter((s) => {
       const t = status[s.id]?.type
       return t === "busy" || t === "retry"

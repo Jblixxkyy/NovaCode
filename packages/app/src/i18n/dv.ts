@@ -195,9 +195,9 @@ export const dict = {
   "dialog.provider.group.other": "އެހެން",
   "dialog.provider.custom.label": "ކަސްޓަމް OpenAI އާއި އެއްގޮތްވާ ޕްރޮވައިޑަރެއް",
   "dialog.provider.tag.recommended": "ލަފާދެވިފައިވުން",
-  "dialog.provider.opencode.note":
+  "dialog.provider.novacode.note":
     "ކިއުރެޓް ކުރެވިފައިވާ މޮޑެލްތަކުގެ ތެރޭގައި Claude، GPT، Gemini އަދި އެހެނިހެން މޮޑެލްތައް ހިމެނެއެވެ",
-  "dialog.provider.opencode.tagline": "އިތުބާރު ހުރި އޮޕްޓިމައިޒްޑް މޮޑެލްތަކެވެ",
+  "dialog.provider.novacode.tagline": "އިތުބާރު ހުރި އޮޕްޓިމައިޒްޑް މޮޑެލްތަކެވެ",
   "dialog.provider.opencodeGo.tagline": "އެންމެންނަށް ކުޑަ އަގެއްގައި ސަބްސްކްރިޕްޝަން ދިނުމެވެ",
   "dialog.provider.anthropic.note": "ޕްރޯ އަދި މެކްސް ހިމެނޭ ގޮތަށް Claude މޮޑެލްތަކަށް ސީދާ އެކްސެސް ލިބޭނެ އެވެ",
   "dialog.provider.copilot.note": "GitHub Copilot މެދުވެރިކޮށް ކޯޑިންގ އެހީތެރިވުމަށް AI މޮޑެލްތައް",
@@ -454,7 +454,7 @@ export const dict = {
   "wsl.server.retryStart": "އަލުން ފަށަން މަސައްކަތް ކުރާށެވެ",
   "wsl.server.updating": "އަޕްޑޭޓް ކުރަމުން...",
   "wsl.onboarding.step.distro": "ޑިސްޓްރޯ ހޮވާށެވެ",
-  "wsl.onboarding.step.opencode": "NovaCode އެވެ",
+  "wsl.onboarding.step.novacode": "NovaCode އެވެ",
   "wsl.onboarding.checkingRuntime": "ޗެކް ކުރަމުންދަނީ WSL...",
   "wsl.onboarding.restartRequired": "Windows އިންސްޓޯލް ކުރުން ނިންމުމަށް ރީސްޓާޓް އެއް ބޭނުންވެއެވެ.",
   "wsl.onboarding.ready": "WSL ތައްޔާރުވެއްޖެއެވެ.",
@@ -961,6 +961,8 @@ export const dict = {
 
   "settings.general.row.uiFont.title": "UI ފޮންޓް",
   "settings.general.row.uiFont.description": "މުޅި އިންޓަރފޭސްގައި ބޭނުންކުރާ ފޮންޓް ކަސްޓަމައިޒް ކުރުން",
+  "settings.general.row.toolTitleColor.title": "ޓޫލް ޓައިޓަލްގެ ކުލަ",
+  "settings.general.row.toolTitleColor.description": "ސެޝަންތަކުގައި ޓޫލް ޓައިޓަލްތަކުގެ ކުލަ ކަސްޓަމައިޒް ކުރުން",
   "settings.general.row.followup.title": "ފޮލޯއަޕް ސުލޫކު",
   "settings.general.row.followup.description":
     "ފޮލޯއަޕް ޕްރޮމްޕްޓްސް ވަގުތުން ސްޓިއަރ ކުރުން ނުވަތަ ކިއުއެއްގައި މަޑުކުރުންތޯ ހޮވާށެވެ",

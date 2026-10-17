@@ -1,15 +1,15 @@
 import { createStore, reconcile } from "solid-js/store"
 import { type Accessor, batch, createEffect, createMemo, createRoot, getOwner, onCleanup } from "solid-js"
 import { useNavigate, useParams, useSearchParams } from "@solidjs/router"
-import { createSimpleContext } from "@opencode-ai/ui/context"
+import { createSimpleContext } from "@novacode-ai/ui/context"
 import type { ServerSDK } from "./server-sdk"
 import type { ServerSync } from "./server-sync"
 import { usePlatform } from "@/context/platform"
 import { useLanguage } from "@/context/language"
 import { useSettings } from "@/context/settings"
-import { base64Encode } from "@opencode-ai/core/util/encode"
+import { base64Encode } from "@novacode-ai/core/util/encode"
 import { decode64 } from "@/utils/base64"
-import { EventSessionError } from "@opencode-ai/sdk/v2"
+import { EventSessionError } from "@novacode-ai/sdk/v2"
 import { Persist, persisted } from "@/utils/persist"
 import { playSoundById } from "@/utils/sound"
 import { useGlobal } from "./global"
@@ -233,7 +233,7 @@ function createServerNotificationState(input: {
   const currentSession = input.sessionID
 
   const [store, setStore, _, ready] = persisted(
-    Persist.serverGlobal(serverSDK().scope, "notification", ["notification.v1"]),
+    Persist.serverGlobal(serverSDK().scope, "notification"),
     createStore({
       list: [] as Notification[],
     }),

@@ -35,7 +35,6 @@ export async function createOpencodeServer(options?: ServerOptions) {
   const proc = launch(`opencode`, args, {
     env: {
       ...process.env,
-      OPENCODE_CONFIG_CONTENT: JSON.stringify(options.config ?? {}),
       NOVACODE_CONFIG_CONTENT: JSON.stringify(options.config ?? {}),
     },
   })
@@ -120,7 +119,6 @@ export function createOpencodeTui(options?: TuiOptions) {
     stdio: "inherit",
     env: {
       ...process.env,
-      OPENCODE_CONFIG_CONTENT: JSON.stringify(options?.config ?? {}),
       NOVACODE_CONFIG_CONTENT: JSON.stringify(options?.config ?? {}),
     },
   })

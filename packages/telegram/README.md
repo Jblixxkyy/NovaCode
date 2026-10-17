@@ -1,4 +1,4 @@
-# @opencode-ai/novatelegram
+# @novacode-ai/novatelegram
 
 Telegram bot integration for novacode. One long-running bot process talks to a local novacode server (v2 SDK via `promptAsync` + event stream) — one novacode session per chat or forum topic, with streaming preview, media, reactions, approvals, and durable polling.
 
@@ -53,7 +53,7 @@ See `.env.example`. Complex policy (`groups`, `topics`, `customCommands`) lives 
 
 ## Notes
 
-- Built against the v2 Opencode SDK (`@opencode-ai/sdk/v2`, `promptAsync` → `session.idle` event collection, cumulative `message.part.updated` with no delta).
+- Built against the v2 Opencode SDK (`@novacode-ai/sdk/v2`, `promptAsync` → `session.idle` event collection, cumulative `message.part.updated` with no delta).
 - Throttled via `@grammyjs/transformer-throttler` + `sequentialize` wrapper in `src/runtime.ts`.
 - `packages/slack` is the original template; this package reaches OpenClaw parity (minus multi-account/ACP bindings/gateway ceremony) with less slop.
 - Run `bun typecheck` (`tsgo` / `tsc`) from this package to verify; polling durability is best-effort for a personal bot — Telegram redelivers on crash, the bot re-processes from offset.

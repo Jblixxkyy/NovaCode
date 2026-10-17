@@ -1,4 +1,4 @@
-import { createOpencode as createNovacode } from "@opencode-ai/sdk/v2"
+import { createOpencode as createNovacode } from "@novacode-ai/sdk/v2"
 import { loadConfig } from "./config"
 import { createLogger } from "./logging"
 import { Store } from "./store"
@@ -15,8 +15,8 @@ import { StreamingPreview } from "./streaming"
 import { Reactions } from "./react"
 import { CallbackRouter } from "./callback"
 import { Approvals } from "./approvals"
-import type { OpencodeClient as NovacodeClient } from "@opencode-ai/sdk/v2"
-import type { TextPart, FilePart, ToolStateCompleted } from "@opencode-ai/sdk/v2"
+import type { OpencodeClient as NovacodeClient } from "@novacode-ai/sdk/v2"
+import type { TextPart, FilePart, ToolStateCompleted } from "@novacode-ai/sdk/v2"
 import type { Logger } from "./logging"
 
 const config = await loadConfig()
@@ -270,14 +270,18 @@ async function handleUserTurn(input: TurnInput): Promise<void> {
     promptBody.model = { providerID: providerID!, modelID: rest.join("/") }
   }
 
-  log.debug("prompting session", session.sessionId, "with", parts.length, "parts")
+  const sessionDir = sessionMap.getDirectory(chatId, threadId, chatCtx) ?? config.projectDir
+  log.debug("prompting session", session.sessionId, "with", parts.length, "parts in dir", sessionDir)
   const accept = await novacode.client.session
-    .promptAsync({
-      sessionID: session.sessionId,
-      parts,
-      ...(promptBody.agent ? { agent: promptBody.agent } : {}),
-      ...(promptBody.model ? { model: promptBody.model } : {}),
-    })
+    .promptAsync(
+      {
+        sessionID: session.sessionId,
+        parts,
+        ...(promptBody.agent ? { agent: promptBody.agent } : {}),
+        ...(promptBody.model ? { model: promptBody.model } : {}),
+      },
+      sessionDir ? { headers: { "x-opencode-directory": encodeURIComponent(sessionDir) } } : undefined,
+    )
     .catch((err: unknown) => {
       log.error("prompt error:", err)
       return { error: err }
@@ -355,6 +359,7 @@ async function collectTurn(
       const props = event.properties
       if (props.sessionID !== sessionID) continue
       const part = props.part
+      if (part.type === "reasoning") continue
       if (part.type === "text") {
         const tp = part as TextPart
         const prev = textByPart.get(tp.id)

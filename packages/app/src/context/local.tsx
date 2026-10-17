@@ -1,5 +1,5 @@
-import { createSimpleContext } from "@opencode-ai/ui/context"
-import { base64Encode } from "@opencode-ai/core/util/encode"
+import { createSimpleContext } from "@novacode-ai/ui/context"
+import { base64Encode } from "@novacode-ai/core/util/encode"
 import { useParams } from "@solidjs/router"
 import { batch, createEffect, createMemo, startTransition } from "solid-js"
 import { createStore } from "solid-js/store"
@@ -74,7 +74,7 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
 
     const [saved, setSaved, , savedReady] = persisted(
       {
-        ...Persist.serverWorkspace(serverSDK().scope, sdk().directory, "model-selection", ["model-selection.v1"]),
+        ...Persist.serverWorkspace(serverSDK().scope, sdk().directory, "model-selection"),
         migrate,
       },
       createStore<Saved>({

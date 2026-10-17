@@ -25,7 +25,7 @@ const dict: Record<string, string> = {
   "dialog.model.unpaid.freeModels.title": "Free models provided by OpenCode",
   "dialog.model.unpaid.addMore.title": "Add more models from popular providers",
   "dialog.model.unpaid.viewMoreProviders": "See 70+ more providers",
-  "dialog.provider.opencode.tagline": "Reliable optimized models",
+  "dialog.provider.novacode.tagline": "Reliable optimized models",
   "dialog.provider.opencodeGo.tagline": "Low cost subscription for everyone",
   "dialog.provider.custom.label": "Custom OpenAI-compatible provider",
   "dialog.provider.search.placeholder": "Search providers",

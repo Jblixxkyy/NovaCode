@@ -34,13 +34,13 @@ already-loaded config until then.
 
 | Scope                         | Path                                                                                                                      |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| Project config                | `./novacode.json`, `./novacode.jsonc`, or `.novacode/novacode.json` (legacy `opencode.json` / `.opencode/` still load; NovaCode files win) |
-| Global config                 | `~/.config/novacode/novacode.json` or `novacode.jsonc` (legacy `opencode.json` in that dir still loads) |
-| Project agents                | `.novacode/agent/<name>.md` or `.opencode/agent(s)/<name>.md` |
+| Project config                | `./novacode.json`, `./novacode.jsonc`, or `.novacode/novacode.json` (legacy `novacode.json` / `.novacode/` still load; NovaCode files win) |
+| Global config                 | `~/.config/novacode/novacode.json` or `novacode.jsonc` (legacy `novacode.json` in that dir still loads; set `NOVACODE_CONFIG_DIR` env var to override to a per-app folder) |
+| Project agents                | `.novacode/agent/<name>.md` or `.novacode/agent(s)/<name>.md` |
 | Global agents                 | `~/.config/novacode/agent(s)/<name>.md` |
-| Project commands              | `.novacode/command/<name>.md` or `.opencode/command(s)/<name>.md` |
+| Project commands              | `.novacode/command/<name>.md` or `.novacode/command(s)/<name>.md` |
 | Global commands               | `~/.config/novacode/command(s)/<name>.md` |
-| Project skills                | `.novacode/skill(s)/<name>/SKILL.md` or `.opencode/skill(s)/<name>/SKILL.md` |
+| Project skills                | `.novacode/skill(s)/<name>/SKILL.md` or `.novacode/skill(s)/<name>/SKILL.md` |
 | Global skills                 | `~/.config/novacode/skill(s)/<name>/SKILL.md` |
 | External skills (auto-loaded) | `~/.claude/skills/<name>/SKILL.md`, `~/.agents/skills/<name>/SKILL.md` |
 
@@ -160,7 +160,7 @@ file is named `SKILL.md` exactly, and lives in its own folder named after the
 skill:
 
 ```
-.opencode/skills/my-skill/SKILL.md
+.novacode/skills/my-skill/SKILL.md
 ```
 
 Frontmatter:
@@ -220,7 +220,7 @@ Local `path` values may be relative to the declaring config, absolute, or use
 
 Two ways to define an agent. Use the file form for anything non-trivial.
 
-### Inline (in `opencode.json`)
+### Inline (in `novacode.json`)
 
 ```json
 {
@@ -239,7 +239,7 @@ Two ways to define an agent. Use the file form for anything non-trivial.
 ### File
 
 ```
-.opencode/agent/my-reviewer.md      OR     .opencode/agents/my-reviewer.md
+.novacode/agent/my-reviewer.md      OR     .novacode/agents/my-reviewer.md
 ```
 
 ```markdown
@@ -281,7 +281,7 @@ NovaCode's command loader scans for `**/*.md` inside command directories. The
 file is named after the command, and lives directly inside the `command` folder:
 
 ```
-.opencode/command/deploy.md
+.novacode/command/deploy.md
 ```
 
 Frontmatter:
@@ -315,7 +315,7 @@ model: anthropic/claude-sonnet-4-6
 ```
 
 Auto-discovered plugins (no config entry needed): any `*.ts` or `*.js` file in
-`.opencode/plugin/` or `.opencode/plugins/`.
+`.novacode/plugin/` or `.novacode/plugins/`.
 
 A plugin module exports `default` (or any named export) of type
 `Plugin = (input: PluginInput, options?) => Promise<Hooks>`. The export is a
@@ -323,7 +323,7 @@ function, not a plain object literal, and the function returns an object
 (return `{}` if there is nothing to register).
 
 ```ts
-import type { Plugin } from "@opencode-ai/plugin"
+import type { Plugin } from "@novacode-ai/plugin"
 
 export default (async ({ client, project, directory, $ }) => {
   return {
@@ -421,19 +421,22 @@ the `plan` agent's permission ruleset (`edit: deny *`).
 
 When a user's config is broken and NovaCode won't start, these env vars help:
 
-- `OPENCODE_DISABLE_PROJECT_CONFIG=1`: skip the project's local `opencode.json`
+- `NOVACODE_DISABLE_PROJECT_CONFIG=1`: skip the project's local `novacode.json`
   and start from globals only. Run from the project directory, NovaCode loads,
   the user edits the broken file, then they restart without the flag.
-- `OPENCODE_CONFIG=/path/to/file.json` or `NOVACODE_CONFIG_DIR=/path/to/dir`:
+- `NOVACODE_CONFIG=/path/to/file.json` or `NOVACODE_CONFIG_DIR=/path/to/dir`:
   load an additional explicit config file, or override the global config directory
-  (`NOVACODE_CONFIG_DIR` wins over `OPENCODE_CONFIG_DIR`).
-- `OPENCODE_CONFIG_CONTENT='{"$schema":"https://opencode.ai/config.json"}'`:
+  (`NOVACODE_CONFIG_DIR` wins over `NOVACODE_CONFIG_DIR`).
+- `NOVACODE_CONFIG_CONTENT='{"$schema":"https://opencode.ai/config.json"}'`:
   inject inline JSON as a final local-scope merge.
-- `OPENCODE_DISABLE_DEFAULT_PLUGINS=1`: skip default plugins.
-- `OPENCODE_PURE=1`: skip external plugins entirely.
-- `OPENCODE_DISABLE_EXTERNAL_SKILLS=1`,
-  `OPENCODE_DISABLE_CLAUDE_CODE_SKILLS=1`: skip the external skill scans under
+- `NOVACODE_DISABLE_DEFAULT_PLUGINS=1`: skip default plugins.
+- `NOVACODE_PURE=1`: skip external plugins entirely.
+- `NOVACODE_DISABLE_EXTERNAL_SKILLS=1`,
+  `NOVACODE_DISABLE_CLAUDE_CODE_SKILLS=1`: skip the external skill scans under
   `~/.claude/` and `~/.agents/`.
+- `NOVACODE_CONFIG_DIR=/path/to/dir`: use a custom config directory instead of the
+  shared `~/.config/novacode/`. This is useful for running multiple isolated instances
+  (e.g., dev vs packaged desktop app).
 
 ## When proposing edits
 
@@ -442,7 +445,7 @@ When a user's config is broken and NovaCode won't start, these env vars help:
   `https://opencode.ai/config.json` and read the schema rather than guessing.
 - Preserve `$schema` and any existing fields the user did not ask to change.
 - For agent, command, skill, and plugin definitions, prefer creating new files
-  in the correct location over inlining everything in `opencode.json`.
+  in the correct location over inlining everything in `novacode.json`.
 - If the user's existing config is malformed, point them at the env-var escape
   hatches above so they can edit from inside NovaCode without breaking their
   session.

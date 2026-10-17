@@ -57,9 +57,9 @@ Si l'application de bureau plante au lancement, se bloque ou se comporte étrang
 
 Ouvrez votre fichier de configuration global et recherchez une clé `plugin`.
 
-- **macOS/Linux** : `~/.config/opencode/opencode.jsonc` (ou `~/.config/opencode/opencode.json`)
-- **macOS/Linux** (anciennes installations) : `~/.local/share/opencode/opencode.jsonc`
-- **Windows** : appuyez sur `WIN+R` et collez `%USERPROFILE%\.config\opencode\opencode.jsonc`
+- **macOS/Linux** : `~/.config/opencode/novacode.jsonc` (ou `~/.config/opencode/novacode.json`)
+- **macOS/Linux** (anciennes installations) : `~/.local/share/opencode/novacode.jsonc`
+- **Windows** : appuyez sur `WIN+R` et collez `%USERPROFILE%\.config\opencode\novacode.jsonc`
 
 Si vous avez configuré des plugins, désactivez-les temporairement en supprimant la clé ou en la définissant sur un tableau vide :
 
@@ -111,13 +111,13 @@ Depuis l'écran d'accueil, cliquez sur le nom du serveur (avec le point d'état)
 
 #### Supprimez `server.port` / `server.hostname` de votre configuration
 
-Si votre `opencode.json(c)` contient une section `server`, supprimez-la temporairement et redémarrez l'application de bureau.
+Si votre `novacode.json(c)` contient une section `server`, supprimez-la temporairement et redémarrez l'application de bureau.
 
 #### Vérifier les variables d'environnement
 
-Si `OPENCODE_PORT` est défini dans votre environnement, l'application de bureau tentera d'utiliser ce port pour le serveur local.
+Si `NOVACODE_PORT` est défini dans votre environnement, l'application de bureau tentera d'utiliser ce port pour le serveur local.
 
-- Désactivez `OPENCODE_PORT` (ou choisissez un port libre) et redémarrez.
+- Désactivez `NOVACODE_PORT` (ou choisissez un port libre) et redémarrez.
 
 ---
 

@@ -1928,6 +1928,7 @@ export type Config = {
    */
   autoupdate?: boolean | "notify"
   disabled_providers?: Array<string>
+  disabled_plugins?: Array<string>
   enabled_providers?: Array<string>
   model?: string
   small_model?: string
@@ -2435,6 +2436,19 @@ export type Project = {
 export type ProjectNotFoundError = {
   _tag: "ProjectNotFoundError"
   projectID: string
+  message: string
+}
+
+export type PluginStatus = {
+  id: string
+  enabled: boolean
+}
+
+export type PluginStatusList = Array<PluginStatus>
+
+export type PluginNotFoundError = {
+  _tag: "PluginNotFoundError"
+  id: string
   message: string
 }
 
@@ -7386,6 +7400,40 @@ export type GlobalUpgradeResponses = {
 
 export type GlobalUpgradeResponse = GlobalUpgradeResponses[keyof GlobalUpgradeResponses]
 
+export type GlobalDesktopDiscoveryData = {
+  body?: never
+  path?: never
+  query?: never
+  url: "/global/desktop-discovery"
+}
+
+export type GlobalDesktopDiscoveryErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type GlobalDesktopDiscoveryError = GlobalDesktopDiscoveryErrors[keyof GlobalDesktopDiscoveryErrors]
+
+export type GlobalDesktopDiscoveryResponses = {
+  /**
+   * Desktop discovery information
+   */
+  200: {
+    available: boolean
+    discovery?: {
+      url: string
+      username: string
+      password: string
+      pid: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
+      channel: string
+    }
+  }
+}
+
+export type GlobalDesktopDiscoveryResponse = GlobalDesktopDiscoveryResponses[keyof GlobalDesktopDiscoveryResponses]
+
 export type EventSubscribeData = {
   body?: never
   path?: never
@@ -8889,6 +8937,69 @@ export type ExperimentalProjectCopyGenerateNameResponses = {
 
 export type ExperimentalProjectCopyGenerateNameResponse =
   ExperimentalProjectCopyGenerateNameResponses[keyof ExperimentalProjectCopyGenerateNameResponses]
+
+export type PluginStatusData = {
+  body?: never
+  path?: never
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/plugin"
+}
+
+export type PluginStatusErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type PluginStatusError = PluginStatusErrors[keyof PluginStatusErrors]
+
+export type PluginStatusResponses = {
+  /**
+   * Plugin status
+   */
+  200: PluginStatusList
+}
+
+export type PluginStatusResponse = PluginStatusResponses[keyof PluginStatusResponses]
+
+export type PluginToggleData = {
+  body?: {
+    id: string
+    enabled: boolean
+  }
+  path?: never
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/plugin/toggle"
+}
+
+export type PluginToggleErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+  /**
+   * PluginNotFoundError
+   */
+  404: PluginNotFoundError
+}
+
+export type PluginToggleError = PluginToggleErrors[keyof PluginToggleErrors]
+
+export type PluginToggleResponses = {
+  /**
+   * Plugin status after toggle
+   */
+  200: PluginStatusList
+}
+
+export type PluginToggleResponse = PluginToggleResponses[keyof PluginToggleResponses]
 
 export type PtyShellsData = {
   body?: never
@@ -12928,6 +13039,41 @@ export type V2CommandListResponses = {
 
 export type V2CommandListResponse = V2CommandListResponses[keyof V2CommandListResponses]
 
+export type V2SkillRemoveData = {
+  body?: never
+  path?: never
+  query: {
+    location?: {
+      directory?: string
+      workspace?: string
+    }
+    name: string
+  }
+  url: "/api/skill"
+}
+
+export type V2SkillRemoveErrors = {
+  /**
+   * InvalidRequestError
+   */
+  400: InvalidRequestError
+  /**
+   * UnauthorizedError
+   */
+  401: UnauthorizedError
+}
+
+export type V2SkillRemoveError = V2SkillRemoveErrors[keyof V2SkillRemoveErrors]
+
+export type V2SkillRemoveResponses = {
+  /**
+   * <No Content>
+   */
+  204: void
+}
+
+export type V2SkillRemoveResponse = V2SkillRemoveResponses[keyof V2SkillRemoveResponses]
+
 export type V2SkillListData = {
   body?: never
   path?: never
@@ -12964,6 +13110,44 @@ export type V2SkillListResponses = {
 }
 
 export type V2SkillListResponse = V2SkillListResponses[keyof V2SkillListResponses]
+
+export type V2SkillCreateData = {
+  body: {
+    name: string
+    description?: string
+    content: string
+  }
+  path?: never
+  query?: {
+    location?: {
+      directory?: string
+      workspace?: string
+    }
+  }
+  url: "/api/skill"
+}
+
+export type V2SkillCreateErrors = {
+  /**
+   * InvalidRequestError
+   */
+  400: InvalidRequestError
+  /**
+   * UnauthorizedError
+   */
+  401: UnauthorizedError
+}
+
+export type V2SkillCreateError = V2SkillCreateErrors[keyof V2SkillCreateErrors]
+
+export type V2SkillCreateResponses = {
+  /**
+   * SkillV2.Info
+   */
+  200: SkillV2Info
+}
+
+export type V2SkillCreateResponse = V2SkillCreateResponses[keyof V2SkillCreateResponses]
 
 export type V2EventSubscribeData = {
   body?: never

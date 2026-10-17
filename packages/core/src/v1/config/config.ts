@@ -68,6 +68,9 @@ export const Info = Schema.Struct({
   disabled_providers: Schema.optional(Schema.mutable(Schema.Array(Schema.String))).annotate({
     description: "Disable providers that are loaded automatically",
   }),
+  disabled_plugins: Schema.optional(Schema.mutable(Schema.Array(Schema.String))).annotate({
+    description: "Disable plugins by their configured spec, eg npm package name or file path",
+  }),
   enabled_providers: Schema.optional(Schema.mutable(Schema.Array(Schema.String))).annotate({
     description: "When set, ONLY these providers will be enabled. All other providers will be ignored",
   }),

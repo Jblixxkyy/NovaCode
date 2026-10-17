@@ -195,8 +195,8 @@ export const dict = {
   "dialog.provider.group.other": "Бусад",
   "dialog.provider.custom.label": "Захиалгат OpenAI-тохиромжтой үйлчилгээ үзүүлэгч",
   "dialog.provider.tag.recommended": "Санал болгож байна",
-  "dialog.provider.opencode.note": "Claude, GPT, Gemini болон бусад загваруудыг сонгон шалгаруулсан",
-  "dialog.provider.opencode.tagline": "Найдвартай оновчтой загварууд",
+  "dialog.provider.novacode.note": "Claude, GPT, Gemini болон бусад загваруудыг сонгон шалгаруулсан",
+  "dialog.provider.novacode.tagline": "Найдвартай оновчтой загварууд",
   "dialog.provider.opencodeGo.tagline": "Хүн бүрт зориулсан хямд өртөгтэй захиалга",
   "dialog.provider.anthropic.note": "Pro болон Max зэрэг Claude загварт шууд хандах",
   "dialog.provider.copilot.note": "GitHub Copilot-ээр дамжуулан кодлоход туслах хиймэл оюун ухааны загварууд",
@@ -451,7 +451,7 @@ export const dict = {
   "wsl.server.retryStart": "Дахин оролдох",
   "wsl.server.updating": "Шинэчилж байна...",
   "wsl.onboarding.step.distro": "Дистро сонгоно уу",
-  "wsl.onboarding.step.opencode": "NovaCode",
+  "wsl.onboarding.step.novacode": "NovaCode",
   "wsl.onboarding.checkingRuntime": "WSL-г шалгаж байна...",
   "wsl.onboarding.restartRequired": "Windows-г WSL суулгаж дуусгахын тулд дахин эхлүүлэх шаардлагатай.",
   "wsl.onboarding.ready": "WSL бэлэн боллоо.",
@@ -954,6 +954,8 @@ export const dict = {
 
   "settings.general.row.uiFont.title": "UI фонт",
   "settings.general.row.uiFont.description": "Интерфэйс даяар ашигласан фонтыг тохируулна уу",
+  "settings.general.row.toolTitleColor.title": "Багажний гарчигийн өнгө",
+  "settings.general.row.toolTitleColor.description": "Сешн дэх багажний гарчгийн өнгийг өөрчлөх",
   "settings.general.row.followup.title": "Дагаж мөрдөх зан үйл",
   "settings.general.row.followup.description":
     "Дагах сануулгууд шууд чиглүүлэх үү эсвэл дараалалд хүлээх үү гэдгийг сонгоно уу",

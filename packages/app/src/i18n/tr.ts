@@ -213,8 +213,8 @@ export const dict = {
   "dialog.provider.group.other": "Diğer",
   "dialog.provider.custom.label": "Özel OpenAI uyumlu sağlayıcı",
   "dialog.provider.tag.recommended": "Önerilen",
-  "dialog.provider.opencode.note": "Claude, GPT, Gemini ve daha fazlasını içeren seçilmiş modeller",
-  "dialog.provider.opencode.tagline": "Güvenilir, optimize edilmiş modeller",
+  "dialog.provider.novacode.note": "Claude, GPT, Gemini ve daha fazlasını içeren seçilmiş modeller",
+  "dialog.provider.novacode.tagline": "Güvenilir, optimize edilmiş modeller",
   "dialog.provider.opencodeGo.tagline": "Herkes için düşük maliyetli abonelik",
   "dialog.provider.anthropic.note": "Pro ve Max dahil Claude modellerine doğrudan erişim",
   "dialog.provider.copilot.note": "GitHub Copilot üzerinden kodlama yardımı için yapay zekâ modelleri",
@@ -482,7 +482,7 @@ export const dict = {
   "wsl.server.retryStart": "Başlatmayı yeniden dene",
   "wsl.server.updating": "Güncelleniyor...",
   "wsl.onboarding.step.distro": "Dağıtım seç",
-  "wsl.onboarding.step.opencode": "NovaCode",
+  "wsl.onboarding.step.novacode": "NovaCode",
   "wsl.onboarding.checkingRuntime": "WSL kontrol ediliyor...",
   "wsl.onboarding.restartRequired": "WSL kurulumunu tamamlamak için Windows'un yeniden başlatılması gerekiyor.",
   "wsl.onboarding.ready": "WSL hazır.",
@@ -940,6 +940,8 @@ export const dict = {
 
   "settings.general.row.uiFont.title": "Arayüz yazı tipi",
   "settings.general.row.uiFont.description": "Arayüz genelinde kullanılan yazı tipini özelleştirin",
+  "settings.general.row.toolTitleColor.title": "Araç başlığı rengi",
+  "settings.general.row.toolTitleColor.description": "Oturumlardaki araç başlıklarının rengini özelleştir",
   "settings.general.row.followup.title": "Takip davranışı",
   "settings.general.row.followup.description":
     "Takip istemlerinin hemen yönlendirilmesini mi yoksa sırada beklemesini mi istediğinizi seçin",

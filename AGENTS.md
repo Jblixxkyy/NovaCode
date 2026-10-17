@@ -60,7 +60,7 @@ const { a, b } = obj
 
 - Never alias imports. Do not use `import { foo as bar } from "..."` or renamed imports like `resolve as pathResolve`.
 - Never use star imports. Do not use `import * as Foo from "..."` or `import type * as Foo from "..."`.
-- If a namespace-style value is needed, import the module's own exported namespace by name, for example `import { Project } from "@opencode-ai/core/project"`, then reference `Project.ID`.
+- If a namespace-style value is needed, import the module's own exported namespace by name, for example `import { Project } from "@novacode-ai/core/project"`, then reference `Project.ID`.
 - Prefer dynamic imports for heavy modules that are only needed in selected code paths, especially in startup-sensitive entrypoints. Destructure dynamic import bindings near the top of the narrowest scope that needs them so they read like normal imports. Avoid inline chains such as `await import("./module").then((mod) => mod.value())` or `(await import("./module")).value()`. Keep branch-specific imports inside the branch that needs them to preserve lazy loading.
 
 ### Variables
@@ -142,11 +142,11 @@ const table = sqliteTable("session", {
 
 - Avoid mocks as much as possible, you shouldn't be using globalThis.\* at all unless it's the only option.
 - Test actual implementation, do not duplicate logic into tests
-- Tests cannot run from repo root (guard: `do-not-run-tests-from-root`); run from package dirs like `packages/opencode`.
+- Tests cannot run from repo root (guard: `do-not-run-tests-from-root`); run from package dirs like `packages/novacode`.
 
 ## Type Checking
 
-- Always run `bun typecheck` from package directories (e.g., `packages/opencode`), never `tsc` directly.
+- Always run `bun typecheck` from package directories (e.g., `packages/novacode`), never `tsc` directly.
 
 ## V2 Session Core
 
@@ -160,8 +160,7 @@ const table = sqliteTable("session", {
 - Keep EventV2 replay owner claims separate from clustered Session execution ownership.
 - Keep the System Context algebra, registry, and built-ins in `src/system-context`; keep Context Source producers with their observed domains, and keep Session History selection plus Context Epoch persistence Session-owned.
 
-## NovaCode Rebrand (opencode → novacode)
+## NovaCode Naming
 
-- Canonical app name is `novacode` (`packages/core/src/identity.ts:APP_NAME`); `opencode` is legacy fallback only. Any new env var, path, or config name must use `novacode`/`NOVACODE_` primary with `opencode`/`OPENCODE_` fallback via `Identity.appEnv`/`novaKey`.
-- `packages/core/src/global.ts` runs `migrateLegacyAppDirs` as a module-load side effect before XDG paths are defined; guarded by `shouldMigrateLegacyApp` (skips `:memory:` DB, `*_TEST_HOME`, or `NOVACODE_SKIP_LEGACY_MIGRATE=true`). Tests must set one of those guards to avoid real FS migration.
-- Files that must change together on rebrand: `packages/core/src/identity.ts` + `packages/core/src/global.ts` + `packages/core/src/global-migrate.ts` + `packages/core/src/flag/flag.ts` + `packages/opencode/src/config/paths.ts` + `packages/app/src/utils/persist.ts`. Missing any one breaks fallback/migration.
+- NovaCode is a standalone product with no OpenCode fallbacks. Env vars are `NOVACODE_*` only (via `Identity.appEnv`), config dirs are `.novacode`, project config files are `novacode.json[c]`, and data/cache/config XDG dirs derive from `APP_NAME` in `packages/core/src/identity.ts`.
+- `packages/app/src/utils/persist.ts` reads and writes only `novacode.*` storage names; there is no legacy storage fallback.

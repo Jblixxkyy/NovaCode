@@ -1,6 +1,6 @@
 import { chromium } from "@playwright/test";
 import { mockOpenCodeServer, currentSession } from "./e2e/utils/mock-server.ts";
-import { base64Encode } from "@opencode-ai/core/util/encode";
+import { base64Encode } from "@novacode-ai/core/util/encode";
 
 const directory = "C:/OpenCode/SubagentNavigation";
 const projectID = "proj_subagent_navigation";

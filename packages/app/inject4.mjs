@@ -1,7 +1,7 @@
 import { chromium } from "@playwright/test";
 import { mockOpenCodeServer } from "./e2e/utils/mock-server.ts";
 import { fixture, pageMessages } from "./e2e/smoke/session-timeline.fixture.ts";
-import { base64Encode } from "@opencode-ai/core/util/encode";
+import { base64Encode } from "@novacode-ai/core/util/encode";
 
 const browser = await chromium.launch({ headless: true });
 const ctx = await browser.newContext({ viewport:{width:1440,height:900}, deviceScaleFactor:2 });

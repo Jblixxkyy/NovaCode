@@ -55,7 +55,7 @@
   }
 
   [data-slot="tool-status-done"] {
-    color: var(--text-strong);
+    color: var(--tool-title-color, #00ff41);
     opacity: 1;
     filter: blur(0);
     transform: translateY(0);

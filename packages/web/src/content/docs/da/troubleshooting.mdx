@@ -57,9 +57,9 @@ Hvis skrivebordsappen går ned ved opstart, hænger eller opfører sig mærkelig
 
 Åbn den globale konfigurationsfil og se efter en `plugin`-nøgle.
 
-- **macOS/Linux**: `~/.config/opencode/opencode.jsonc` (eller `~/.config/opencode/opencode.json`)
-- **macOS/Linux** (ældre installationer): `~/.local/share/opencode/opencode.jsonc`
-- **Windows**: Tryk `WIN+R` og indsæt `%USERPROFILE%\.config\opencode\opencode.jsonc`
+- **macOS/Linux**: `~/.config/opencode/novacode.jsonc` (eller `~/.config/opencode/novacode.json`)
+- **macOS/Linux** (ældre installationer): `~/.local/share/opencode/novacode.jsonc`
+- **Windows**: Tryk `WIN+R` og indsæt `%USERPROFILE%\.config\opencode\novacode.jsonc`
 
 Hvis du har konfigureret plugins, deaktiver dem midlertidigt ved at fjerne nøglen eller sætte den til et tomt array:
 
@@ -111,13 +111,13 @@ Fra startskærmen klikker du på servernavnet (med statusprikken) for at åbne s
 
 #### Fjern `server.port` / `server.hostname` fra din konfiguration
 
-Hvis `opencode.json(c)` indeholder en `server`-del, fjern den midlertidigt og start skrivebordsappen på ny.
+Hvis `novacode.json(c)` indeholder en `server`-del, fjern den midlertidigt og start skrivebordsappen på ny.
 
 #### Tjek miljøvariabler
 
-Hvis du har `OPENCODE_PORT` sat i dit miljø, vil skrivebordsappen prøve at bruge den port for den lokale server.
+Hvis du har `NOVACODE_PORT` sat i dit miljø, vil skrivebordsappen prøve at bruge den port for den lokale server.
 
-- Deaktiver `OPENCODE_PORT` (eller vælg en ledig port) og start på ny.
+- Deaktiver `NOVACODE_PORT` (eller vælg en ledig port) og start på ny.
 
 ---
 

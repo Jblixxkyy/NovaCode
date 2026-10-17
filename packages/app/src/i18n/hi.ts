@@ -200,8 +200,8 @@ export const dict = {
   "dialog.provider.group.other": "अन्य",
   "dialog.provider.custom.label": "कस्टम OpenAI-संगत प्रोवाइडर",
   "dialog.provider.tag.recommended": "अनुशंसित",
-  "dialog.provider.opencode.note": "Claude, GPT, Gemini और अधिक सहित क्यूरेटेड मॉडल",
-  "dialog.provider.opencode.tagline": "विश्वसनीय अनुकूलित मॉडल",
+  "dialog.provider.novacode.note": "Claude, GPT, Gemini और अधिक सहित क्यूरेटेड मॉडल",
+  "dialog.provider.novacode.tagline": "विश्वसनीय अनुकूलित मॉडल",
   "dialog.provider.opencodeGo.tagline": "सभी के लिए कम लागत वाली सदस्यता",
   "dialog.provider.anthropic.note": "प्रो और मैक्स सहित Claude मॉडल तक सीधी पहुँच",
   "dialog.provider.copilot.note": "GitHub Copilot के माध्यम से कोडिंग सहायता के लिए AI मॉडल",
@@ -455,7 +455,7 @@ export const dict = {
   "wsl.server.retryStart": "पुन: प्रयास प्रारंभ करें",
   "wsl.server.updating": "अद्यतन किया जा रहा है...",
   "wsl.onboarding.step.distro": "डिस्ट्रो चुनें",
-  "wsl.onboarding.step.opencode": "NovaCode",
+  "wsl.onboarding.step.novacode": "NovaCode",
   "wsl.onboarding.checkingRuntime": "WSL की जाँच हो रही है...",
   "wsl.onboarding.restartRequired": "WSL की स्थापना पूरी करने के लिए Windows को पुनः आरंभ करना होगा।",
   "wsl.onboarding.ready": "WSL तैयार है।",
@@ -954,6 +954,8 @@ export const dict = {
 
   "settings.general.row.uiFont.title": "UI फ़ॉन्ट",
   "settings.general.row.uiFont.description": "पूरे इंटरफ़ेस में उपयोग किए गए फ़ॉन्ट को कस्टमाइज़ करें",
+  "settings.general.row.toolTitleColor.title": "टूल शीर्षक का रंग",
+  "settings.general.row.toolTitleColor.description": "सत्रों में टूल शीर्षकों का रंग अनुकूलित करें",
   "settings.general.row.followup.title": "अनुवर्ती व्यवहार",
   "settings.general.row.followup.description":
     "चुनें कि क्या अनुवर्ती प्रॉम्प्ट तुरंत आगे बढ़ेगा या कतार में प्रतीक्षा करेगा",

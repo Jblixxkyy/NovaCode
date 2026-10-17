@@ -1,4 +1,4 @@
-import type { Session } from "@opencode-ai/sdk/v2/client"
+import type { Session } from "@novacode-ai/sdk/v2/client"
 import { pathKey } from "@/utils/path-key"
 
 export function sessionMatchesHomeProjects(

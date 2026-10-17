@@ -10,6 +10,7 @@ export interface SessionEntry {
   sessionId: string
   agent?: string
   model?: string
+  directory?: string
   createdAt: number
 }
 

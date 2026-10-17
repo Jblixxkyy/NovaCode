@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import { sessionMatchesHomeProjects } from "./home-session-match"
-import type { Session } from "@opencode-ai/sdk/v2/client"
+import type { Session } from "@novacode-ai/sdk/v2/client"
 
 const session = (input: { directory: string; projectID?: string }) =>
   ({

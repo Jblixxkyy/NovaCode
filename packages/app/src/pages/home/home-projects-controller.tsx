@@ -10,7 +10,7 @@ import { ServerConnection } from "@/context/server"
 import { closeHomeProject, errorMessage, homeProjectDirectories } from "@/pages/layout/helpers"
 import { Persist, persisted } from "@/utils/persist"
 import { showToast } from "@/utils/toast"
-import { useDialog } from "@opencode-ai/ui/context/dialog"
+import { useDialog } from "@novacode-ai/ui/context/dialog"
 import { createResource } from "solid-js"
 import { createStore } from "solid-js/store"
 import type { HomeController } from "./home-controller"
@@ -24,7 +24,7 @@ export function createHomeProjectsController(home: HomeController) {
   const openSettings = useSettingsCommand()
   const serverManagement = useServerManagementController({ navigateOnAdd: false })
   const [_state, setState, _, ready] = persisted(
-    Persist.global("home.servers", ["home.servers.v1"]),
+    Persist.global("home.servers"),
     createStore({ collapsed: {} as Record<string, boolean> }),
   )
   const [state] = createResource(

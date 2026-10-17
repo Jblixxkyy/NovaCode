@@ -84,8 +84,8 @@ opencode attach http://10.20.30.40:4096
 | <nobr><code>{"--continue"}</code></nobr> | `-c` | Fortsæt den seneste session                                                       |
 | <nobr><code>{"--session"}</code></nobr>  | `-s` | Sessions-id for at fortsætte                                                      |
 | <nobr><code>{"--fork"}</code></nobr>     |      | Forgren sessionen ved fortsættelse (brug med `--continue` eller `--session`)      |
-| <nobr><code>{"--password"}</code></nobr> | `-p` | Adgangskode til basic auth (standard: `OPENCODE_SERVER_PASSWORD`)                 |
-| <nobr><code>{"--username"}</code></nobr> | `-u` | Brugernavn til basic auth (standard: `OPENCODE_SERVER_USERNAME` eller `opencode`) |
+| <nobr><code>{"--password"}</code></nobr> | `-p` | Adgangskode til basic auth (standard: `NOVACODE_SERVER_PASSWORD`)                 |
+| <nobr><code>{"--username"}</code></nobr> | `-u` | Brugernavn til basic auth (standard: `NOVACODE_SERVER_USERNAME` eller `opencode`) |
 
 ---
 
@@ -352,8 +352,8 @@ opencode run --attach http://localhost:4096 "Explain async/await in JavaScript"
 | <nobr><code>{"--format"}</code></nobr>   |      | Format: standard (formateret) eller json (rå JSON hændelser)                        |
 | <nobr><code>{"--title"}</code></nobr>    |      | Titel for sessionen (bruger trunkeret prompt, hvis der ikke er angivet nogen værdi) |
 | <nobr><code>{"--attach"}</code></nobr>   |      | Tilslut til en kørende opencode-server (f.eks. http://localhost:4096)               |
-| <nobr><code>{"--password"}</code></nobr> | `-p` | Adgangskode til basic auth (standard: `OPENCODE_SERVER_PASSWORD`)                   |
-| <nobr><code>{"--username"}</code></nobr> | `-u` | Brugernavn til basic auth (standard: `OPENCODE_SERVER_USERNAME` eller `opencode`)   |
+| <nobr><code>{"--password"}</code></nobr> | `-p` | Adgangskode til basic auth (standard: `NOVACODE_SERVER_PASSWORD`)                   |
+| <nobr><code>{"--username"}</code></nobr> | `-u` | Brugernavn til basic auth (standard: `NOVACODE_SERVER_USERNAME` eller `opencode`)   |
 | <nobr><code>{"--dir"}</code></nobr>      |      | Mappe at køre i, eller sti på fjernserveren ved tilkobling                          |
 | <nobr><code>{"--variant"}</code></nobr>  |      | Modelvariant (udbyder-specifik ræsonneringsindsats)                                 |
 | <nobr><code>{"--thinking"}</code></nobr> |      | Vis tænkeblokke                                                                     |
@@ -369,7 +369,7 @@ Start en hovedløs OpenCode-server til API-adgang. Tjek [server docs](/docs/serv
 opencode serve
 ```
 
-Dette starter en HTTP-server, der giver API-adgang til opencode-funktionalitet uden TUI-grænsefladen. Indstil `OPENCODE_SERVER_PASSWORD` for at aktivere HTTP grundlæggende godkendelse (brugernavn er standard til `opencode`).
+Dette starter en HTTP-server, der giver API-adgang til opencode-funktionalitet uden TUI-grænsefladen. Indstil `NOVACODE_SERVER_PASSWORD` for at aktivere HTTP grundlæggende godkendelse (brugernavn er standard til `opencode`).
 
 #### Flag
 
@@ -465,7 +465,7 @@ Start en hovedløs OpenCode-server med en webgrænseflade.
 opencode web
 ```
 
-Dette starter en HTTP-server og åbner en webbrowser for at få adgang til OpenCode via en webgrænseflade. Indstil `OPENCODE_SERVER_PASSWORD` for at aktivere HTTP grundlæggende godkendelse (brugernavn er standard til `opencode`).
+Dette starter en HTTP-server og åbner en webbrowser for at få adgang til OpenCode via en webgrænseflade. Indstil `NOVACODE_SERVER_PASSWORD` for at aktivere HTTP grundlæggende godkendelse (brugernavn er standard til `opencode`).
 
 #### Flag
 
@@ -564,30 +564,30 @@ OpenCode kan konfigureres ved hjælp af miljøvariabler.
 
 | Variabel                              | Skriv   | Beskrivelse                                                           |
 | ------------------------------------- | ------- | --------------------------------------------------------------------- |
-| `OPENCODE_AUTO_SHARE`                 | boolean | Del automatisk session                                                |
-| `OPENCODE_GIT_BASH_PATH`              | string  | Sti til Git Bash eksekverbar på Windows                               |
-| `OPENCODE_CONFIG`                     | string  | Sti til konfigurationsfil                                             |
-| `OPENCODE_TUI_CONFIG`                 | string  | Sti til TUI-konfigurationsfil                                         |
-| `OPENCODE_CONFIG_DIR`                 | string  | Sti til konfigurationsmappe                                           |
-| `OPENCODE_CONFIG_CONTENT`             | string  | Indbygget json-konfigurationsindhold                                  |
-| `OPENCODE_DISABLE_AUTOUPDATE`         | boolean | Deaktiver automatisk opdateringskontrol                               |
-| `OPENCODE_DISABLE_PRUNE`              | boolean | Deaktiver beskæring af gamle data                                     |
-| `OPENCODE_DISABLE_TERMINAL_TITLE`     | boolean | Deaktiver automatisk opdatering af terminaltitel                      |
-| `OPENCODE_PERMISSION`                 | string  | Indbygget json-tilladelseskonfiguration                               |
-| `OPENCODE_DISABLE_DEFAULT_PLUGINS`    | boolean | Deaktiver standard plugins                                            |
-| `OPENCODE_DISABLE_LSP_DOWNLOAD`       | boolean | Deaktiver automatisk LSP-serverdownloads                              |
-| `OPENCODE_ENABLE_EXPERIMENTAL_MODELS` | boolean | Aktive eksperimentelle modeller                                       |
-| `OPENCODE_DISABLE_AUTOCOMPACT`        | boolean | Deaktiver automatisk kontekstkomprimering                             |
-| `OPENCODE_DISABLE_CLAUDE_CODE`        | boolean | Deaktiver læsning fra `.claude` (prompt + færdigheder)                |
-| `OPENCODE_DISABLE_CLAUDE_CODE_PROMPT` | boolean | Deaktiver læsning `~/.claude/CLAUDE.md`                               |
-| `OPENCODE_DISABLE_CLAUDE_CODE_SKILLS` | boolean | Deaktiver indlæsning af `.claude/skills`                              |
-| `OPENCODE_DISABLE_MODELS_FETCH`       | boolean | Deaktivering af modeller fra eksterne kilder                          |
-| `OPENCODE_FAKE_VCS`                   | string  | Falsk VCS-udbyder til testformål                                      |
-| `OPENCODE_CLIENT`                     | string  | Klient-id (standard til `cli`)                                        |
-| `OPENCODE_ENABLE_EXA`                 | boolean | Aktiver Exa-websøgeværktøjer                                          |
-| `OPENCODE_SERVER_PASSWORD`            | string  | Aktiver grundlæggende godkendelse for `serve`/`web`                   |
-| `OPENCODE_SERVER_USERNAME`            | string  | Tilsidesæt grundlæggende godkendelsesbrugernavn (standard `opencode`) |
-| `OPENCODE_MODELS_URL`                 | string  | Brugerdefineret URL til hentning af modelkonfiguration                |
+| `NOVACODE_AUTO_SHARE`                 | boolean | Del automatisk session                                                |
+| `NOVACODE_GIT_BASH_PATH`              | string  | Sti til Git Bash eksekverbar på Windows                               |
+| `NOVACODE_CONFIG`                     | string  | Sti til konfigurationsfil                                             |
+| `NOVACODE_TUI_CONFIG`                 | string  | Sti til TUI-konfigurationsfil                                         |
+| `NOVACODE_CONFIG_DIR`                 | string  | Sti til konfigurationsmappe                                           |
+| `NOVACODE_CONFIG_CONTENT`             | string  | Indbygget json-konfigurationsindhold                                  |
+| `NOVACODE_DISABLE_AUTOUPDATE`         | boolean | Deaktiver automatisk opdateringskontrol                               |
+| `NOVACODE_DISABLE_PRUNE`              | boolean | Deaktiver beskæring af gamle data                                     |
+| `NOVACODE_DISABLE_TERMINAL_TITLE`     | boolean | Deaktiver automatisk opdatering af terminaltitel                      |
+| `NOVACODE_PERMISSION`                 | string  | Indbygget json-tilladelseskonfiguration                               |
+| `NOVACODE_DISABLE_DEFAULT_PLUGINS`    | boolean | Deaktiver standard plugins                                            |
+| `NOVACODE_DISABLE_LSP_DOWNLOAD`       | boolean | Deaktiver automatisk LSP-serverdownloads                              |
+| `NOVACODE_ENABLE_EXPERIMENTAL_MODELS` | boolean | Aktive eksperimentelle modeller                                       |
+| `NOVACODE_DISABLE_AUTOCOMPACT`        | boolean | Deaktiver automatisk kontekstkomprimering                             |
+| `NOVACODE_DISABLE_CLAUDE_CODE`        | boolean | Deaktiver læsning fra `.claude` (prompt + færdigheder)                |
+| `NOVACODE_DISABLE_CLAUDE_CODE_PROMPT` | boolean | Deaktiver læsning `~/.claude/CLAUDE.md`                               |
+| `NOVACODE_DISABLE_CLAUDE_CODE_SKILLS` | boolean | Deaktiver indlæsning af `.claude/skills`                              |
+| `NOVACODE_DISABLE_MODELS_FETCH`       | boolean | Deaktivering af modeller fra eksterne kilder                          |
+| `NOVACODE_FAKE_VCS`                   | string  | Falsk VCS-udbyder til testformål                                      |
+| `NOVACODE_CLIENT`                     | string  | Klient-id (standard til `cli`)                                        |
+| `NOVACODE_ENABLE_EXA`                 | boolean | Aktiver Exa-websøgeværktøjer                                          |
+| `NOVACODE_SERVER_PASSWORD`            | string  | Aktiver grundlæggende godkendelse for `serve`/`web`                   |
+| `NOVACODE_SERVER_USERNAME`            | string  | Tilsidesæt grundlæggende godkendelsesbrugernavn (standard `opencode`) |
+| `NOVACODE_MODELS_URL`                 | string  | Brugerdefineret URL til hentning af modelkonfiguration                |
 
 ---
 
@@ -597,21 +597,21 @@ Disse miljøvariabler muliggør eksperimentelle funktioner, der kan ændres elle
 
 | Variabel                                        | Skriv   | Beskrivelse                                          |
 | ----------------------------------------------- | ------- | ---------------------------------------------------- |
-| `OPENCODE_EXPERIMENTAL`                         | boolean | Aktiver eksperimentelle funktioner under samleflaget |
-| `OPENCODE_EXPERIMENTAL_ICON_DISCOVERY`          | boolean | Aktiver ikonopdagelse                                |
-| `OPENCODE_EXPERIMENTAL_DISABLE_COPY_ON_SELECT`  | boolean | Deaktiver kopi ved valg i TUI                        |
-| `OPENCODE_EXPERIMENTAL_BASH_DEFAULT_TIMEOUT_MS` | nummer  | Standard timeout for bash-kommandoer i ms            |
-| `OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX`        | nummer  | Maks. output-tokens for LLM-svar                     |
-| `OPENCODE_EXPERIMENTAL_FILEWATCHER`             | boolean | Aktiver filovervågning for hele dir                  |
-| `OPENCODE_EXPERIMENTAL_OXFMT`                   | boolean | Aktiver oxfmt formatter                              |
-| `OPENCODE_EXPERIMENTAL_LSP_TOOL`                | boolean | Aktive eksperimenter LSP værktøj                     |
-| `OPENCODE_EXPERIMENTAL_DISABLE_FILEWATCHER`     | boolean | Deaktiver filovervågning                             |
-| `OPENCODE_EXPERIMENTAL_EXA`                     | boolean | Aktive eksperimenter Exa-funktioner                  |
-| `OPENCODE_EXPERIMENTAL_LSP_TY`                  | boolean | Aktiver TY LSP for python-filer                      |
-| `OPENCODE_EXPERIMENTAL_PLAN_MODE`               | boolean | Aktiver plantilstand                                 |
-| `OPENCODE_EXPERIMENTAL_BACKGROUND_SUBAGENTS`    | boolean | Aktiver baggrundsopgaver for subagenter              |
-| `OPENCODE_EXPERIMENTAL_EVENT_SYSTEM`            | boolean | Aktiver eksperimentelt hændelsessystem               |
-| `OPENCODE_EXPERIMENTAL_NATIVE_LLM`              | boolean | Aktiver native LLM-anmodningssti                     |
-| `OPENCODE_EXPERIMENTAL_PARALLEL`                | boolean | Aktiver parallel udførelse af websøgning             |
-| `OPENCODE_EXPERIMENTAL_SCOUT`                   | boolean | Aktiver Scout-subagent                               |
-| `OPENCODE_EXPERIMENTAL_WORKSPACES`              | boolean | Aktiver workspace-understøttelse                     |
+| `NOVACODE_EXPERIMENTAL`                         | boolean | Aktiver eksperimentelle funktioner under samleflaget |
+| `NOVACODE_EXPERIMENTAL_ICON_DISCOVERY`          | boolean | Aktiver ikonopdagelse                                |
+| `NOVACODE_EXPERIMENTAL_DISABLE_COPY_ON_SELECT`  | boolean | Deaktiver kopi ved valg i TUI                        |
+| `NOVACODE_EXPERIMENTAL_BASH_DEFAULT_TIMEOUT_MS` | nummer  | Standard timeout for bash-kommandoer i ms            |
+| `NOVACODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX`        | nummer  | Maks. output-tokens for LLM-svar                     |
+| `NOVACODE_EXPERIMENTAL_FILEWATCHER`             | boolean | Aktiver filovervågning for hele dir                  |
+| `NOVACODE_EXPERIMENTAL_OXFMT`                   | boolean | Aktiver oxfmt formatter                              |
+| `NOVACODE_EXPERIMENTAL_LSP_TOOL`                | boolean | Aktive eksperimenter LSP værktøj                     |
+| `NOVACODE_EXPERIMENTAL_DISABLE_FILEWATCHER`     | boolean | Deaktiver filovervågning                             |
+| `NOVACODE_EXPERIMENTAL_EXA`                     | boolean | Aktive eksperimenter Exa-funktioner                  |
+| `NOVACODE_EXPERIMENTAL_LSP_TY`                  | boolean | Aktiver TY LSP for python-filer                      |
+| `NOVACODE_EXPERIMENTAL_PLAN_MODE`               | boolean | Aktiver plantilstand                                 |
+| `NOVACODE_EXPERIMENTAL_BACKGROUND_SUBAGENTS`    | boolean | Aktiver baggrundsopgaver for subagenter              |
+| `NOVACODE_EXPERIMENTAL_EVENT_SYSTEM`            | boolean | Aktiver eksperimentelt hændelsessystem               |
+| `NOVACODE_EXPERIMENTAL_NATIVE_LLM`              | boolean | Aktiver native LLM-anmodningssti                     |
+| `NOVACODE_EXPERIMENTAL_PARALLEL`                | boolean | Aktiver parallel udførelse af websøgning             |
+| `NOVACODE_EXPERIMENTAL_SCOUT`                   | boolean | Aktiver Scout-subagent                               |
+| `NOVACODE_EXPERIMENTAL_WORKSPACES`              | boolean | Aktiver workspace-understøttelse                     |

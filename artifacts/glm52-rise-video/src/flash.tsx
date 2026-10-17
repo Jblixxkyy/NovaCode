@@ -1,4 +1,4 @@
-import React from "react"
+﻿import React from "react"
 import { AbsoluteFill, Easing, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion"
 
 // stats.opencode.ai design tokens (light theme)
@@ -67,13 +67,13 @@ export function FlashShare() {
         {/* header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <DataWordmark height={30} />
-          <div style={{ fontSize: 20, fontWeight: 500, color: c.faint, letterSpacing: 1 }}>JUN 22–28, 2026</div>
+          <div style={{ fontSize: 20, fontWeight: 500, color: c.faint, letterSpacing: 1 }}>JUN 22â€“28, 2026</div>
         </div>
 
         {/* headline (static) */}
         <div style={{ marginTop: 50 }}>
           <div style={{ fontSize: 23, fontWeight: 600, color: c.muted, letterSpacing: 2 }}>
-            OPENCODE GO · SHARE OF TOKENS
+            OPENCODE GO Â· SHARE OF TOKENS
           </div>
           <div
             style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 24, marginTop: 14 }}
@@ -114,7 +114,7 @@ export function FlashShare() {
                   {b.label}
                 </div>
                 <div style={{ position: "relative", flex: 1, height: 48 }}>
-                  {/* dotted 100% track — height is a multiple of the 12px tile, anchored bottom, so dots never clip */}
+                  {/* dotted 100% track â€” height is a multiple of the 12px tile, anchored bottom, so dots never clip */}
                   <div
                     style={{
                       position: "absolute",
@@ -175,7 +175,7 @@ export function FlashShare() {
         >
           <div style={{ display: "inline-flex", alignItems: "center", gap: 9, color: c.muted }}>
             <span style={{ width: 13, height: 13, background: c.accent, display: "inline-block" }} />
-            DeepSeek V4 Flash · 9.48T tokens · 83.6M requests
+            DeepSeek V4 Flash Â· 9.48T tokens Â· 83.6M requests
           </div>
           <div style={{ color: c.ink }}>opencode.ai/data</div>
         </div>

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "name": "@novacode-ai/plugin-computer-use",
+  "version": "0.1.0",
+  "type": "module",
+  "license": "MIT",
+  "description": "Computer-use plugin for novacode — screenshot + mouse/keyboard control (ChatGPT/Anthropic style)",
+  "exports": {
+    ".": "./src/index.ts",
+    "./server": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsgo --noEmit"
+  },
+  "dependencies": {
+    "@novacode-ai/plugin": "workspace:*",
+    "zod": "catalog:"
+  },
+  "optionalDependencies": {
+    "@nut-tree/nut-js": "^4.2.0",
+    "screenshot-desktop": "^1.15.4"
+  },
+  "peerDependencies": {
+    "@novacode-ai/plugin": "*"
+  },
+  "devDependencies": {
+    "@tsconfig/node22": "catalog:",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "@typescript/native-preview": "catalog:"
+  }
+}

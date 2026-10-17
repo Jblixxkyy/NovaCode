@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test"
-import { base64Encode } from "@opencode-ai/core/util/encode"
+import { base64Encode } from "@novacode-ai/core/util/encode"
 import { fixture, pageMessages } from "./session-timeline.fixture"
 import { mockOpenCodeServer } from "../utils/mock-server"
 import { expectSessionTitle } from "../utils/waits"

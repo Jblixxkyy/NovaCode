@@ -57,9 +57,9 @@ Se o aplicativo de desktop estiver travando ao iniciar, pendurado ou se comporta
 
 Abra seu arquivo de configuração global e procure uma chave `plugin`.
 
-- **macOS/Linux**: `~/.config/opencode/opencode.jsonc` (ou `~/.config/opencode/opencode.json`)
-- **macOS/Linux** (instalações mais antigas): `~/.local/share/opencode/opencode.jsonc`
-- **Windows**: Pressione `WIN+R` e cole `%USERPROFILE%\.config\opencode\opencode.jsonc`
+- **macOS/Linux**: `~/.config/opencode/novacode.jsonc` (ou `~/.config/opencode/novacode.json`)
+- **macOS/Linux** (instalações mais antigas): `~/.local/share/opencode/novacode.jsonc`
+- **Windows**: Pressione `WIN+R` e cole `%USERPROFILE%\.config\opencode\novacode.jsonc`
 
 Se você tiver plugins configurados, desative-os temporariamente removendo a chave ou definindo-a como um array vazio:
 
@@ -111,13 +111,13 @@ Na tela inicial, clique no nome do servidor (com o ponto de status) para abrir o
 
 #### Removendo `server.port` / `server.hostname` da sua configuração
 
-Se seu `opencode.json(c)` contiver uma seção `server`, remova-a temporariamente e reinicie o aplicativo de desktop.
+Se seu `novacode.json(c)` contiver uma seção `server`, remova-a temporariamente e reinicie o aplicativo de desktop.
 
 #### Verificando as variáveis de ambiente
 
-Se você tiver `OPENCODE_PORT` definido em seu ambiente, o aplicativo de desktop tentará usar essa porta para o servidor local.
+Se você tiver `NOVACODE_PORT` definido em seu ambiente, o aplicativo de desktop tentará usar essa porta para o servidor local.
 
-- Desfaça `OPENCODE_PORT` (ou escolha uma porta livre) e reinicie.
+- Desfaça `NOVACODE_PORT` (ou escolha uma porta livre) e reinicie.
 
 ---
 

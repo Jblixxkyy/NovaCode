@@ -5,7 +5,7 @@
     "": {
       "name": "tmp_cli_test",
       "dependencies": {
-        "@opencode-ai/cli-windows-x64-baseline": "0.0.0-next-16350",
+        "@novacode-ai/cli-windows-x64-baseline": "0.0.0-next-16350",
       },
       "devDependencies": {
         "@types/bun": "latest",
@@ -16,7 +16,7 @@
     },
   },
   "packages": {
-    "@opencode-ai/cli-windows-x64-baseline": ["@opencode-ai/cli-windows-x64-baseline@0.0.0-next-16350", "", { "os": "win32", "cpu": "x64" }, "sha512-0IolfCPvKrIUm18RLMHo7NMuyMIKdrNwakOHD+ipFC8n8i7tc86JuYHYklRPsiZziK3KBEHkrCZo1wI3PgYXpw=="],
+    "@novacode-ai/cli-windows-x64-baseline": ["@novacode-ai/cli-windows-x64-baseline@0.0.0-next-16350", "", { "os": "win32", "cpu": "x64" }, "sha512-0IolfCPvKrIUm18RLMHo7NMuyMIKdrNwakOHD+ipFC8n8i7tc86JuYHYklRPsiZziK3KBEHkrCZo1wI3PgYXpw=="],
 
     "@types/bun": ["@types/bun@1.4.0", "", { "dependencies": { "bun-types": "1.4.0" } }, "sha512-K+lZULY23vRgK/CfTjFIV+tyifaNdSMlPh9j+6mQ/cLfpOznLyAuzgV/JQysyECpkBQLVMSyvjlr2fBUSA9wFQ=="],
 

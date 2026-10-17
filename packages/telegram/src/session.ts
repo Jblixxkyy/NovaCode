@@ -75,6 +75,20 @@ export class SessionMap {
     this.store.setSession(key, next)
   }
 
+  getDirectory(chatId: number | string, threadId?: number, ctx?: GroupTopicContext): string | undefined {
+    const key = this.key(chatId, threadId, ctx)
+    return this.store.getSession(key)?.directory
+  }
+
+  setDirectory(chatId: number | string, threadId: number | undefined, directory: string, ctx?: GroupTopicContext): void {
+    const key = this.key(chatId, threadId, ctx)
+    const existing = this.store.getSession(key)
+    const next: SessionEntry = existing
+      ? { ...existing, directory }
+      : { sessionId: "", createdAt: Date.now(), directory }
+    this.store.setSession(key, next)
+  }
+
   count(): number {
     return this.store.sessionCount()
   }

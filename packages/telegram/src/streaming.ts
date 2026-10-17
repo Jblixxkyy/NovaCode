@@ -2,6 +2,7 @@ import type { Bot } from "grammy"
 import type { Config } from "./config"
 import type { Logger } from "./logging"
 import type { Store } from "./store"
+import { formatTelegramText } from "./format"
 
 const chatKey = (chatId: number, threadId: number | undefined) => `${chatId}:${threadId ?? "main"}`
 
@@ -107,8 +108,9 @@ export class StreamingPreview {
   }
 
   private async editWithFallback(messageId: number, text: string): Promise<void> {
+    const formatted = formatTelegramText(text)
     try {
-      await this.bot.api.editMessageText(this.chatId, messageId, text, {
+      await this.bot.api.editMessageText(this.chatId, messageId, formatted, {
         parse_mode: "Markdown",
       })
       return
@@ -116,6 +118,6 @@ export class StreamingPreview {
       const msg = err instanceof Error ? err.message : String(err)
       if (!msg.includes("can't parse entities")) throw err
     }
-    await this.bot.api.editMessageText(this.chatId, messageId, text)
+    await this.bot.api.editMessageText(this.chatId, messageId, formatted)
   }
 }

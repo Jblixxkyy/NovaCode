@@ -1,17 +1,17 @@
-import type { IntegrationMethod, IntegrationOauthConnectOutput } from "@opencode-ai/client/promise"
-import { Button } from "@opencode-ai/ui/button"
-import { useDialog } from "@opencode-ai/ui/context/dialog"
-import { Dialog } from "@opencode-ai/ui/dialog"
-import { Icon } from "@opencode-ai/ui/icon"
-import { IconButton } from "@opencode-ai/ui/icon-button"
-import { List, type ListRef } from "@opencode-ai/ui/list"
-import { ProviderIcon } from "@opencode-ai/ui/provider-icon"
-import { Spinner } from "@opencode-ai/ui/spinner"
-import { Tag } from "@opencode-ai/ui/tag"
-import { TextField } from "@opencode-ai/ui/text-field"
-import { ButtonV2 } from "@opencode-ai/ui/v2/button-v2"
-import { DialogBody, DialogHeader, DialogTitle, DialogV2 } from "@opencode-ai/ui/v2/dialog-v2"
-import { TextInputV2 } from "@opencode-ai/ui/v2/text-input-v2"
+import type { IntegrationMethod, IntegrationOauthConnectOutput } from "@novacode-ai/client/promise"
+import { Button } from "@novacode-ai/ui/button"
+import { useDialog } from "@novacode-ai/ui/context/dialog"
+import { Dialog } from "@novacode-ai/ui/dialog"
+import { Icon } from "@novacode-ai/ui/icon"
+import { IconButton } from "@novacode-ai/ui/icon-button"
+import { List, type ListRef } from "@novacode-ai/ui/list"
+import { ProviderIcon } from "@novacode-ai/ui/provider-icon"
+import { Spinner } from "@novacode-ai/ui/spinner"
+import { Tag } from "@novacode-ai/ui/tag"
+import { TextField } from "@novacode-ai/ui/text-field"
+import { ButtonV2 } from "@novacode-ai/ui/v2/button-v2"
+import { DialogBody, DialogHeader, DialogTitle, DialogV2 } from "@novacode-ai/ui/v2/dialog-v2"
+import { TextInputV2 } from "@novacode-ai/ui/v2/text-input-v2"
 import { showToast } from "@/utils/toast"
 import {
   type Accessor,
@@ -206,7 +206,7 @@ function ProviderPicker(props: {
           <ProviderIcon data-slot="list-item-extra-icon" id={i.id} />
           <span>{i.name}</span>
           <Show when={i.id === "opencode"}>
-            <div class="text-14-regular text-text-weak">{language.t("dialog.provider.opencode.tagline")}</div>
+            <div class="text-14-regular text-text-weak">{language.t("dialog.provider.novacode.tagline")}</div>
           </Show>
           <Show when={i.id === CUSTOM_ID}>
             <Tag>{language.t("settings.providers.tag.custom")}</Tag>
@@ -337,7 +337,7 @@ function ProviderPickerV2(props: {
                           <span class="min-w-0 truncate font-[440] text-v2-text-text-muted">
                             {language.t(
                               provider.id === "opencode"
-                                ? "dialog.provider.opencode.tagline"
+                                ? "dialog.provider.novacode.tagline"
                                 : "dialog.provider.opencodeGo.tagline",
                             )}
                           </span>

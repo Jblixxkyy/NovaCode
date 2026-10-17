@@ -193,8 +193,8 @@ export const dict = {
   "dialog.provider.group.other": "Друго",
   "dialog.provider.custom.label": "Прилагодено OpenAI-компатибилен провајдер",
   "dialog.provider.tag.recommended": "Препорачано",
-  "dialog.provider.opencode.note": "Курирани модели вклучувајќи Claude, GPT, Gemini и повеќе",
-  "dialog.provider.opencode.tagline": "Сигурни оптимизирани модели",
+  "dialog.provider.novacode.note": "Курирани модели вклучувајќи Claude, GPT, Gemini и повеќе",
+  "dialog.provider.novacode.tagline": "Сигурни оптимизирани модели",
   "dialog.provider.opencodeGo.tagline": "Ниска цена претплата за секого",
   "dialog.provider.anthropic.note": "Директен пристап до Claude модели, вклучувајќи ги Pro и Max",
   "dialog.provider.copilot.note": "Модели со вештачка интелигенција за помош за кодирање преку GitHub Copilot",
@@ -449,7 +449,7 @@ export const dict = {
   "wsl.server.retryStart": "Обидете се повторно да започнете",
   "wsl.server.updating": "Се ажурира...",
   "wsl.onboarding.step.distro": "Изберете дистрибуција",
-  "wsl.onboarding.step.opencode": "NovaCode",
+  "wsl.onboarding.step.novacode": "NovaCode",
   "wsl.onboarding.checkingRuntime": "Се проверува WSL...",
   "wsl.onboarding.restartRequired": "На Windows му треба рестартирање за да заврши инсталирањето на WSL.",
   "wsl.onboarding.ready": "WSL е подготвен.",
@@ -950,6 +950,8 @@ export const dict = {
 
   "settings.general.row.uiFont.title": "UI фонт",
   "settings.general.row.uiFont.description": "Прилагодете го фонтот што се користи низ интерфејсот",
+  "settings.general.row.toolTitleColor.title": "Боја на насловот на алатката",
+  "settings.general.row.toolTitleColor.description": "Приспособете ја бојата на насловите на алатките во сесиите",
   "settings.general.row.followup.title": "Последователно однесување",
   "settings.general.row.followup.description":
     "Изберете дали следењето ќе ве поттикне да се управува веднаш или да чекате во редица",

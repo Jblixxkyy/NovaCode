@@ -193,8 +193,8 @@ export const dict = {
   "dialog.provider.group.other": "Άλλο",
   "dialog.provider.custom.label": "Προσαρμοσμένη OpenAI-συμβατός πάροχος",
   "dialog.provider.tag.recommended": "Συνιστάται",
-  "dialog.provider.opencode.note": "Επιμελημένα μοντέλα συμπεριλαμβανομένων των Claude, GPT, Gemini και άλλων",
-  "dialog.provider.opencode.tagline": "Αξιόπιστα βελτιστοποιημένα μοντέλα",
+  "dialog.provider.novacode.note": "Επιμελημένα μοντέλα συμπεριλαμβανομένων των Claude, GPT, Gemini και άλλων",
+  "dialog.provider.novacode.tagline": "Αξιόπιστα βελτιστοποιημένα μοντέλα",
   "dialog.provider.opencodeGo.tagline": "Συνδρομή χαμηλού κόστους για όλους",
   "dialog.provider.anthropic.note": "Άμεση πρόσβαση σε Claude μοντέλα, συμπεριλαμβανομένων των Pro και Max",
   "dialog.provider.copilot.note": "Μοντέλα AI για βοήθεια κωδικοποίησης μέσω GitHub Copilot",
@@ -450,7 +450,7 @@ export const dict = {
   "wsl.server.retryStart": "Επανάληψη έναρξης",
   "wsl.server.updating": "Ενημέρωση...",
   "wsl.onboarding.step.distro": "Επιλογή διανομής",
-  "wsl.onboarding.step.opencode": "NovaCode",
+  "wsl.onboarding.step.novacode": "NovaCode",
   "wsl.onboarding.checkingRuntime": "Έλεγχος WSL...",
   "wsl.onboarding.restartRequired": "Windows χρειάζεται επανεκκίνηση για να ολοκληρωθεί η εγκατάσταση του WSL.",
   "wsl.onboarding.ready": "WSL είναι έτοιμο.",
@@ -957,6 +957,8 @@ export const dict = {
 
   "settings.general.row.uiFont.title": "Γραμματοσειρά UI",
   "settings.general.row.uiFont.description": "Προσαρμογή της γραμματοσειράς που χρησιμοποιείται σε όλη τη διεπαφή",
+  "settings.general.row.toolTitleColor.title": "Χρώμα τίτλου εργαλείου",
+  "settings.general.row.toolTitleColor.description": "Προσαρμόστε το χρώμα των τίτλων των εργαλείων στις συνεδρίες",
   "settings.general.row.followup.title": "Συμπεριφορά παρακολούθησης",
   "settings.general.row.followup.description":
     "Επιλέξτε εάν οι επακόλουθες προτροπές κατευθύνονται αμέσως ή περιμένετε σε μια ουρά",

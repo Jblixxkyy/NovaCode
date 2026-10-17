@@ -1,4 +1,4 @@
-import React from "react"
+﻿import React from "react"
 import { AbsoluteFill, Easing, interpolate, useCurrentFrame, useVideoConfig } from "remotion"
 import { days, launchIndex, glmWeekTokensT, segments } from "./data"
 
@@ -112,7 +112,7 @@ export function GLM52Rise() {
           {/* header */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <DataWordmark height={30} />
-            <div style={{ fontSize: 20, fontWeight: 500, color: c.faint, letterSpacing: 1 }}>JUN 12–25, 2026</div>
+            <div style={{ fontSize: 20, fontWeight: 500, color: c.faint, letterSpacing: 1 }}>JUN 12â€“25, 2026</div>
           </div>
 
           {/* headline (static) */}

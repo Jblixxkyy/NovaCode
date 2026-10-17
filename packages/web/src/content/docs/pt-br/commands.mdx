@@ -50,7 +50,7 @@ Você pode adicionar comandos personalizados através da configuração do openc
 
 Use a opção `command` na sua [configuração](/docs/config) do opencode:
 
-```json title="opencode.jsonc" {4-12}
+```json title="novacode.jsonc" {4-12}
 {
   "$schema": "https://opencode.ai/config.json",
   "command": {
@@ -221,7 +221,7 @@ Vamos analisar as opções de configuração em detalhes.
 
 A opção `template` define o prompt que será enviado ao LLM quando o comando for executado.
 
-```json title="opencode.json"
+```json title="novacode.json"
 {
   "command": {
     "test": {
@@ -239,7 +239,7 @@ Esta é uma opção de configuração **obrigatória**.
 
 Use a opção `description` para fornecer uma breve descrição do que o comando faz.
 
-```json title="opencode.json"
+```json title="novacode.json"
 {
   "command": {
     "test": {
@@ -259,7 +259,7 @@ Use a configuração `agent` para especificar opcionalmente qual [agente](/docs/
 Se este for um [subagente](/docs/agents/#subagents), o comando acionará uma invocação de subagente por padrão.
 Para desativar esse comportamento, defina `subtask` como `false`.
 
-```json title="opencode.json"
+```json title="novacode.json"
 {
   "command": {
     "review": {
@@ -279,7 +279,7 @@ Use o booleano `subtask` para forçar o comando a acionar uma invocação de [su
 Isso é útil se você quiser que o comando não polua seu contexto principal e **forçará** o agente a agir como um subagente,
 mesmo que `mode` esteja definido como `primary` na configuração do [agente](/docs/agents).
 
-```json title="opencode.json"
+```json title="novacode.json"
 {
   "command": {
     "analyze": {
@@ -297,7 +297,7 @@ Esta é uma opção de configuração **opcional**.
 
 Use a configuração `model` para substituir o modelo padrão para este comando.
 
-```json title="opencode.json"
+```json title="novacode.json"
 {
   "command": {
     "analyze": {

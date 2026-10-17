@@ -1,6 +1,6 @@
-import type { FilePart, Project, UserMessage, VcsFileDiff } from "@opencode-ai/sdk/v2"
-import { getFilename } from "@opencode-ai/core/util/path"
-import { useDialog } from "@opencode-ai/ui/context/dialog"
+import type { FilePart, Project, UserMessage, VcsFileDiff } from "@novacode-ai/sdk/v2"
+import { getFilename } from "@novacode-ai/core/util/path"
+import { useDialog } from "@novacode-ai/ui/context/dialog"
 import { createQuery, skipToken, useMutation, useQueryClient } from "@tanstack/solid-query"
 import {
   batch,
@@ -26,18 +26,18 @@ import { debounce } from "@solid-primitives/scheduled"
 import { useLocal } from "@/context/local"
 import { FileProvider, selectionFromLines, useFile, type FileSelection, type SelectedLineRange } from "@/context/file"
 import { createStore } from "solid-js/store"
-import type { SessionReviewLineComment } from "@opencode-ai/session-ui/session-review"
-import { ResizeHandle } from "@opencode-ai/ui/resize-handle"
-import { Select } from "@opencode-ai/ui/select"
-import { SelectV2 } from "@opencode-ai/ui/v2/select-v2"
-import { isScrollKeyTarget, scrollKey, scrollKeyOwner } from "@opencode-ai/ui/scroll-view"
-import { Tabs } from "@opencode-ai/ui/tabs"
-import { ButtonV2 } from "@opencode-ai/ui/v2/button-v2"
-import { createAutoScroll } from "@opencode-ai/ui/hooks"
-import { previewSelectedLines } from "@opencode-ai/session-ui/pierre/selection-bridge"
-import { Button } from "@opencode-ai/ui/button"
+import type { SessionReviewLineComment } from "@novacode-ai/session-ui/session-review"
+import { ResizeHandle } from "@novacode-ai/ui/resize-handle"
+import { Select } from "@novacode-ai/ui/select"
+import { SelectV2 } from "@novacode-ai/ui/v2/select-v2"
+import { isScrollKeyTarget, scrollKey, scrollKeyOwner } from "@novacode-ai/ui/scroll-view"
+import { Tabs } from "@novacode-ai/ui/tabs"
+import { ButtonV2 } from "@novacode-ai/ui/v2/button-v2"
+import { createAutoScroll } from "@novacode-ai/ui/hooks"
+import { previewSelectedLines } from "@novacode-ai/session-ui/pierre/selection-bridge"
+import { Button } from "@novacode-ai/ui/button"
 import { showToast } from "@/utils/toast"
-import { base64Encode, checksum } from "@opencode-ai/core/util/encode"
+import { base64Encode, checksum } from "@novacode-ai/core/util/encode"
 import { useLocation, useNavigate, useParams, useSearchParams } from "@solidjs/router"
 import { NewSessionView, SessionHeader } from "@/components/session"
 import { ErrorPage } from "@/pages/error"
@@ -83,9 +83,9 @@ import {
 } from "@/pages/session/session-panel-width"
 import { SessionSidePanel } from "@/pages/session/session-side-panel"
 import { sessionPanelLayout } from "@/pages/session/session-panel-layout"
-import { SessionReviewEmptyChangesV2 } from "@opencode-ai/session-ui/v2/session-review-empty-changes-v2"
-import { SessionReviewEmptyNoGitV2 } from "@opencode-ai/session-ui/v2/session-review-empty-no-git-v2"
-import { SessionReviewV2SidebarToggle } from "@opencode-ai/session-ui/v2/session-review-v2"
+import { SessionReviewEmptyChangesV2 } from "@novacode-ai/session-ui/v2/session-review-empty-changes-v2"
+import { SessionReviewEmptyNoGitV2 } from "@novacode-ai/session-ui/v2/session-review-empty-no-git-v2"
+import { SessionReviewV2SidebarToggle } from "@novacode-ai/session-ui/v2/session-review-v2"
 import { ReviewPanelV2 } from "@/pages/session/v2/review-panel-v2"
 import { createReviewPanelV2State } from "@/pages/session/v2/review-panel-v2-state"
 import { reviewDiffDirectory, reviewDiffNeedsLoad, reviewRootDirectory } from "@/pages/session/v2/review-diff-kinds"
@@ -604,7 +604,7 @@ export default function Page() {
   })
 
   const [followup, setFollowup] = persisted(
-    Persist.serverWorkspace(serverSDK().scope, sdk().directory, "followup", ["followup.v1"]),
+    Persist.serverWorkspace(serverSDK().scope, sdk().directory, "followup"),
     createStore<{
       items: Record<string, FollowupItem[] | undefined>
       failed: Record<string, string | undefined>

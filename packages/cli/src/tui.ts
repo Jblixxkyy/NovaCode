@@ -1,8 +1,8 @@
-import { run } from "@opencode-ai/tui"
-import { TuiConfig } from "@opencode-ai/tui/config"
+import { run } from "@novacode-ai/tui"
+import { TuiConfig } from "@novacode-ai/tui/config"
 import { Effect } from "effect"
-import { AppNodeBuilder } from "@opencode-ai/core/effect/app-node-builder"
-import { Global } from "@opencode-ai/core/global"
+import { AppNodeBuilder } from "@novacode-ai/core/effect/app-node-builder"
+import { Global } from "@novacode-ai/core/global"
 
 export function runTui(transport: { url: string; headers: RequestInit["headers"] }) {
   const config = TuiConfig.resolve({}, { terminalSuspend: false })

@@ -57,9 +57,9 @@ Ako se desktop aplikacija ruši pri pokretanju, visi ili se čudno ponaša, poč
 
 Otvorite svoju globalnu konfiguracijsku datoteku i potražite ključ `plugin`.
 
-- **macOS/Linux**: `~/.config/opencode/opencode.jsonc` (ili `~/.config/opencode/opencode.json`)
-- **macOS/Linux** (starije instalacije): `~/.local/share/opencode/opencode.jsonc`
-- **Windows**: Pritisnite `WIN+R` i zalijepite `%USERPROFILE%\.config\opencode\opencode.jsonc`
+- **macOS/Linux**: `~/.config/opencode/novacode.jsonc` (ili `~/.config/opencode/novacode.json`)
+- **macOS/Linux** (starije instalacije): `~/.local/share/opencode/novacode.jsonc`
+- **Windows**: Pritisnite `WIN+R` i zalijepite `%USERPROFILE%\.config\opencode\novacode.jsonc`
 
 Ako imate konfigurirane dodatke, privremeno ih onemogućite uklanjanjem ključa ili postavljanjem na prazan niz:
 
@@ -111,13 +111,13 @@ Na početnom ekranu kliknite na ime servera (sa tačkom statusa) da otvorite bir
 
 #### Uklonite `server.port` / `server.hostname` iz vaše konfiguracije
 
-Ako vaš `opencode.json(c)` sadrži odjeljak `server`, privremeno ga uklonite i ponovo pokrenite desktop aplikaciju.
+Ako vaš `novacode.json(c)` sadrži odjeljak `server`, privremeno ga uklonite i ponovo pokrenite desktop aplikaciju.
 
 #### Provjerite varijable okruženja
 
-Ako ste postavili `OPENCODE_PORT` u svom okruženju, desktop aplikacija će pokušati da koristi taj port za lokalni server.
+Ako ste postavili `NOVACODE_PORT` u svom okruženju, desktop aplikacija će pokušati da koristi taj port za lokalni server.
 
-- Poništite `OPENCODE_PORT` (ili odaberite slobodan port) i ponovo pokrenite.
+- Poništite `NOVACODE_PORT` (ili odaberite slobodan port) i ponovo pokrenite.
 
 ---
 

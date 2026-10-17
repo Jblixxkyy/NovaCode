@@ -1,5 +1,5 @@
-import { Skill } from "@opencode-ai/schema/skill"
-import { Location } from "@opencode-ai/schema/location"
+import { Skill } from "@novacode-ai/schema/skill"
+import { Location } from "@novacode-ai/schema/location"
 import { Schema } from "effect"
 import { HttpApiEndpoint, HttpApiGroup, HttpApiSchema, OpenApi } from "effect/unstable/httpapi"
 import { InvalidRequestError } from "../errors"

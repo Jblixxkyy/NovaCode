@@ -389,7 +389,7 @@ describe("OpenAPI.fromSpec", () => {
     expect(result.value).toMatchObject({
       items: [
         {
-          path: "tools.opencode.v2.health.get",
+          path: "tools.novacode.v2.health.get",
           description: "Check whether the API server is ready to accept requests.",
         },
       ],
@@ -410,8 +410,8 @@ describe("OpenAPI.fromSpec", () => {
       runtime
         .execute(
           `
-          const existing = await tools.opencode.v2.session.get({ sessionID: "ses_123" })
-          const created = await tools.opencode.v2.session.create({ id: "ses_456" })
+          const existing = await tools.novacode.v2.session.get({ sessionID: "ses_123" })
+          const created = await tools.novacode.v2.session.create({ id: "ses_456" })
           return { existing, created }
         `,
         )
@@ -810,7 +810,7 @@ describe("OpenAPI.fromSpec", () => {
     })
 
     const result = await Effect.runPromise(
-      runtime.execute("return await tools.opencode.v2.session.get({})").pipe(Effect.provide(layer)),
+      runtime.execute("return await tools.novacode.v2.session.get({})").pipe(Effect.provide(layer)),
     )
 
     expect(result).toMatchObject({ ok: false })

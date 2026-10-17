@@ -1,7 +1,7 @@
 import { createEffect, createMemo, createRoot, getOwner, onCleanup } from "solid-js"
 import { createStore, produce } from "solid-js/store"
-import { createSimpleContext } from "@opencode-ai/ui/context"
-import type { PermissionRequest } from "@opencode-ai/sdk/v2/client"
+import { createSimpleContext } from "@novacode-ai/ui/context"
+import type { PermissionRequest } from "@novacode-ai/sdk/v2/client"
 import { Persist, persisted } from "@/utils/persist"
 import type { ServerSDK } from "@/context/server-sdk"
 import type { ServerSync } from "./server-sync"
@@ -190,7 +190,7 @@ type PermissionEvent = Parameters<Parameters<ServerSDK["event"]["listen"]>[0]>[0
 function createServerPermissionState(input: { sdk: ServerSDK; sync: ServerSync }) {
   const [store, setStore, _, ready] = persisted(
     {
-      ...Persist.serverGlobal(input.sdk.scope, "permission", ["permission.v3"]),
+      ...Persist.serverGlobal(input.sdk.scope, "permission"),
       migrate(value) {
         if (!value || typeof value !== "object" || Array.isArray(value)) return value
 

@@ -199,8 +199,8 @@ export const dict = {
   "dialog.provider.group.other": "その他",
   "dialog.provider.custom.label": "OpenAI互換のカスタムプロバイダー",
   "dialog.provider.tag.recommended": "推奨",
-  "dialog.provider.opencode.note": "Claude, GPT, Geminiなどを含む厳選されたモデル",
-  "dialog.provider.opencode.tagline": "信頼性の高い最適化モデル",
+  "dialog.provider.novacode.note": "Claude, GPT, Geminiなどを含む厳選されたモデル",
+  "dialog.provider.novacode.tagline": "信頼性の高い最適化モデル",
   "dialog.provider.opencodeGo.tagline": "すべての人に低価格のサブスクリプション",
   "dialog.provider.anthropic.note": "ProやMaxを含むClaudeモデルに直接アクセス",
   "dialog.provider.copilot.note": "GitHub Copilotを通じてコーディングを支援するAIモデル",
@@ -447,7 +447,7 @@ export const dict = {
   "wsl.server.retryStart": "起動を再試行",
   "wsl.server.updating": "更新中...",
   "wsl.onboarding.step.distro": "ディストリビューションを選択",
-  "wsl.onboarding.step.opencode": "NovaCode",
+  "wsl.onboarding.step.novacode": "NovaCode",
   "wsl.onboarding.checkingRuntime": "WSLを確認中...",
   "wsl.onboarding.restartRequired": "WSLのインストールを完了するにはWindowsの再起動が必要です。",
   "wsl.onboarding.ready": "WSLの準備ができました。",
@@ -854,6 +854,8 @@ export const dict = {
 
   "settings.general.row.uiFont.title": "UIフォント",
   "settings.general.row.uiFont.description": "インターフェース全体で使用するフォントをカスタマイズします",
+  "settings.general.row.toolTitleColor.title": "ツールタイトルの色",
+  "settings.general.row.toolTitleColor.description": "セッション内のツールタイトルの色をカスタマイズします",
   "settings.general.row.followup.title": "フォローアップの動作",
   "settings.general.row.followup.description":
     "フォローアッププロンプトを即座に実行するか、キューで待機させるかを選択します",

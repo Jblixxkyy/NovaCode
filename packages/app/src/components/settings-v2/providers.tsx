@@ -1,7 +1,7 @@
-import { ButtonV2 } from "@opencode-ai/ui/v2/button-v2"
-import { Tag } from "@opencode-ai/ui/v2/badge-v2"
-import { useDialog } from "@opencode-ai/ui/context/dialog"
-import { ProviderIcon } from "@opencode-ai/ui/provider-icon"
+import { ButtonV2 } from "@novacode-ai/ui/v2/button-v2"
+import { Tag } from "@novacode-ai/ui/v2/badge-v2"
+import { useDialog } from "@novacode-ai/ui/context/dialog"
+import { ProviderIcon } from "@novacode-ai/ui/provider-icon"
 import { showToast } from "@/utils/toast"
 import { popularProviders, useProviders } from "@/hooks/use-providers"
 import { createMemo, type Accessor, type Component, For, Show } from "solid-js"
@@ -17,7 +17,7 @@ type ProviderSource = "env" | "api" | "config" | "custom"
 type ProviderItem = ReturnType<ReturnType<typeof useProviders>["connected"]>[number]
 
 const PROVIDER_NOTES = [
-  { match: (id: string) => id === "opencode", key: "dialog.provider.opencode.note" },
+  { match: (id: string) => id === "opencode", key: "dialog.provider.novacode.note" },
   { match: (id: string) => id === "opencode-go", key: "dialog.provider.opencodeGo.tagline" },
   { match: (id: string) => id === "anthropic", key: "dialog.provider.anthropic.note" },
   { match: (id: string) => id.startsWith("github-copilot"), key: "dialog.provider.copilot.note" },

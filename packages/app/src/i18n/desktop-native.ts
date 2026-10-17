@@ -329,7 +329,7 @@ export const DESKTOP_NATIVE_ENGLISH = {
   "desktop.webapp.error.packaged.detail": "In a packaged build, use the normal desktop app or run \"bun run dev\" from the repository to start the web app.",
   "desktop.webapp.error.missingRoot.title": "Web App source not found",
   "desktop.webapp.error.missingRoot.message": "Could not find the NovaCode source directory.",
-  "desktop.webapp.error.missingRoot.detail": "Expected packages/opencode and packages/app under {{root}}. Make sure you're running from a source checkout.",
+  "desktop.webapp.error.missingRoot.detail": "Expected packages/novacode and packages/app under {{root}}. Make sure you're running from a source checkout.",
   "desktop.webapp.error.spawnFailed.title": "Failed to start Web App",
   "desktop.webapp.error.spawnFailed.message": "Could not start {{target}}.",
   "desktop.webapp.error.spawnFailed.detail": "{{error}}",

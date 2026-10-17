@@ -5,17 +5,17 @@ prompt files. Branch: `audit-config-fixes`.
 
 ## Findings
 
-### Project config (`.opencode/opencode.jsonc`)
+### Project config (`.novacode/novacode.jsonc`)
 - `provider: {}`, `mcp: {}`, `permission: {}` are all empty.
-- `references.opencode-local.path` uses the legacy `~/.local/share/opencode`
+- `references.novacode-local.path` uses the legacy `~/.local/share/opencode`
   path.
 - `references.effect` is a GitHub repo, but the `effect` skill expects a local
-  clone at `.opencode/references/effect-smol` — mismatch.
+  clone at `.novacode/references/effect-smol` — mismatch.
 - `"tools": { "github-triage": false, "github-pr-search": false }` is not a
-  valid config surface. Tools auto-load from `.opencode/tool/`; the toggle is
+  valid config surface. Tools auto-load from `.novacode/tool/`; the toggle is
   silently ignored.
 
-### Global config (`~/.config/opencode/opencode.jsonc`)
+### Global config (`~/.config/opencode/novacode.jsonc`)
 - Stored on the legacy `opencode` path. NovaCode-native is
   `~/.config/novacode/novacode.jsonc`.
 - `provider.zen` defines `deepseek-v4-flash-free` aliased to `deepseek`. The
@@ -38,16 +38,16 @@ prompt files. Branch: `audit-config-fixes`.
   `gpt-5.4`).
 
 ### Project skills
-- `effect/SKILL.md` instructs cloning into `.opencode/references/effect-smol`,
+- `effect/SKILL.md` instructs cloning into `.novacode/references/effect-smol`,
   but the reference is registered as a GitHub repo, not a local path.
 - `novacode-dev/SKILL.md` and `rtl-aware-development/SKILL.md` have valid
   frontmatter.
 
-### Built-in agents (`packages/opencode/src/agent/agent.ts`)
+### Built-in agents (`packages/novacode/src/agent/agent.ts`)
 - `build`, `plan`, `general`, `explore`, plus hidden `compaction`, `title`,
   `summary`. All well-formed.
 
-### System prompts (`packages/opencode/src/agent/prompt/*.txt`)
+### System prompts (`packages/novacode/src/agent/prompt/*.txt`)
 - `explore.txt` and `generate.txt` read clean.
 - `compaction.txt`, `title.txt`, `summary.txt` not yet reviewed.
 
@@ -59,24 +59,24 @@ prompt files. Branch: `audit-config-fixes`.
 ## Fixes
 
 ### F1 — global config model id (high)
-File: `~/.config/opencode/opencode.jsonc`
+File: `~/.config/opencode/novacode.jsonc`
 Replace `deepseek-v4-flash-free` alias with `deepseek-v4-flash`.
 
 ### F2 — global config path (high)
-Copy `~/.config/opencode/opencode.jsonc` → `~/.config/novacode/novacode.jsonc`.
+Copy `~/.config/opencode/novacode.jsonc` → `~/.config/novacode/novacode.jsonc`.
 Leave the legacy file alone (fallback reads it).
 
-### F3 — project `references.opencode-local` path (high)
-File: `.opencode/opencode.jsonc:11`
+### F3 — project `references.novacode-local` path (high)
+File: `.novacode/novacode.jsonc:11`
 `"path": "~/.local/share/opencode"` → `"path": "~/.local/share/novacode"`.
 
 ### F4 — `references.effect` vs skill mismatch (high)
-File: `.opencode/opencode.jsonc:7`
-Keep GitHub reference. Update `.opencode/skills/effect/SKILL.md` to drop the
+File: `.novacode/novacode.jsonc:7`
+Keep GitHub reference. Update `.novacode/skills/effect/SKILL.md` to drop the
 "clone locally" instructions and reference the GitHub alias via `@effect`.
 
 ### F5 — dead `tools` block (high)
-File: `.opencode/opencode.jsonc:16-19`
+File: `.novacode/novacode.jsonc:16-19`
 Delete the `tools` key entirely.
 
 ### F6 — `jarvis` bash permissions (high)
@@ -94,20 +94,20 @@ bash:
 
 ### F7 — command model id sweep (high)
 Files:
-- `.opencode/command/commit.md` — `opencode/kimi-k2.5`
-- `.opencode/command/translate.md` — `opencode/gpt-5.6-sol`
-- `.opencode/command/changelog.md` — `opencode/gpt-5.4`
-- `.opencode/command/issues.md` — `opencode/claude-haiku-4.5`
+- `.novacode/command/commit.md` — `opencode/kimi-k2.5`
+- `.novacode/command/translate.md` — `opencode/gpt-5.6-sol`
+- `.novacode/command/changelog.md` — `opencode/gpt-5.4`
+- `.novacode/command/issues.md` — `opencode/claude-haiku-4.5`
 
 Resolve each against current Zen list; fall back to
 `anthropic/claude-sonnet-4-6` if missing.
 
 ### F8 — hidden agent descriptions (medium)
-Files: `.opencode/agent/triage.md`, `.opencode/agent/duplicate-pr.md`
+Files: `.novacode/agent/triage.md`, `.novacode/agent/duplicate-pr.md`
 Add `description:` frontmatter.
 
 ### F9 — remaining prompt txt files (medium)
-Review `packages/opencode/src/agent/prompt/{compaction,title,summary}.txt`
+Review `packages/novacode/src/agent/prompt/{compaction,title,summary}.txt`
 for stale instructions.
 
 ### F10 — document plan in AGENTS.md (low)
@@ -129,7 +129,7 @@ fixes and commit hashes so future agents can trace each change.
 - After each edit, re-read the file to confirm.
 - Parse JSONC with `jsonc-parser` (already a dep).
 - Manual smoke: enumerate resolved agents/models from the merged config via a
-  one-off Bun script using `@opencode-ai/core/config`.
+  one-off Bun script using `@novacode-ai/core/config`.
 - No typecheck from the shell (it OOM-kills the shell process on Windows);
   rely on schema parsing and manual review instead.
 
@@ -138,7 +138,7 @@ fixes and commit hashes so future agents can trace each change.
 - [x] Findings gathered
 - [ ] F1 — global model id
 - [ ] F2 — global config path move
-- [ ] F3 — references.opencode-local path
+- [ ] F3 — references.novacode-local path
 - [ ] F4 — effect reference + skill alignment
 - [ ] F5 — remove dead `tools` block
 - [ ] F6 — tighten jarvis bash permissions

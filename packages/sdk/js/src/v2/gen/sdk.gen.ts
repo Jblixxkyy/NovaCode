@@ -80,6 +80,8 @@ import type {
   GlobalConfigGetResponses,
   GlobalConfigUpdateErrors,
   GlobalConfigUpdateResponses,
+  GlobalDesktopDiscoveryErrors,
+  GlobalDesktopDiscoveryResponses,
   GlobalDisposeErrors,
   GlobalDisposeResponses,
   GlobalEventErrors,
@@ -130,6 +132,10 @@ import type {
   PermissionRuleset,
   PermissionV2Reply,
   PermissionV2Source,
+  PluginStatusErrors,
+  PluginStatusResponses,
+  PluginToggleErrors,
+  PluginToggleResponses,
   ProjectCommands,
   ProjectCurrentErrors,
   ProjectCurrentResponses,
@@ -383,8 +389,12 @@ import type {
   V2SessionSwitchModelResponses,
   V2SessionWaitErrors,
   V2SessionWaitResponses,
+  V2SkillCreateErrors,
+  V2SkillCreateResponses,
   V2SkillListErrors,
   V2SkillListResponses,
+  V2SkillRemoveErrors,
+  V2SkillRemoveResponses,
   VcsApplyErrors,
   VcsApplyResponses,
   VcsDiffErrors,
@@ -1374,6 +1384,19 @@ export class Global extends HeyApiClient {
         ...params.headers,
       },
     })
+  }
+
+  /**
+   * Get desktop discovery info
+   *
+   * Check if a desktop app sidecar is running and return its connection details.
+   */
+  public desktopDiscovery<ThrowOnError extends boolean = false>(options?: Options<never, ThrowOnError>) {
+    return (options?.client ?? this.client).get<
+      GlobalDesktopDiscoveryResponses,
+      GlobalDesktopDiscoveryErrors,
+      ThrowOnError
+    >({ url: "/global/desktop-discovery", ...options })
   }
 
   private _config?: Config
@@ -2690,6 +2713,77 @@ export class Project extends HeyApiClient {
       url: "/project/{projectID}/directories",
       ...options,
       ...params,
+    })
+  }
+}
+
+export class Plugin extends HeyApiClient {
+  /**
+   * Get plugin status
+   *
+   * Get the enabled state of all configured plugins.
+   */
+  public status<ThrowOnError extends boolean = false>(
+    parameters?: {
+      directory?: string
+      workspace?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).get<PluginStatusResponses, PluginStatusErrors, ThrowOnError>({
+      url: "/plugin",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
+   * Toggle plugin
+   *
+   * Enable or disable a configured plugin. Takes effect immediately.
+   */
+  public toggle<ThrowOnError extends boolean = false>(
+    parameters?: {
+      directory?: string
+      workspace?: string
+      id?: string
+      enabled?: boolean
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+            { in: "body", key: "id" },
+            { in: "body", key: "enabled" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).post<PluginToggleResponses, PluginToggleErrors, ThrowOnError>({
+      url: "/plugin/toggle",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
     })
   }
 }
@@ -6524,6 +6618,39 @@ export class Command2 extends HeyApiClient {
 
 export class Skill extends HeyApiClient {
   /**
+   * Delete skill
+   *
+   * Delete an existing skill by name.
+   */
+  public remove<ThrowOnError extends boolean = false>(
+    parameters: {
+      location?: {
+        directory?: string
+        workspace?: string
+      }
+      name: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "location" },
+            { in: "query", key: "name" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).delete<V2SkillRemoveResponses, V2SkillRemoveErrors, ThrowOnError>({
+      url: "/api/skill",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
    * List skills
    *
    * Retrieve currently registered skills.
@@ -6542,6 +6669,48 @@ export class Skill extends HeyApiClient {
       url: "/api/skill",
       ...options,
       ...params,
+    })
+  }
+
+  /**
+   * Create skill
+   *
+   * Create a new skill markdown file in the workspace.
+   */
+  public create<ThrowOnError extends boolean = false>(
+    parameters?: {
+      location?: {
+        directory?: string
+        workspace?: string
+      }
+      name?: string
+      description?: string
+      content?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "location" },
+            { in: "body", key: "name" },
+            { in: "body", key: "description" },
+            { in: "body", key: "content" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).post<V2SkillCreateResponses, V2SkillCreateErrors, ThrowOnError>({
+      url: "/api/skill",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
     })
   }
 }
@@ -7170,6 +7339,11 @@ export class OpencodeClient extends HeyApiClient {
   private _project?: Project
   get project(): Project {
     return (this._project ??= new Project({ client: this.client }))
+  }
+
+  private _plugin?: Plugin
+  get plugin(): Plugin {
+    return (this._plugin ??= new Plugin({ client: this.client }))
   }
 
   private _pty?: Pty

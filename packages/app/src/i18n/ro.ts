@@ -192,8 +192,8 @@ export const dict = {
   "dialog.provider.group.other": "Altele",
   "dialog.provider.custom.label": "Furnizor compatibil OpenAI personalizat",
   "dialog.provider.tag.recommended": "Recomandat",
-  "dialog.provider.opencode.note": "Modele selectate, inclusiv Claude, GPT, Gemini și altele",
-  "dialog.provider.opencode.tagline": "Modele optimizate, fiabile",
+  "dialog.provider.novacode.note": "Modele selectate, inclusiv Claude, GPT, Gemini și altele",
+  "dialog.provider.novacode.tagline": "Modele optimizate, fiabile",
   "dialog.provider.opencodeGo.tagline": "Abonament accesibil pentru toți",
   "dialog.provider.anthropic.note": "Acces direct la modelele Claude, inclusiv Pro și Max",
   "dialog.provider.copilot.note": "Modele AI pentru asistență la programare prin GitHub Copilot",
@@ -447,7 +447,7 @@ export const dict = {
   "wsl.server.retryStart": "Reîncearcă pornirea",
   "wsl.server.updating": "Se actualizează...",
   "wsl.onboarding.step.distro": "Alege distribuția",
-  "wsl.onboarding.step.opencode": "NovaCode",
+  "wsl.onboarding.step.novacode": "NovaCode",
   "wsl.onboarding.checkingRuntime": "Se verifică WSL...",
   "wsl.onboarding.restartRequired": "Windows trebuie repornit pentru a finaliza instalarea WSL.",
   "wsl.onboarding.ready": "WSL este gata.",
@@ -950,6 +950,8 @@ export const dict = {
 
   "settings.general.row.uiFont.title": "Font interfață",
   "settings.general.row.uiFont.description": "Personalizează fontul folosit în toată interfața",
+  "settings.general.row.toolTitleColor.title": "Culoarea titlurilor instrumentelor",
+  "settings.general.row.toolTitleColor.description": "Personalizați culoarea titlurilor instrumentelor în sesiuni",
   "settings.general.row.followup.title": "Comportament follow-up",
   "settings.general.row.followup.description":
     "Alege dacă solicitările follow-up se execută imediat sau așteaptă în coadă",

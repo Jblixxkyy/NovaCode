@@ -1,7 +1,7 @@
 import { createRoot, createSignal, getOwner, onCleanup, runWithOwner, type Owner } from "solid-js"
 import { createStore, type SetStoreFunction, type Store } from "solid-js/store"
 import { Persist, persisted } from "@/utils/persist"
-import type { VcsInfo } from "@opencode-ai/sdk/v2/client"
+import type { VcsInfo } from "@novacode-ai/sdk/v2/client"
 import {
   DIR_IDLE_TTL_MS,
   MAX_DIR_STORES,
@@ -17,7 +17,7 @@ import { canDisposeDirectory, pickDirectoriesToEvict } from "./eviction"
 import { useQuery } from "@tanstack/solid-query"
 import { QueryOptionsApi } from "../server-sync"
 import { directoryKey, type DirectoryKey } from "./utils"
-import { NormalizedProviderListResponse } from "@opencode-ai/session-ui/context"
+import { NormalizedProviderListResponse } from "@novacode-ai/session-ui/context"
 import type { ServerScope } from "@/utils/server-scope"
 
 export function createChildStoreManager(input: {
@@ -155,7 +155,7 @@ export function createChildStoreManager(input: {
     if (!children[key]) {
       const vcs = runWithOwner(input.owner, () =>
         input.persist(
-          Persist.serverWorkspace(input.scope, directory, "vcs", ["vcs.v1"]),
+          Persist.serverWorkspace(input.scope, directory, "vcs"),
           createStore({ value: undefined as VcsInfo | undefined }),
         ),
       )
@@ -165,7 +165,7 @@ export function createChildStoreManager(input: {
 
       const meta = runWithOwner(input.owner, () =>
         input.persist(
-          Persist.serverWorkspace(input.scope, directory, "project", ["project.v1"]),
+          Persist.serverWorkspace(input.scope, directory, "project"),
           createStore({ value: undefined as ProjectMeta | undefined }),
         ),
       )
@@ -174,7 +174,7 @@ export function createChildStoreManager(input: {
 
       const icon = runWithOwner(input.owner, () =>
         input.persist(
-          Persist.serverWorkspace(input.scope, directory, "icon", ["icon.v1"]),
+          Persist.serverWorkspace(input.scope, directory, "icon"),
           createStore({ value: undefined as string | undefined }),
         ),
       )

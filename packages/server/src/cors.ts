@@ -4,7 +4,7 @@ const trustedOrigin = /^https:\/\/([a-z0-9-]+\.)*(opencode|novacode)\.ai$/
 
 export type CorsOptions = { readonly cors?: ReadonlyArray<string> }
 
-export const CorsConfig = Context.Reference<CorsOptions | undefined>("@opencode/ServerCorsConfig", {
+export const CorsConfig = Context.Reference<CorsOptions | undefined>("@novacode/ServerCorsConfig", {
   defaultValue: () => undefined,
 })
 

@@ -1,6 +1,6 @@
 export * as Database from "./database"
 
-import { EffectDrizzleSqlite } from "@opencode-ai/effect-drizzle-sqlite"
+import { EffectDrizzleSqlite } from "@novacode-ai/effect-drizzle-sqlite"
 import { layer as sqliteLayer } from "#sqlite"
 import { Context, Effect, Layer } from "effect"
 import { Global } from "../global"
@@ -17,7 +17,7 @@ export interface Interface {
   db: DatabaseShape
 }
 
-export class Service extends Context.Service<Service, Interface>()("@opencode/v2/storage/Database") {}
+export class Service extends Context.Service<Service, Interface>()("@novacode/v2/storage/Database") {}
 
 const layer = Layer.effect(
   Service,
@@ -41,14 +41,14 @@ export function layerFromPath(filename: string) {
 }
 
 export function path() {
-  if (Flag.OPENCODE_DB) {
-    if (Flag.OPENCODE_DB === ":memory:" || isAbsolute(Flag.OPENCODE_DB)) return Flag.OPENCODE_DB
-    return join(Global.Path.data, Flag.OPENCODE_DB)
+  if (Flag.NOVACODE_DB) {
+    if (Flag.NOVACODE_DB === ":memory:" || isAbsolute(Flag.NOVACODE_DB)) return Flag.NOVACODE_DB
+    return join(Global.Path.data, Flag.NOVACODE_DB)
   }
   const channel = InstallationChannel.replace(/[^a-zA-Z0-9._-]/g, "-")
   if (
     ["latest", "beta", "prod"].includes(channel) ||
-    Flag.OPENCODE_DISABLE_CHANNEL_DB
+    Flag.NOVACODE_DISABLE_CHANNEL_DB
   )
     return join(Global.Path.data, "novacode.db")
   // Local and git-branch builds share one file so switching branches does not hide sessions.

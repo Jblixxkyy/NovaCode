@@ -194,8 +194,8 @@ export const dict = {
   "dialog.provider.group.other": "အခြား",
   "dialog.provider.custom.label": "စိတ်ကြိုက် OpenAI-သဟဇာတ ပံ့ပိုးပေးသူ",
   "dialog.provider.tag.recommended": "အကြံပြုထားသည်။",
-  "dialog.provider.opencode.note": "Claude၊ GPT၊ Gemini နှင့် အခြားအရာများ အပါအဝင် ရွေးချယ်ထားသော မော်ဒယ်များ",
-  "dialog.provider.opencode.tagline": "ယုံကြည်စိတ်ချရသော အကောင်းဆုံးပြင်ဆင်ထားသော မော်ဒယ်များ",
+  "dialog.provider.novacode.note": "Claude၊ GPT၊ Gemini နှင့် အခြားအရာများ အပါအဝင် ရွေးချယ်ထားသော မော်ဒယ်များ",
+  "dialog.provider.novacode.tagline": "ယုံကြည်စိတ်ချရသော အကောင်းဆုံးပြင်ဆင်ထားသော မော်ဒယ်များ",
   "dialog.provider.opencodeGo.tagline": "လူတိုင်းအတွက် ကုန်ကျစရိတ်သက်သာသော စာရင်းသွင်းမှု",
   "dialog.provider.anthropic.note": "Pro နှင့် Max အပါအဝင် Claude မော်ဒယ်များသို့ တိုက်ရိုက်ဝင်ရောက်ခွင့်",
   "dialog.provider.copilot.note": "GitHub Copilot မှတစ်ဆင့် ကုဒ်ရေးနည်းအကူအညီအတွက် AI မော်ဒယ်များ",
@@ -452,7 +452,7 @@ export const dict = {
   "wsl.server.retryStart": "ပြန်လည်စတင်ကြည့်ပါ။",
   "wsl.server.updating": "အပ်ဒိတ်လုပ်နေသည်...",
   "wsl.onboarding.step.distro": "distro ကို ရွေးပါ။",
-  "wsl.onboarding.step.opencode": "NovaCode",
+  "wsl.onboarding.step.novacode": "NovaCode",
   "wsl.onboarding.checkingRuntime": "WSL ကို စစ်ဆေးနေသည်...",
   "wsl.onboarding.restartRequired": "WSL ထည့်သွင်းခြင်းကို အပြီးသတ်ရန် Windows ကို ပြန်လည်စတင်ရန် လိုအပ်သည်။",
   "wsl.onboarding.ready": "WSL အဆင်သင့်ဖြစ်ပါပြီ။",
@@ -959,6 +959,8 @@ export const dict = {
 
   "settings.general.row.uiFont.title": "UI ဖောင့်",
   "settings.general.row.uiFont.description": "အင်တာဖေ့စ်တစ်လျှောက်သုံးဖောင့်ကို စိတ်ကြိုက်ပြင်ဆင်ပါ။",
+  "settings.general.row.toolTitleColor.title": "ကိရိယာ ခေါင်းစဉ် အရောင်",
+  "settings.general.row.toolTitleColor.description": "ဆက်ရှင်များတွင် ကိရိယာ ခေါင်းစဉ်များ၏ အရောင်ကို စိတ်ကြိုက်ပြင်ဆင်ပါ",
   "settings.general.row.followup.title": "နောက်ဆက်တွဲအပြုအမူ",
   "settings.general.row.followup.description":
     "နောက်ဆက်တွဲအချက်မှာ ချက်ချင်းပဲ့ကိုင်သလား သို့မဟုတ် တန်းစီစောင့်ဆိုင်းခြင်းရှိမရှိကို ရွေးပါ။",

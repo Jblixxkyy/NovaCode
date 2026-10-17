@@ -3,7 +3,7 @@
   --card-line-pad: 12px;
 
   [data-slot="basic-tool-tool-title"] {
-    color: var(--v2-text-text-base);
+    color: var(--tool-title-color, #00ff41);
   }
 
   [data-slot="basic-tool-tool-subtitle"] {
@@ -68,7 +68,7 @@
 
 body:not([data-new-layout]) [data-component="card"][data-kind="tool-error-card"] {
   [data-slot="basic-tool-tool-title"] {
-    color: var(--text-strong);
+    color: var(--tool-title-color, #00ff41);
   }
 
   [data-slot="basic-tool-tool-subtitle"] {

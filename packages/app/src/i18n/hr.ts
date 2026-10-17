@@ -196,8 +196,8 @@ export const dict = {
   "dialog.provider.group.other": "ostalo",
   "dialog.provider.custom.label": "Prilagođeni pružatelj kompatibilan sa OpenAI",
   "dialog.provider.tag.recommended": "Preporučeno",
-  "dialog.provider.opencode.note": "Odabrani modeli uključujući Claude, GPT, Gemini i druge",
-  "dialog.provider.opencode.tagline": "Pouzdani optimizirani modeli",
+  "dialog.provider.novacode.note": "Odabrani modeli uključujući Claude, GPT, Gemini i druge",
+  "dialog.provider.novacode.tagline": "Pouzdani optimizirani modeli",
   "dialog.provider.opencodeGo.tagline": "Niska cijena pretplate za sve",
   "dialog.provider.anthropic.note": "Izravan pristup Claude modelima, uključujući Pro i Max",
   "dialog.provider.copilot.note": "AI modeli za pomoć kodiranja putem GitHub Copilot",
@@ -452,7 +452,7 @@ export const dict = {
   "wsl.server.retryStart": "Ponovi početak",
   "wsl.server.updating": "Ažuriranje...",
   "wsl.onboarding.step.distro": "Odaberite distro",
-  "wsl.onboarding.step.opencode": "NovaCode",
+  "wsl.onboarding.step.novacode": "NovaCode",
   "wsl.onboarding.checkingRuntime": "Provjera WSL...",
   "wsl.onboarding.restartRequired": "Windows treba ponovno pokretanje kako bi završio instalaciju WSL.",
   "wsl.onboarding.ready": "WSL je spreman.",
@@ -955,6 +955,8 @@ export const dict = {
 
   "settings.general.row.uiFont.title": "UI font",
   "settings.general.row.uiFont.description": "Prilagodite font koji se koristi u cijelom sučelju",
+  "settings.general.row.toolTitleColor.title": "Boja naslova alata",
+  "settings.general.row.toolTitleColor.description": "Prilagodite boju naslova alata u sesijama",
   "settings.general.row.followup.title": "Praćenje ponašanja",
   "settings.general.row.followup.description":
     "Odaberite hoće li se naknadni upiti usmjeravati odmah ili čekati u redu",

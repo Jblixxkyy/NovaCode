@@ -192,8 +192,8 @@ export const dict = {
   "dialog.provider.group.other": "Lain-lain",
   "dialog.provider.custom.label": "Penyedia serasi OpenAI tersuai",
   "dialog.provider.tag.recommended": "Disyorkan",
-  "dialog.provider.opencode.note": "Model terpilih termasuk Claude, GPT, Gemini dan banyak lagi",
-  "dialog.provider.opencode.tagline": "Model dioptimumkan yang boleh dipercayai",
+  "dialog.provider.novacode.note": "Model terpilih termasuk Claude, GPT, Gemini dan banyak lagi",
+  "dialog.provider.novacode.tagline": "Model dioptimumkan yang boleh dipercayai",
   "dialog.provider.opencodeGo.tagline": "Langganan kos rendah untuk semua",
   "dialog.provider.anthropic.note": "Akses terus ke model Claude, termasuk Pro dan Max",
   "dialog.provider.copilot.note": "Model AI untuk bantuan pengekodan melalui GitHub Copilot",
@@ -448,7 +448,7 @@ export const dict = {
   "wsl.server.retryStart": "Cuba mula semula",
   "wsl.server.updating": "Mengemas kini...",
   "wsl.onboarding.step.distro": "Pilih distro",
-  "wsl.onboarding.step.opencode": "NovaCode",
+  "wsl.onboarding.step.novacode": "NovaCode",
   "wsl.onboarding.checkingRuntime": "Memeriksa WSL...",
   "wsl.onboarding.restartRequired": "Windows perlu dimulakan semula untuk melengkapkan pemasangan WSL.",
   "wsl.onboarding.ready": "WSL sedia digunakan.",
@@ -945,6 +945,8 @@ export const dict = {
 
   "settings.general.row.uiFont.title": "Fon Antara Muka",
   "settings.general.row.uiFont.description": "Sesuaikan fon yang digunakan di seluruh antara muka",
+  "settings.general.row.toolTitleColor.title": "Warna tajuk alat",
+  "settings.general.row.toolTitleColor.description": "Sesuaikan warna tajuk alat dalam sesi",
   "settings.general.row.followup.title": "Tingkah laku susulan",
   "settings.general.row.followup.description":
     "Pilih sama ada arahan susulan dilaksanakan serta-merta atau menunggu dalam barisan",

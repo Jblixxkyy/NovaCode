@@ -1,4 +1,4 @@
-## Priorities
+﻿## Priorities
 
 - Prioritise, in this order: stability, simplicity, performance.
 - Before changing session or timeline code, record a production benchmark baseline and compare it after the change.
@@ -11,7 +11,7 @@
 
 - `opencode dev web` proxies `https://app.opencode.ai`, so local UI/CSS changes will not show there.
 - For local UI changes, run the backend and app dev servers separately.
-- Backend (from `packages/opencode`): `bun run --conditions=browser ./src/index.ts serve --port 4096`
+- Backend (from `packages/novacode`): `bun run --conditions=browser ./src/index.ts serve --port 4096`
 - App (from `packages/app`): `bun dev -- --port 4444`
 - Open `http://localhost:4444` to verify UI changes (it targets the backend at `http://localhost:4096`).
 
@@ -32,7 +32,7 @@
 - Translate complete UI phrases in context. A glossary hit is evidence, not permission to translate word-by-word. Check terse labels such as session, prompt, agent, model, fork, shell, terminal, workspace, and worktree in the same grammatical role before choosing a term.
 - Before a locale is ready, audit recurring concepts for one consistent translation and review every value that still equals English. Classify retained English as a product name, provider/tool name, URL, code token, keyboard legend, acronym, asset name, or established borrowing; translate unexplained leftovers.
 - In translation review notes, name the corpora used and call out uncertain or region-specific terminology so native speakers can focus review where it matters.
-- Also use the relevant language authority or official dictionary for the locale (for example RAE/Fundéu, FranceTerme, Duden, TDK, Kotus/Kielitoimiston sanakirja, Språkrådet/Bokmålsordboka, Rada Języka Polskiego/PWN, the Russian and Arabic language academies, the Ukrainian Orthography, Taiwan MOE dictionaries, or the Royal Society of Thailand). Treat the English dictionary as the semantic source of truth and preserve placeholders, code identifiers, product names, and keyboard labels.
+- Also use the relevant language authority or official dictionary for the locale (for example RAE/FundÃ©u, FranceTerme, Duden, TDK, Kotus/Kielitoimiston sanakirja, SprÃ¥krÃ¥det/BokmÃ¥lsordboka, Rada JÄ™zyka Polskiego/PWN, the Russian and Arabic language academies, the Ukrainian Orthography, Taiwan MOE dictionaries, or the Royal Society of Thailand). Treat the English dictionary as the semantic source of truth and preserve placeholders, code identifiers, product names, and keyboard labels.
 
 ## Tool Calling
 
@@ -49,8 +49,15 @@ Core workflow:
 3. `agent-browser click @e1` / `fill @e2 "text"` - Interact using refs
 4. Re-snapshot after page changes
 
-## Persist & Rebrand Storage
+## Persist & Storage
 
-- `src/utils/persist.ts` primary keys are `novacode.global.dat` / `novacode.window.*` / `novacode.{workspace,draft}.*`; legacy `opencode.*` is read-only fallback. `GLOBAL_STORAGE` has `legacyStorageNames=[opencode.global.dat]`; workspace/draft use `prefixedStorage("novacode",…)` and `legacyWorkspaceStorage` enumerates `opencode` aliases for both `/` and `\` pathKey variants.
-- `evict()` and alias enumeration must handle both `novacode.` and `opencode.` prefixes or quota eviction misses legacy entries. `windowStorage(windowID)` prefixes with `novacode.window` and legacy reads use `opencode.window` alias.
+- src/utils/persist.ts primary keys are 
+ovacode.global.dat / 
+ovacode.window.* / 
+ovacode.{workspace,draft}.*. There is no legacy storage fallback; all reads and writes use the 
+ovacode.* names only.
+- evict() enumerates only the 
+ovacode. prefix when quota eviction runs. windowStorage(windowID) prefixes with 
+ovacode.window.
+
 - `src/context/server.tsx:replaceWorktree` dedupes by `pathKey` (normalized `/`), updates `projects`, `recentlyClosed`, and `lastProject` atomically; used after `Project.relocate` emits worktree changes.

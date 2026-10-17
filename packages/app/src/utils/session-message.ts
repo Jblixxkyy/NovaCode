@@ -4,8 +4,8 @@ import type {
   SessionMessageInfo,
   SessionMessageShell,
   SessionMessageUser,
-} from "@opencode-ai/client/promise"
-import type { AssistantMessage, FilePart, Message, Part, ToolPart, UserMessage } from "@opencode-ai/sdk/v2"
+} from "@novacode-ai/client/promise"
+import type { AssistantMessage, FilePart, Message, Part, ToolPart, UserMessage } from "@novacode-ai/sdk/v2"
 import { Option, Schema } from "effect"
 
 const emptyTokens = { input: 0, output: 0, reasoning: 0, cache: { read: 0, write: 0 } }
@@ -295,7 +295,9 @@ function assistantParts(sessionID: string, message: SessionMessageAssistant): Pa
       : []
     const fileParts: FilePart[] = [
       ...toolContent
-        .filter((item): item is Extract<typeof item, { type: "file" }> => item.type === "file")
+        .filter(
+          (item): item is { type: "file"; mime: string; name?: string; uri: string } => item.type === "file",
+        )
         .map((item) => ({
           id: sessionMessagePartID(message.id, "file", ordinals.file++),
           sessionID,

@@ -82,8 +82,8 @@ async function stop() {
 
 function prepareSidecarEnv(password: string, userDataPath: string) {
   Object.assign(process.env, {
-    OPENCODE_SERVER_USERNAME: "novacode",
-    OPENCODE_SERVER_PASSWORD: password,
+    NOVACODE_SERVER_USERNAME: "novacode",
+    NOVACODE_SERVER_PASSWORD: password,
     XDG_STATE_HOME: process.env.XDG_STATE_HOME ?? userDataPath,
   })
 }

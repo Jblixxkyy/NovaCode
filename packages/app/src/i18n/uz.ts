@@ -194,8 +194,8 @@ export const dict = {
   "dialog.provider.group.other": "Boshqa",
   "dialog.provider.custom.label": "Maxsus OpenAI-mos keladigan provayder",
   "dialog.provider.tag.recommended": "Tavsiya etilgan",
-  "dialog.provider.opencode.note": "Tanlangan modellar, jumladan Claude, GPT, Gemini va boshqalar",
-  "dialog.provider.opencode.tagline": "Ishonchli optimallashtirilgan modellar",
+  "dialog.provider.novacode.note": "Tanlangan modellar, jumladan Claude, GPT, Gemini va boshqalar",
+  "dialog.provider.novacode.tagline": "Ishonchli optimallashtirilgan modellar",
   "dialog.provider.opencodeGo.tagline": "Hamma uchun arzon obuna",
   "dialog.provider.anthropic.note": "Claude modellariga, jumladan Pro va Maksga to'g'ridan-to'g'ri kirish",
   "dialog.provider.copilot.note": "GitHub Copilot orqali kodlash yordami uchun AI modellari",
@@ -450,7 +450,7 @@ export const dict = {
   "wsl.server.retryStart": "Qaytadan boshlash",
   "wsl.server.updating": "Yangilanmoqda...",
   "wsl.onboarding.step.distro": "Distroni tanlang",
-  "wsl.onboarding.step.opencode": "NovaCode",
+  "wsl.onboarding.step.novacode": "NovaCode",
   "wsl.onboarding.checkingRuntime": "WSL tekshirilmoqda...",
   "wsl.onboarding.restartRequired": "WSL oʻrnatilishini tugatish uchun Windows qayta ishga tushirilishi kerak.",
   "wsl.onboarding.ready": "WSL tayyor.",
@@ -954,6 +954,8 @@ export const dict = {
 
   "settings.general.row.uiFont.title": "UI shrifti",
   "settings.general.row.uiFont.description": "Interfeys davomida ishlatiladigan shriftni moslashtiring",
+  "settings.general.row.toolTitleColor.title": "Asbob sarlavhasi rangi",
+  "settings.general.row.toolTitleColor.description": "Sessiyalardagi asbob sarlavhalarining rangini sozlang",
   "settings.general.row.followup.title": "Kuzatuv xatti-harakati",
   "settings.general.row.followup.description":
     "Kuzatuv soʻrovlari darhol boshqarilishini yoki navbatda kutishini tanlang",

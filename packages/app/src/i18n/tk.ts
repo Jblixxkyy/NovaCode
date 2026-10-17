@@ -193,8 +193,8 @@ export const dict = {
   "dialog.provider.group.other": "Beýlekiler",
   "dialog.provider.custom.label": "Xörite OpenAI gabat gelýän üpjün ediji",
   "dialog.provider.tag.recommended": "Maslahat berilýär",
-  "dialog.provider.opencode.note": "Claude, GPT, Gemini we ş.m.",
-  "dialog.provider.opencode.tagline": "Ygtybarly optimal modeller",
+  "dialog.provider.novacode.note": "Claude, GPT, Gemini we ş.m.",
+  "dialog.provider.novacode.tagline": "Ygtybarly optimal modeller",
   "dialog.provider.opencodeGo.tagline": "Hemmeler üçin arzan bahaly abuna",
   "dialog.provider.anthropic.note": "Pro we Max ýaly Claude modellerine göni giriş",
   "dialog.provider.copilot.note": "GitHub Copilot arkaly kodlaşdyrmak üçin AI modelleri",
@@ -448,7 +448,7 @@ export const dict = {
   "wsl.server.retryStart": "Başlaň",
   "wsl.server.updating": "Täzelenmek ...",
   "wsl.onboarding.step.distro": "Distro saýlaň",
-  "wsl.onboarding.step.opencode": "NovaCode",
+  "wsl.onboarding.step.novacode": "NovaCode",
   "wsl.onboarding.checkingRuntime": "WSL barlamak ...",
   "wsl.onboarding.restartRequired": "Windows, WSL gurnamagy gutarmak üçin täzeden başlamaly.",
   "wsl.onboarding.ready": "WSL taýýar.",
@@ -947,6 +947,8 @@ export const dict = {
 
   "settings.general.row.uiFont.title": "UI şrift",
   "settings.general.row.uiFont.description": "Interfeýsiň hemme ýerinde ulanylýan şrifti düzüň",
+  "settings.general.row.toolTitleColor.title": "Gural başlygynyň reňki",
+  "settings.general.row.toolTitleColor.description": "Sesiýalarda gural başlyklarynyň reňkini saýlaň",
   "settings.general.row.followup.title": "Gözegçilik",
   "settings.general.row.followup.description":
     "Gözegçiligiň haýal etmän dolandyrjakdygyny ýa-da nobata garaşýandygyny saýlaň",

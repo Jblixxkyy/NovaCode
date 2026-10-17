@@ -45,14 +45,14 @@ stdenvNoCC.mkDerivation (finalAttrs: {
   '';
 
   env.MODELS_DEV_API_JSON = "${models-dev}/dist/_api.json";
-  env.OPENCODE_DISABLE_MODELS_FETCH = true;
-  env.OPENCODE_VERSION = finalAttrs.version;
-  env.OPENCODE_CHANNEL = "prod";
+  env.NOVACODE_DISABLE_MODELS_FETCH = true;
+  env.NOVACODE_VERSION = finalAttrs.version;
+  env.NOVACODE_CHANNEL = "prod";
 
   buildPhase = ''
     runHook preBuild
 
-    cd ./packages/opencode
+    cd ./packages/novacode
     bun --bun ./script/build.ts --single --skip-install
     bun --bun ./script/schema.ts schema.json
 
@@ -91,7 +91,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     writableTmpDirAsHomeHook
   ];
   doInstallCheck = true;
-  versionCheckKeepEnvironment = [ "HOME" "OPENCODE_DISABLE_MODELS_FETCH" ];
+  versionCheckKeepEnvironment = [ "HOME" "NOVACODE_DISABLE_MODELS_FETCH" ];
   versionCheckProgramArg = "--version";
 
   passthru = {

@@ -57,9 +57,9 @@ Desktop uygulamasi acilista cokuyorsa, takiliyorsa veya garip davranislar goster
 
 Global config dosyanizi acin ve `plugin` anahtarini arayin.
 
-- **macOS/Linux**: `~/.config/opencode/opencode.jsonc` (veya `~/.config/opencode/opencode.json`)
-- **macOS/Linux** (eski kurulumlar): `~/.local/share/opencode/opencode.jsonc`
-- **Windows**: `WIN+R` tuslayip `%USERPROFILE%\.config\opencode\opencode.jsonc` yapistirin
+- **macOS/Linux**: `~/.config/opencode/novacode.jsonc` (veya `~/.config/opencode/novacode.json`)
+- **macOS/Linux** (eski kurulumlar): `~/.local/share/opencode/novacode.jsonc`
+- **Windows**: `WIN+R` tuslayip `%USERPROFILE%\.config\opencode\novacode.jsonc` yapistirin
 
 Plugin tanimliysa anahtari kaldirarak veya bos bir diziye cekerek gecici olarak devre disi birakin:
 
@@ -111,13 +111,13 @@ Ana ekranda sunucu adina (durum noktali) tiklayarak Server secicisini acin. **De
 
 #### Config'ten `server.port` / `server.hostname` kaldirin
 
-`opencode.json(c)` dosyanizda `server` bolumu varsa gecici olarak kaldirin ve desktop uygulamasini yeniden baslatin.
+`novacode.json(c)` dosyanizda `server` bolumu varsa gecici olarak kaldirin ve desktop uygulamasini yeniden baslatin.
 
 #### Ortam degiskenlerini kontrol edin
 
-Ortamda `OPENCODE_PORT` ayarliysa desktop uygulamasi yerel sunucu icin o portu kullanmaya calisir.
+Ortamda `NOVACODE_PORT` ayarliysa desktop uygulamasi yerel sunucu icin o portu kullanmaya calisir.
 
-- `OPENCODE_PORT` degerini kaldirin (veya bos bir port secin) ve yeniden baslatin
+- `NOVACODE_PORT` degerini kaldirin (veya bos bir port secin) ve yeniden baslatin
 
 ---
 

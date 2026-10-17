@@ -1,9 +1,9 @@
 import { createMemo, createSignal, For, Show } from "solid-js"
 import { useNavigate } from "@solidjs/router"
 import { DateTime } from "luxon"
-import { Icon as IconV2 } from "@opencode-ai/ui/v2/icon"
-import { IconButtonV2 } from "@opencode-ai/ui/v2/icon-button-v2"
-import { TooltipV2 } from "@opencode-ai/ui/v2/tooltip-v2"
+import { Icon as IconV2 } from "@novacode-ai/ui/v2/icon"
+import { IconButtonV2 } from "@novacode-ai/ui/v2/icon-button-v2"
+import { TooltipV2 } from "@novacode-ai/ui/v2/tooltip-v2"
 import { useLanguage } from "@/context/language"
 import { useSync } from "@/context/sync"
 import { useSessionLayout } from "@/pages/session/session-layout"
@@ -128,7 +128,7 @@ export function MemorySolarSystemDialog(props: { onClose: () => void; onSelect?:
       return parts.some((p) => (p as Record<string, unknown>).type === "compaction")
     })
     const sessionNodes: MessageNodeLike[] = sessionMessages
-      .filter((m) => m.role === "user")
+      .filter((m) => "role" in m && m.role === "user")
       .slice(-6)
       .map((m) => m as unknown as MessageNodeLike)
     // fallback: if no compaction, use next older messages

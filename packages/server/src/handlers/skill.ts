@@ -1,12 +1,12 @@
 import path from "path"
-import { Global } from "@opencode-ai/core/global"
-import { SkillV2 } from "@opencode-ai/core/skill"
-import { FSUtil } from "@opencode-ai/core/fs-util"
-import { Location } from "@opencode-ai/core/location"
-import { AbsolutePath } from "@opencode-ai/core/schema"
+import { Global } from "@novacode-ai/core/global"
+import { SkillV2 } from "@novacode-ai/core/skill"
+import { FSUtil } from "@novacode-ai/core/fs-util"
+import { Location } from "@novacode-ai/core/location"
+import { AbsolutePath } from "@novacode-ai/core/schema"
 import { Effect } from "effect"
 import { HttpApiBuilder, HttpApiSchema } from "effect/unstable/httpapi"
-import { InvalidRequestError } from "@opencode-ai/protocol/errors"
+import { InvalidRequestError } from "@novacode-ai/protocol/errors"
 import { Api } from "../api"
 import { response } from "../location"
 
@@ -45,7 +45,7 @@ export const SkillHandler = HttpApiBuilder.group(Api, "server.skill", (handlers)
 
         // determine target directory
         const targetDir = location.directory
-          ? path.join(location.directory, ".opencode", "skills", name)
+          ? path.join(location.directory, ".novacode", "skills", name)
           : path.join(global.config, "skills", name)
         const targetFile = path.join(targetDir, "SKILL.md")
 

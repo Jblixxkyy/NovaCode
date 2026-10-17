@@ -57,9 +57,9 @@ Si la aplicación de escritorio falla al iniciarse, se bloquea o se comporta de 
 
 Abra su archivo de configuración global y busque una clave `plugin`.
 
-- **macOS/Linux**: `~/.config/opencode/opencode.jsonc` (o `~/.config/opencode/opencode.json`)
-- **macOS/Linux** (instalaciones anteriores): `~/.local/share/opencode/opencode.jsonc`
-- **Windows**: Presione `WIN+R` y pegue `%USERPROFILE%\.config\opencode\opencode.jsonc`
+- **macOS/Linux**: `~/.config/opencode/novacode.jsonc` (o `~/.config/opencode/novacode.json`)
+- **macOS/Linux** (instalaciones anteriores): `~/.local/share/opencode/novacode.jsonc`
+- **Windows**: Presione `WIN+R` y pegue `%USERPROFILE%\.config\opencode\novacode.jsonc`
 
 Si tiene complementos configurados, desactívelos temporalmente eliminando la clave o configurándola en una matriz vacía:
 
@@ -111,13 +111,13 @@ Desde la pantalla de inicio, haga clic en el nombre del servidor (con el punto d
 
 #### Elimina `server.port` / `server.hostname` de tu configuración
 
-Si su `opencode.json(c)` contiene una sección `server`, elimínela temporalmente y reinicie la aplicación de escritorio.
+Si su `novacode.json(c)` contiene una sección `server`, elimínela temporalmente y reinicie la aplicación de escritorio.
 
 #### Verificar variables de entorno
 
-Si tiene `OPENCODE_PORT` configurado en su entorno, la aplicación de escritorio intentará usar ese puerto para el servidor local.
+Si tiene `NOVACODE_PORT` configurado en su entorno, la aplicación de escritorio intentará usar ese puerto para el servidor local.
 
-- Desarme `OPENCODE_PORT` (o elija un puerto libre) y reinicie.
+- Desarme `NOVACODE_PORT` (o elija un puerto libre) y reinicie.
 
 ---
 

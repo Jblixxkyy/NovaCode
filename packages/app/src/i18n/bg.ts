@@ -195,8 +195,8 @@ export const dict = {
   "dialog.provider.group.other": "други",
   "dialog.provider.custom.label": "Персонализиран OpenAI-съвместим доставчик",
   "dialog.provider.tag.recommended": "Препоръчва се",
-  "dialog.provider.opencode.note": "Подбрани модели, включително Claude, GPT, Gemini и други",
-  "dialog.provider.opencode.tagline": "Надеждни оптимизирани модели",
+  "dialog.provider.novacode.note": "Подбрани модели, включително Claude, GPT, Gemini и други",
+  "dialog.provider.novacode.tagline": "Надеждни оптимизирани модели",
   "dialog.provider.opencodeGo.tagline": "Абонамент на ниска цена за всеки",
   "dialog.provider.anthropic.note": "Директен достъп до Claude модели, включително Pro и Max",
   "dialog.provider.copilot.note": "AI модели за помощ при кодиране чрез GitHub Copilot",
@@ -451,7 +451,7 @@ export const dict = {
   "wsl.server.retryStart": "Повторен старт",
   "wsl.server.updating": "Актуализиране...",
   "wsl.onboarding.step.distro": "Изберете дистрибуция",
-  "wsl.onboarding.step.opencode": "NovaCode",
+  "wsl.onboarding.step.novacode": "NovaCode",
   "wsl.onboarding.checkingRuntime": "Проверява се WSL...",
   "wsl.onboarding.restartRequired": "Windows се нуждае от рестартиране, за да завърши инсталирането на WSL.",
   "wsl.onboarding.ready": "WSL е готов.",
@@ -952,6 +952,8 @@ export const dict = {
 
   "settings.general.row.uiFont.title": "UI шрифт",
   "settings.general.row.uiFont.description": "Персонализирайте шрифта, използван в целия интерфейс",
+  "settings.general.row.toolTitleColor.title": "Цвят на заглавието на инструмента",
+  "settings.general.row.toolTitleColor.description": "Персонализирайте цвета на заглавията на инструментите в сесиите",
   "settings.general.row.followup.title": "Последващо поведение",
   "settings.general.row.followup.description":
     "Изберете дали последващите подкани да се управляват незабавно или да чакат на опашка",

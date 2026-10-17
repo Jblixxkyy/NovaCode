@@ -98,7 +98,7 @@ describe("persist localStorage resilience", () => {
   })
 
   test("failing fallback scope does not poison direct storage scope", () => {
-    const broken = persistTesting.localStorageWithPrefix("opencode.throw.scope2")
+    const broken = persistTesting.localStorageWithPrefix("novacode.throw.scope2")
     broken.setItem("value", '{"value":1}')
 
     const direct = persistTesting.localStorageDirect()
@@ -120,52 +120,10 @@ describe("persist localStorage resilience", () => {
     expect(/[:\\/]/.test(result)).toBeFalse()
   })
 
-  test("workspace target keeps raw path storage as legacy fallback", () => {
+  test("workspace target uses normalized path storage", () => {
     const target = Persist.workspace("C:\\Users\\foo", "vcs")
 
     expect(target.storage).toBe(persistTesting.workspaceStorage("C:/Users/foo"))
-    expect(target.legacyStorageNames).toContain(persistTesting.workspaceStorage("C:\\Users\\foo"))
-    expect(target.legacyStorageNames?.some((name) => name.startsWith("opencode.workspace."))).toBe(true)
-  })
-
-  test("workspace target keeps backslash storage as fallback for normalized Windows paths", () => {
-    const target = Persist.workspace("C:/Users/foo", "vcs")
-
-    expect(target.storage).toBe(persistTesting.workspaceStorage("C:/Users/foo"))
-    expect(target.legacyStorageNames).toContain(persistTesting.workspaceStorage("C:\\Users\\foo"))
-    expect(target.legacyStorageNames?.some((name) => name.startsWith("opencode.workspace."))).toBe(true)
-  })
-
-  test("migrates direct legacy keys into scoped storage", () => {
-    storage.setItem("legacy.workspace", '{"value":2}')
-    const target = Persist.workspace("C:/Users/foo", "demo", ["legacy.workspace"])
-    const current = persistTesting.localStorageWithPrefix(target.storage!)
-    const legacyStore = persistTesting.localStorageDirect()
-
-    const result = persistTesting.migrateLegacy({
-      current,
-      legacyStore,
-      stores: [],
-      keys: target.legacy!,
-      key: target.key,
-      defaults: { value: 1 },
-    })
-
-    expect(result).toBe('{"value":2}')
-    expect(storage.getItem(`${target.storage}:${target.key}`)).toBe('{"value":2}')
-    expect(legacyStore.getItem("legacy.workspace")).toBeNull()
-    expect(storage.getItem("legacy.workspace")).toBeNull()
-  })
-
-  test("removes legacy workspace storage when removing persisted target", () => {
-    const target = Persist.workspace("C:\\Users\\foo", "terminal")
-    storage.setItem(`${target.storage}:${target.key}`, '{"value":1}')
-    storage.setItem(`${target.legacyStorageNames![0]}:${target.key}`, '{"value":2}')
-
-    removePersisted(target)
-
-    expect(storage.getItem(`${target.storage}:${target.key}`)).toBeNull()
-    expect(storage.getItem(`${target.legacyStorageNames![0]}:${target.key}`)).toBeNull()
   })
 
   test("draft target isolates storage per draft and namespaces keys", () => {
@@ -186,10 +144,9 @@ describe("persist localStorage resilience", () => {
     expect(storage.getItem(`${target.storage}:${target.key}`)).toBeNull()
   })
 
-  test("local workspace keeps OpenCode storage as a rebrand fallback", () => {
+  test("local workspace storage uses the novacode prefix", () => {
     const target = Persist.workspace("/home/luke/repo", "prompt")
     expect(target.storage).toStartWith("novacode.workspace.")
-    expect(target.legacyStorageNames?.some((name) => name.startsWith("opencode.workspace."))).toBe(true)
   })
 
   test("server workspace target preserves local storage and isolates remote storage", () => {
@@ -201,8 +158,6 @@ describe("persist localStorage resilience", () => {
     expect(windows.storage).not.toBe(local.storage)
     expect(debian.storage).not.toBe(local.storage)
     expect(debian.storage).not.toBe(windows.storage)
-    expect(windows.legacyStorageNames).toBeUndefined()
-    expect(debian.legacyStorageNames).toBeUndefined()
   })
 
   test("server global target preserves local key and isolates remote keys", () => {

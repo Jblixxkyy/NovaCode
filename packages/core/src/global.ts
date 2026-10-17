@@ -4,11 +4,11 @@ import { xdgData, xdgCache, xdgConfig, xdgState } from "xdg-basedir"
 import os from "os"
 import { Context, Effect, Layer } from "effect"
 import { Flock } from "./util/flock"
-import { Flag, truthy } from "./flag/flag"
+import { Flag } from "./flag/flag"
 import { makeGlobalNode } from "./effect/app-node"
-import { APP_NAME, LEGACY_APP_NAME, migrateLegacyAppDirs, shouldMigrateLegacyApp } from "./global-migrate"
+import { APP_NAME } from "./identity"
 
-export { APP_NAME, LEGACY_APP_NAME }
+export { APP_NAME }
 
 const app = APP_NAME
 const data = path.join(xdgData!, app)
@@ -17,27 +17,9 @@ const config = path.join(xdgConfig!, app)
 const state = path.join(xdgState!, app)
 const tmp = path.join(os.tmpdir(), app)
 
-if (
-  shouldMigrateLegacyApp({
-    db: process.env["NOVACODE_DB"] ?? process.env["OPENCODE_DB"],
-    testHome: process.env["NOVACODE_TEST_HOME"] ?? process.env["OPENCODE_TEST_HOME"],
-    skip: truthy("NOVACODE_SKIP_LEGACY_MIGRATE"),
-  })
-) {
-  migrateLegacyAppDirs({
-    from: {
-      data: path.join(xdgData!, LEGACY_APP_NAME),
-      config: path.join(xdgConfig!, LEGACY_APP_NAME),
-      cache: path.join(xdgCache!, LEGACY_APP_NAME),
-      state: path.join(xdgState!, LEGACY_APP_NAME),
-    },
-    to: { data, config, cache, state },
-  })
-}
-
 const paths = {
   get home() {
-    return process.env.NOVACODE_TEST_HOME ?? process.env.OPENCODE_TEST_HOME ?? os.homedir()
+    return process.env.NOVACODE_TEST_HOME ?? os.homedir()
   },
   data,
   bin: path.join(cache, "bin"),
@@ -63,7 +45,7 @@ await Promise.all([
   fs.mkdir(Path.repos, { recursive: true }),
 ])
 
-export class Service extends Context.Service<Service, Interface>()("@opencode/Global") {}
+export class Service extends Context.Service<Service, Interface>()("@novacode/Global") {}
 
 export interface Interface {
   readonly home: string
@@ -82,7 +64,7 @@ export function make(input: Partial<Interface> = {}): Interface {
     home: Path.home,
     data: Path.data,
     cache: Path.cache,
-    config: Flag.OPENCODE_CONFIG_DIR ?? Path.config,
+    config: Flag.NOVACODE_CONFIG_DIR ?? Path.config,
     state: Path.state,
     tmp: Path.tmp,
     bin: Path.bin,

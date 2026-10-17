@@ -30,34 +30,34 @@ import {
   Todo,
   QuestionAnswer,
   QuestionInfo,
-} from "@opencode-ai/sdk/v2"
+} from "@novacode-ai/sdk/v2"
 import { useData } from "../context"
-import { useFileComponent } from "@opencode-ai/ui/context/file"
-import { useDialog } from "@opencode-ai/ui/context/dialog"
-import { type UiI18n, useI18n } from "@opencode-ai/ui/context/i18n"
+import { useFileComponent } from "@novacode-ai/ui/context/file"
+import { useDialog } from "@novacode-ai/ui/context/dialog"
+import { type UiI18n, useI18n } from "@novacode-ai/ui/context/i18n"
 import { BasicTool, GenericTool } from "./basic-tool"
-import { Accordion } from "@opencode-ai/ui/accordion"
-import { StickyAccordionHeader } from "@opencode-ai/ui/sticky-accordion-header"
-import { Collapsible } from "@opencode-ai/ui/collapsible"
-import { FileIcon } from "@opencode-ai/ui/file-icon"
-import { Icon } from "@opencode-ai/ui/icon"
+import { Accordion } from "@novacode-ai/ui/accordion"
+import { StickyAccordionHeader } from "@novacode-ai/ui/sticky-accordion-header"
+import { Collapsible } from "@novacode-ai/ui/collapsible"
+import { FileIcon } from "@novacode-ai/ui/file-icon"
+import { Icon } from "@novacode-ai/ui/icon"
 import { ToolErrorCard } from "./tool-error-card"
-import { Checkbox } from "@opencode-ai/ui/checkbox"
-import { DiffChanges } from "@opencode-ai/ui/diff-changes"
+import { Checkbox } from "@novacode-ai/ui/checkbox"
+import { DiffChanges } from "@novacode-ai/ui/diff-changes"
 import { Markdown } from "./markdown"
-import { ImagePreview } from "@opencode-ai/ui/image-preview"
-import { getDirectory as _getDirectory, getFilename } from "@opencode-ai/core/util/path"
+import { ImagePreview } from "@novacode-ai/ui/image-preview"
+import { getDirectory as _getDirectory, getFilename } from "@novacode-ai/core/util/path"
 import { AttachmentCardV2 } from "../v2/components/attachment-card-v2"
 import { CommentCardV2 } from "../v2/components/comment-card-v2"
-import { checksum } from "@opencode-ai/core/util/encode"
-import { Tooltip } from "@opencode-ai/ui/tooltip"
-import { IconButton } from "@opencode-ai/ui/icon-button"
-import { Icon as IconV2 } from "@opencode-ai/ui/v2/icon"
-import { IconButtonV2 } from "@opencode-ai/ui/v2/icon-button-v2"
-import { ButtonV2 } from "@opencode-ai/ui/v2/button-v2"
-import { TooltipV2 } from "@opencode-ai/ui/v2/tooltip-v2"
-import { Spinner } from "@opencode-ai/ui/spinner"
-import { TextShimmer } from "@opencode-ai/ui/text-shimmer"
+import { checksum } from "@novacode-ai/core/util/encode"
+import { Tooltip } from "@novacode-ai/ui/tooltip"
+import { IconButton } from "@novacode-ai/ui/icon-button"
+import { Icon as IconV2 } from "@novacode-ai/ui/v2/icon"
+import { IconButtonV2 } from "@novacode-ai/ui/v2/icon-button-v2"
+import { ButtonV2 } from "@novacode-ai/ui/v2/button-v2"
+import { TooltipV2 } from "@novacode-ai/ui/v2/tooltip-v2"
+import { Spinner } from "@novacode-ai/ui/spinner"
+import { TextShimmer } from "@novacode-ai/ui/text-shimmer"
 import { AnimatedCountList } from "./tool-count-summary"
 import { ToolStatusTitle } from "./tool-status-title"
 import { patchFiles } from "./apply-patch-file"
@@ -364,7 +364,7 @@ function getDirectory(path: string | undefined) {
   return relativizeProjectPath(_getDirectory(path), data.directory)
 }
 
-import type { IconProps } from "@opencode-ai/ui/icon"
+import type { IconProps } from "@novacode-ai/ui/icon"
 import { normalize, resolveFileDiff } from "./session-diff"
 
 export type ToolInfo = {
@@ -1119,7 +1119,8 @@ export function ContextToolGroup(props: {
         <div data-component="context-tool-group-trigger">
           <span
             data-slot="context-tool-group-title"
-            class="min-w-0 flex items-center gap-2 text-14-medium text-text-strong"
+            class="min-w-0 flex items-center gap-2 text-14-medium"
+            style={{ color: "var(--tool-title-color, #00ff41)" }}
           >
             <span data-slot="context-tool-group-label" class="shrink-0">
               <ToolStatusTitle

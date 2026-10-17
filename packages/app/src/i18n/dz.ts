@@ -195,8 +195,8 @@ export const dict: Record<string, string> = {
   "dialog.provider.group.other": "གཞན",
   "dialog.provider.custom.label": "སྲོལ་སྒྲིག OpenAI-མཐུན་འགྱུར་སྤྲོད་མཁན།",
   "dialog.provider.tag.recommended": "རྒྱབ་སྣོན་འབད་ཡི",
-  "dialog.provider.opencode.note": "Claude དང་ GPT དེ་ལས་ Gemini དང་དེ་ལས་ལྷག་སྟེ་ བཀོད་སྒྲིག་འབད་ཡོད་པའི་དཔེ་ཚད།",
-  "dialog.provider.opencode.tagline": "བློ་གཏད་ཅན་གྱི་ཡར་རྒྱས་ཅན་གྱི་དཔེ་ཚད་ཚུ།",
+  "dialog.provider.novacode.note": "Claude དང་ GPT དེ་ལས་ Gemini དང་དེ་ལས་ལྷག་སྟེ་ བཀོད་སྒྲིག་འབད་ཡོད་པའི་དཔེ་ཚད།",
+  "dialog.provider.novacode.tagline": "བློ་གཏད་ཅན་གྱི་ཡར་རྒྱས་ཅན་གྱི་དཔེ་ཚད་ཚུ།",
   "dialog.provider.opencodeGo.tagline": "མི་ཚང་མའི་དོན་ལུ་ གོང་ཚད་དམའ་བའི་ མཁོ་མངགས་འབད་ནི།",
   "dialog.provider.anthropic.note": "པྲོ་དང་མེགསི་ཚུ་རྩིས་ཏེ་ Claudeདཔེ་ཚད་ཚུ་ལུ་ཐད་ཀར་དུ་འཛུལ་སྤྱོད།",
   "dialog.provider.copilot.note": "GitHub Copilot བརྒྱུད་དེ་ ཀོ་ཌིང་གྲོགས་རམ་གྱི་དོན་ལུ་ AI དཔེ་ཚད།",
@@ -453,7 +453,7 @@ export const dict: Record<string, string> = {
   "wsl.server.retryStart": "འགོ་བཙུགས་བསྐྱར་འབད་འབད་རྩོལ་བསྐྱེད།",
   "wsl.server.updating": "དུས་མཐུན་བཟོ་དོ།",
   "wsl.onboarding.step.distro": "བཀྲམ་སྤེལ་གདམ་ཁ་རྐྱབས།",
-  "wsl.onboarding.step.opencode": "NovaCode",
+  "wsl.onboarding.step.novacode": "NovaCode",
   "wsl.onboarding.checkingRuntime": "ཞིབ་དཔྱད་འབད་དོ WSL...",
   "wsl.onboarding.restartRequired": "Windowsལུ་ WSLགཞི་བཙུགས་མཇུག་བསྡུ་ནིའི་དོན་ལུ་ ལོག་འགོ་བཙུགས་དགོཔ་ཨིན།",
   "wsl.onboarding.ready": "WSL གྲ་སྒྲིག་ཡོད།",
@@ -963,6 +963,8 @@ export const dict: Record<string, string> = {
 
   "settings.general.row.uiFont.title": "ཡུ་ཨའི་ཡིག་གཟུགས།",
   "settings.general.row.uiFont.description": "ངོས་འདྲ་བ་ཆ་མཉམ་ལུ་ལག་ལེན་འཐབ་ཡོད་པའི་ཡིག་གཟུགས་སྲོལ་སྒྲིག་འབད།",
+  "settings.general.row.toolTitleColor.title": "ལག་ཆའི་མགོ་མིང་གི་ཚོས་གཞི།",
+  "settings.general.row.toolTitleColor.description": "ལཱ་སྒྲིག་ནང་ལག་ཆའི་མགོ་མིང་གི་ཚོས་གཞི་སྲོལ་སྒྲིག་འབད།",
   "settings.general.row.followup.title": "རྗེས་སུ་འབྲངས་པའི་སྤྱོད་ལམ།",
   "settings.general.row.followup.description":
     "རྗེས་འཇུག་འབོད་བརྡ་ཚུ་ དེ་འཕྲོ་ལས་ སྒུལ་ནི་ཨིན་ན་ ཡང་ན་ གྱལ་ནང་བསྒུག་སྡོད་ནི་ཨིན་ན་ གདམ་ཁ་རྐྱབས།",
