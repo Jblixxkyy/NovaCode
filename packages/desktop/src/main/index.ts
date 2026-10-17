@@ -51,6 +51,7 @@ import { startBackgroundCli } from "./background-cli"
 import { setNativeTranslations } from "./native-translations"
 import { cleanupWebAppProcesses } from "./desktop-menu-actions"
 import { getStore } from "./store"
+import { parseAutoAccept, startPermissionAutoResponder } from "./permission-auto-responder"
 
 const APP_NAMES: Record<string, string> = {
   dev: "NovaCode Dev",
@@ -68,6 +69,24 @@ const jsCallStackFeature = "DocumentPolicyIncludeJSCallStacksInCrashReports"
 
 let logger: ReturnType<typeof initLogging>
 let server: SidecarListener | null = null
+let permissionAutoResponder: { stop: () => Promise<void> } | null = null
+
+const GLOBAL_STORAGE = "novacode.global.dat"
+
+// The renderer's permission auto accept depends on the sidecar event stream, which Chromium
+// throttles once the window is hidden or occluded. The main process owns the same persisted
+// store the renderer writes through IPC, so it answers auto-accepted asks regardless of
+// renderer visibility. The renderer keeps its own logic for visible windows; duplicate replies
+// are ignored by the server.
+function startPermissionAutoAccept(url: string, password: string) {
+  permissionAutoResponder = startPermissionAutoResponder({
+    url,
+    username: "novacode",
+    password,
+    readAutoAccept: () => parseAutoAccept(getStore(GLOBAL_STORAGE).get("permission")),
+    log: (message, meta) => writeLog("permission", message, meta),
+  })
+}
 
 const pendingDeepLinks: string[] = []
 
@@ -135,6 +154,9 @@ function removeDesktopDiscovery() {
 
 async function killSidecar() {
   removeDesktopDiscovery()
+  const responder = permissionAutoResponder
+  permissionAutoResponder = null
+  await responder?.stop()
   if (!server) return
   const current = server
   server = null
@@ -439,6 +461,7 @@ const main = Effect.gen(function* () {
       }),
     )
     server = listener
+    startPermissionAutoAccept(url, password)
     yield* Deferred.succeed(serverReady, {
       url,
       username: "novacode",

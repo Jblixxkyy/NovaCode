@@ -698,7 +698,7 @@ body:not([data-new-layout])
   [data-slot="message-part-title-text"] {
     flex-shrink: 0;
     text-transform: capitalize;
-    color: var(--v2-text-text-base);
+    color: var(--tool-title-color, #00ff41);
   }
 
   [data-slot="message-part-title-filename"] {
@@ -1725,7 +1725,10 @@ body:not([data-new-layout]) {
       color: var(--text-weak);
     }
 
-    [data-slot="message-part-title-text"],
+    [data-slot="message-part-title-text"] {
+      color: var(--tool-title-color, #00ff41);
+    }
+
     [data-slot="message-part-filename"] {
       color: var(--text-strong);
     }

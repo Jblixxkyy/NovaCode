@@ -503,6 +503,34 @@ export const SettingsGeneral: Component = () => {
         </SettingsRow>
 
         <SettingsRow
+          title={language.t("settings.general.row.toolTitleColor.title")}
+          description={language.t("settings.general.row.toolTitleColor.description")}
+        >
+          <div class="flex items-center gap-2" data-action="settings-tool-title-color">
+            <input
+              type="color"
+              aria-label={language.t("settings.general.row.toolTitleColor.title")}
+              value={settings.appearance.toolTitleColor() || "#00ff41"}
+              onInput={(event) => settings.appearance.setToolTitleColor(event.currentTarget.value)}
+              style={{
+                width: "44px",
+                height: "28px",
+                padding: "2px",
+                border: "0.5px solid var(--border-weak-base)",
+                "border-radius": "6px",
+                "background-color": "transparent",
+                cursor: "pointer",
+              }}
+            />
+            <Show when={settings.appearance.toolTitleColor()}>
+              <Button size="small" variant="ghost" onClick={() => settings.appearance.setToolTitleColor("")}>
+                {language.t("common.reset")}
+              </Button>
+            </Show>
+          </div>
+        </SettingsRow>
+
+        <SettingsRow
           title={language.t("settings.general.row.uiFont.title")}
           description={language.t("settings.general.row.uiFont.description")}
         >

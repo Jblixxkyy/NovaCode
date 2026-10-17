@@ -35,7 +35,7 @@ import { useEvent } from "./context/event"
 import { SDKProvider, useSDK } from "./context/sdk"
 import { StartupLoading } from "./component/startup-loading"
 import { SyncProvider, useSync } from "./context/sync"
-import { DataProvider } from "./context/data"
+import { DataProvider, useData } from "./context/data"
 import { LocationProvider } from "./context/location"
 import { LocalProvider, useLocal } from "./context/local"
 import { PermissionProvider } from "./context/permission"
@@ -378,6 +378,7 @@ function App(props: { onSnapshot?: () => Promise<string[]>; pluginHost: TuiPlugi
   const themeState = useTheme()
   const { theme, mode, setMode, locked, lock, unlock } = themeState
   const sync = useSync()
+  const data = useData()
   const project = useProject()
   const exit = useExit()
   const promptRef = usePromptRef()
@@ -539,7 +540,10 @@ function App(props: { onSnapshot?: () => Promise<string[]>; pluginHost: TuiPlugi
 
   createEffect(
     on(
-      () => sync.status === "complete" && sync.data.provider.length === 0,
+      () => {
+        const integrations = data.location.integration.list()
+        return integrations !== undefined && integrations.length > 0 && !integrations.some((x) => x.connections.length > 0)
+      },
       (isEmpty, wasEmpty) => {
         // only trigger when we transition into an empty-provider state
         if (!isEmpty || wasEmpty) return
