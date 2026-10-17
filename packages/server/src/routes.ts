@@ -3,6 +3,8 @@ import { LayerNode } from "@novacode-ai/core/effect/layer-node"
 import { httpClient } from "@novacode-ai/core/effect/app-node-platform"
 import { AppNodeBuilder } from "@novacode-ai/core/effect/app-node-builder"
 import { EventV2 } from "@novacode-ai/core/event"
+import { FSUtil } from "@novacode-ai/core/fs-util"
+import { Global } from "@novacode-ai/core/global"
 import { Credential } from "@novacode-ai/core/credential"
 import { PermissionSaved } from "@novacode-ai/core/permission/saved"
 import { PtyTicket } from "@novacode-ai/core/pty/ticket"
@@ -26,6 +28,8 @@ import { sessionLocationLayer } from "./middleware/session-location"
 const applicationServices = LayerNode.group([
   Database.node,
   EventV2.node,
+  FSUtil.node,
+  Global.node,
   httpClient,
   ToolOutputStore.cleanupNode,
   SessionV2.node,

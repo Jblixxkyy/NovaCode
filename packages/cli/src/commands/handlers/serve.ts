@@ -2,6 +2,8 @@ import { NodeHttpServer } from "@effect/platform-node"
 import { Credential } from "@novacode-ai/core/credential"
 import { AppNodeBuilder } from "@novacode-ai/core/effect/app-node-builder"
 import { LayerNode } from "@novacode-ai/core/effect/layer-node"
+import { FSUtil } from "@novacode-ai/core/fs-util"
+import { Global } from "@novacode-ai/core/global"
 import { PermissionSaved } from "@novacode-ai/core/permission/saved"
 import { Context, Layer, Option } from "effect"
 import * as Effect from "effect/Effect"
@@ -42,5 +44,8 @@ function bind(hostname: string, port: number, password: string) {
       Layer.provideMerge(NodeHttpServer.layer(() => createServer(), { port, host: hostname })),
       Layer.provide(AppNodeBuilder.build(LayerNode.group([Credential.node, PermissionSaved.node]))),
     ),
-  ).pipe(Effect.map((context) => Context.get(context, HttpServer.HttpServer).address))
+  )
+    .pipe(Effect.provide(AppNodeBuilder.build(Global.node)))
+    .pipe(Effect.provide(AppNodeBuilder.build(FSUtil.node)))
+    .pipe(Effect.map((context) => Context.get(context, HttpServer.HttpServer).address))
 }
