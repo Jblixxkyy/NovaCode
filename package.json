@@ -137,6 +137,7 @@
     "electron"
   ],
   "overrides": {
+    "@ai-sdk/provider-utils": "4.0.59",
     "@opentui/core": "catalog:",
     "@opentui/keymap": "catalog:",
     "@opentui/solid": "catalog:",
