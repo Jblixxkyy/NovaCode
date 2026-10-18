@@ -81,9 +81,36 @@ jobs:
           NOVACODE_CHANNEL: prod
           NODE_OPTIONS: --max-old-space-size=4096
 
-      - name: Package & Publish Windows
+      - name: Package Windows
         working-directory: packages/desktop
-        run: npx electron-builder --win --config electron-builder.config.ts --publish always
+        run: npx electron-builder --win --config electron-builder.config.ts --publish never
         env:
           NOVACODE_CHANNEL: prod
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub Release
+        working-directory: packages/desktop
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $ver = $env:VERSION
+          if (-not $ver) { $ver = (Get-Content package.json | ConvertFrom-Json).version }
+          Write-Host "Creating release v$ver"
+          gh release create "v$ver" --title "v$ver" --generate-notes --repo Jblixxkyy/NovaCode dist/novacode-desktop-win-x64.exe dist/novacode-desktop-win-x64.exe.blockmap
+
+      - name: Upload latest.yml
+        working-directory: packages/desktop
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $ver = $env:VERSION
+          if (-not $ver) { $ver = (Get-Content package.json | ConvertFrom-Json).version }
+          $tag = "v$ver"
+          $base = "https://github.com/Jblixxkyy/NovaCode/releases/download/$tag"
+          $yml = Get-Content dist/latest.yml -Raw
+          $yml = $yml -replace 'url: novacode-desktop-win-x64\.exe\.blockmap', "url: $base/novacode-desktop-win-x64.exe.blockmap"
+          $yml = $yml -replace 'url: novacode-desktop-win-x64\.exe', "url: $base/novacode-desktop-win-x64.exe"
+          [System.IO.File]::WriteAllText("$PWD/latest.yml", $yml)
+          gh release upload $tag latest.yml --clobber --repo Jblixxkyy/NovaCode
