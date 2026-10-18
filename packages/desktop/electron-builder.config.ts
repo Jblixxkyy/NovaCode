@@ -149,10 +149,11 @@ function getConfig() {
         appId,
         productName: "NovaCode",
         protocols: { name: "NovaCode", schemes: ["novacode"] },
-        publish: { provider: "github", owner: "Jblixxkyy", repo: "NovaCode", channel: "latest" },
+        publish: { provider: "github", owner: "Jblixxkyy", repo: "NovaCode", channel: "latest", releaseType: "release" },
         deb: { fpm: [metainfoFpm(appId), legacyDesktopEntryFpm] },
-        rpm: { packageName: "novacode", fpm: [metainfoFpm(appId), legacyDesktopEntryFpm] },
+        rpm: { packageName: "novacode", fpm: [metainfoFpm(appId)] },
       }
+    }
     }
   }
 }
