@@ -30,23 +30,33 @@ const CHANNEL = await (async () => {
 })()
 const IS_PREVIEW = CHANNEL !== "latest"
 
+// Always resolve a real semver. Upstream's free tier gates on the version in the
+// request user-agent, so a 0.0.0-<channel> placeholder blocks every model call.
+// Prefer the desktop version so the engine reports the same number users see in
+// the installed app; the root version is only a fallback.
+const baseVersion = await (async () => {
+  const candidates = [
+    (await Bun.file(path.resolve(import.meta.dir, "../../../packages/desktop/package.json"))
+      .json()
+      .then((pkg) => pkg.version)
+      .catch(() => undefined)),
+    rootPkg.version,
+  ]
+  for (const candidate of candidates) {
+    const value = String(candidate ?? "")
+    if (value && value !== "0.0.0") return value
+  }
+  return "0.0.0"
+})()
+
 const VERSION = await (async () => {
   if (env.NOVACODE_VERSION) return env.NOVACODE_VERSION
-  if (IS_PREVIEW) return `0.0.0-${CHANNEL}-${new Date().toISOString().slice(0, 16).replace(/[-:T]/g, "")}`
-  let current = String(rootPkg.version ?? "")
-  if (!current || current === "0.0.0") {
-    try {
-      const desktopPkg = await Bun.file(path.resolve(import.meta.dir, "../../../packages/desktop/package.json")).json()
-      current = String(desktopPkg.version ?? "0.0.0")
-    } catch {
-      current = "0.0.0"
-    }
-  }
-  const [major, minor, patch] = current.split(".").map((x: string) => Number(x) || 0)
+  const [major, minor, patch] = baseVersion.split(".").map((x: string) => Number(x) || 0)
   const t = env.NOVACODE_BUMP?.toLowerCase()
   if (t === "major") return `${major + 1}.0.0`
   if (t === "minor") return `${major}.${minor + 1}.0`
-  return `${major}.${minor}.${patch + 1}`
+  if (t) return `${major}.${minor}.${patch + 1}`
+  return baseVersion
 })()
 
 const bot = ["actions-user", "novacode", "novacode-agent[bot]"]

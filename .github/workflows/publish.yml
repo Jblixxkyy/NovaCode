@@ -79,6 +79,7 @@ jobs:
         run: bun run --cwd packages/desktop build
         env:
           NOVACODE_CHANNEL: prod
+          NOVACODE_VERSION: ${{ env.VERSION }}
           NODE_OPTIONS: --max-old-space-size=4096
 
       - name: Package Windows
@@ -86,6 +87,7 @@ jobs:
         run: npx electron-builder --win --config electron-builder.config.ts --publish never
         env:
           NOVACODE_CHANNEL: prod
+          NOVACODE_VERSION: ${{ env.VERSION }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create GitHub Release
