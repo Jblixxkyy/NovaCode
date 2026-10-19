@@ -47,8 +47,30 @@ faithfully replicates this layout.
 
 ## NovaCode in-app screenshots
 
-Not captured: the app's session page requires interactive project/session
-setup that couldn't be automated reliably in this environment. The panel
-component typechecks clean, the `/browser/*` API is verified working via
-curl (state/open/navigate/close), and the driver is covered by integration
-tests against real Chromium.
+Captured from the real NovaCode web app (branch `browser-port`): embedded
+web UI served by `novacode serve` on 127.0.0.1:4096, real session page,
+browser tab opened via "Toggle review" → "Browser". The server-side
+Playwright driver loaded a local demo page (external navigation is blocked
+in this sandbox, so `http://127.0.0.1:8899/` stands in for a real site).
+
+### 6. Session layout with browser tab open
+
+![NovaCode browser tab in session](novacode-panel-loaded.png)
+
+- Right panel shows Review + Browser tabs; Browser tab renders the tab strip
+  ("Example Domain"), the browser bar (back/forward/reload, address field
+  with host emphasized, inspect toggle, options menu), and the live page
+  capture below — matching OpenCode's layout in (1).
+
+### 7. Browser panel close-up
+
+![NovaCode browser panel close-up](novacode-panel-closeup.png)
+
+- Tab strip, h-11 browser bar, and live page capture fill the panel.
+
+### 8. Address bar focused
+
+![NovaCode address bar focused](novacode-panel-address.png)
+
+- Clicking the address field selects the full URL for editing, mirroring
+  OpenCode's behavior in (2).
