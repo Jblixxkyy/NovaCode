@@ -154,7 +154,6 @@ function getConfig() {
         rpm: { packageName: "novacode", fpm: [metainfoFpm(appId)] },
       }
     }
-    }
   }
 }
 
