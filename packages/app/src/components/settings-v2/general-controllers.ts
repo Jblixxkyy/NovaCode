@@ -58,7 +58,11 @@ export function createShellSettingsController() {
   const [shells] = createResource(
     async () => {
       const sdk = serverSdk()
-      if ((await sdk.protocol) === "v1") return (await sdk.client.pty.shells()).data ?? []
+      if ((await sdk.protocol) === "v1") {
+        const data = (await sdk.client.pty.shells()).data
+        // The SDK can hand back a non-list envelope on legacy/mismatched servers; a bad shape must never take down the whole settings page.
+        return Array.isArray(data) ? data : []
+      }
       return [] as ShellOption[]
     },
     { initialValue: [] as ShellOption[] },
