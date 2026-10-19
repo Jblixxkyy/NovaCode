@@ -710,12 +710,10 @@ export function groupParts(parts: { messageID: string; part: PartType }[]) {
     if (usedStart < 0) return
     const items = parts.slice(usedStart, end + 1)
     usedStart = -1
-    if (items.length <= 1) {
-      if (items[0]) result.push(singleton(items[0]))
-      return
-    }
+    const first = items[0]
+    if (!first) return
     result.push({
-      key: `used:${items[0]!.part.id}`,
+      key: `used:${first.part.id}`,
       type: "used",
       refs: items.map(partRef),
     })
