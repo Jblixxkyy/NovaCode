@@ -7,7 +7,6 @@ import { createHomeScrollController } from "./home/home-scroll-controller"
 import { createHomeSessionSearchController } from "./home/home-session-search-controller"
 import { createHomeSessionsController } from "./home/home-sessions-controller"
 import { HomeSessions } from "./home/home-sessions"
-import { useNavigate } from "@solidjs/router"
 
 export function NewHome() {
   const home = createHomeController()
@@ -15,7 +14,6 @@ export function NewHome() {
   const sessions = createHomeSessionsController(home)
   const search = createHomeSessionSearchController(home, sessions)
   const scroll = createHomeScrollController(sessions.data.groups)
-  const navigate = useNavigate()
   return (
     <div
       class={`
@@ -39,17 +37,6 @@ export function NewHome() {
         >
           <HomeProjects projects={projects} scroll={scroll} />
           <div class="flex flex-col gap-4 min-w-0">
-            <button
-              type="button"
-              onClick={() => navigate("/playground")}
-              class="flex items-center justify-between rounded-[10px] border border-v2-border-border-base bg-v2-background-bg-layer-02 px-3 py-2.5 text-left hover:bg-v2-background-bg-layer-03 transition-colors"
-            >
-              <span class="flex items-center gap-2 text-[13px] font-[600]">
-                <span class="text-[16px]">🕹️</span> Agent Playground
-                <span class="rounded-full bg-v2-background-bg-base px-1.5 py-0.5 text-[10px] font-[600] text-v2-text-text-muted">2D • NEW</span>
-              </span>
-              <span class="text-[11px] text-v2-text-text-muted">View little humans →</span>
-            </button>
             <HomeSessions sessions={sessions} search={search} scroll={scroll} />
           </div>
           <HomeUtilityNav

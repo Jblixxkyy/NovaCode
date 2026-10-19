@@ -31,10 +31,8 @@ import { IconButtonV2 } from "@novacode-ai/ui/v2/icon-button-v2"
 import { Icon as IconV2 } from "@novacode-ai/ui/v2/icon"
 import { KeybindV2 } from "@novacode-ai/ui/v2/keybind-v2"
 import { TooltipV2 } from "@novacode-ai/ui/v2/tooltip-v2"
-import { useDialog } from "@novacode-ai/ui/context/dialog"
 import { reviewTooltipKeybind } from "../command-tooltip-keybind"
 import { useTitlebarRightMount } from "../titlebar"
-import { MemorySolarSystemDialog } from "./memory-solar-system"
 
 const OPEN_APPS = [
   "vscode",
@@ -530,25 +528,9 @@ type SessionHeaderV2ActionsState = {
 
 function SessionHeaderV2Actions(props: { state: SessionHeaderV2ActionsState }) {
   const language = useLanguage()
-  const dialog = useDialog()
-
-  const openMemories = () => {
-    dialog.push(() => <MemorySolarSystemDialog onClose={() => dialog.close()} />)
-  }
 
   return (
     <div class="flex items-center gap-2">
-      <TooltipV2 placement="bottom" value={language.t("session.memory.title")}>
-        <IconButtonV2
-          type="button"
-          variant="ghost-muted"
-          size="large"
-          class="!w-9 shrink-0"
-          onClick={openMemories}
-          aria-label={language.t("session.memory.open")}
-          icon={<IconV2 name="branch" />}
-        />
-      </TooltipV2>
       <Show when={props.state.statusVisible}>
         <Tooltip placement="bottom" value={props.state.statusLabel}>
           <StatusPopoverV2 />

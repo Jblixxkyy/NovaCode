@@ -1205,14 +1205,4 @@ export const dict = {
   "workspace.reset.archived.one": "1 session will be archived.",
   "workspace.reset.archived.many": "{{count}} sessions will be archived.",
   "workspace.reset.note": "This will reset the workspace to match the default branch.",
-
-  "session.memory.title": "Memory Solar System",
-  "session.memory.subtitle": "Click the main view to explore memories",
-  "session.memory.open": "Open memories",
-  "session.memory.detailFallback": "Memory detail",
-  "session.memory.hint": "Hover a planet to see its beam · Click to inspect · Center is your active session",
-  "session.memory.hintShort": "Hover to highlight · Click to inspect",
-  "session.memory.speed": "Speed",
-  "session.memory.pause": "Pause",
-  "session.memory.play": "Play",
 }
