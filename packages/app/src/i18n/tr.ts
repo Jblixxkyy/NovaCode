@@ -942,6 +942,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "Arayüz genelinde kullanılan yazı tipini özelleştirin",
   "settings.general.row.toolTitleColor.title": "Araç başlığı rengi",
   "settings.general.row.toolTitleColor.description": "Oturumlardaki araç başlıklarının rengini özelleştir",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "Takip davranışı",
   "settings.general.row.followup.description":
     "Takip istemlerinin hemen yönlendirilmesini mi yoksa sırada beklemesini mi istediğinizi seçin",

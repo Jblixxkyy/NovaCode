@@ -85,6 +85,8 @@ export const dict: Record<string, string> = {
   "ui.sessionTurn.status.planning": "Merencanakan langkah selanjutnya",
   "ui.sessionTurn.status.gatheringContext": "Menjelajah",
   "ui.sessionTurn.status.gatheredContext": "Selesai menjelajah",
+  "ui.sessionTurn.status.usingTools": "Using",
+  "ui.sessionTurn.status.usedTools": "Used",
   "ui.sessionTurn.status.searchingCodebase": "Mencari di basis kode",
   "ui.sessionTurn.status.searchingWeb": "Mencari di web",
   "ui.sessionTurn.status.makingEdits": "Menyunting",

@@ -953,6 +953,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "Ҳарферо, ки дар тамоми интерфейс истифода мешавад, танзим кунед",
   "settings.general.row.toolTitleColor.title": "Ранги сарлавҳаи абзор",
   "settings.general.row.toolTitleColor.description": "Ранги сарлавҳаҳои абзорҳоро дар сессияҳо танзим кунед",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "Рафтори пайгирӣ",
   "settings.general.row.followup.description":
     "Интихоб кунед, ки паёмҳои пайгирӣ фавран идора мешаванд ё дар навбат интизор мешаванд",

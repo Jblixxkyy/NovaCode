@@ -868,6 +868,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "خصّص الخط المستخدم في الواجهة بأكملها",
   "settings.general.row.toolTitleColor.title": "لون عنوان الأداة",
   "settings.general.row.toolTitleColor.description": "خصّص لون عناوين الأدوات في الجلسات",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "سلوك المتابعة",
   "settings.general.row.followup.description": "اختر ما إذا كانت طلبات المتابعة توجه فورًا أو تنتظر في قائمة انتظار",
   "settings.general.row.followup.option.queue": "قائمة انتظار",

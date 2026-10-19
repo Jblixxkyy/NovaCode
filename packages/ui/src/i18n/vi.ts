@@ -79,6 +79,8 @@ export const dict: Record<string, string> = {
   "ui.sessionTurn.status.planning": "Lập kế hoạch các bước tiếp theo",
   "ui.sessionTurn.status.gatheringContext": "Khám phá",
   "ui.sessionTurn.status.gatheredContext": "Đã khám phá",
+  "ui.sessionTurn.status.usingTools": "Using",
+  "ui.sessionTurn.status.usedTools": "Used",
   "ui.sessionTurn.status.searchingCodebase": "Tìm kiếm cơ sở mã",
   "ui.sessionTurn.status.searchingWeb": "Tìm kiếm trên web",
   "ui.sessionTurn.status.makingEdits": "Thực hiện chỉnh sửa",

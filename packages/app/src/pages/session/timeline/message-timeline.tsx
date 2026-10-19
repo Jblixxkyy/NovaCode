@@ -25,6 +25,7 @@ import {
   MessageDivider,
   Part as MessagePart,
   partDefaultOpen,
+  UsedToolGroup,
   type UserActions,
 } from "@novacode-ai/session-ui/message-part"
 import { DiffChanges } from "@novacode-ai/ui/diff-changes"
@@ -990,6 +991,32 @@ export function MessageTimeline(props: {
           parts={parts()}
           open={open()}
           onOpenChange={(value) => setToolOpen(contextOpenKey(), value)}
+          busy={
+            workingTurn(row().userMessageID) && lastAssistantGroupKey().get(row().userMessageID) === row().group.key
+          }
+          onSizeChange={onSizeChange}
+        />
+      )
+    }
+
+    if (row().group.type === "used") {
+      const parts = createMemo(() => {
+        const group = row().group
+        if (group.type !== "used") return emptyTools
+        return group.refs
+          .map((ref) => getMsgPart(ref.messageID, ref.partID))
+          .filter((part): part is ToolPart => part?.type === "tool")
+      })
+      const usedOpenKey = () => `used:${row().group.key}`
+      const open = createMemo(() => {
+        return toolOpen[usedOpenKey()] === true
+      })
+
+      return (
+        <UsedToolGroup
+          parts={parts()}
+          open={open()}
+          onOpenChange={(value) => setToolOpen(usedOpenKey(), value)}
           busy={
             workingTurn(row().userMessageID) && lastAssistantGroupKey().get(row().userMessageID) === row().group.key
           }

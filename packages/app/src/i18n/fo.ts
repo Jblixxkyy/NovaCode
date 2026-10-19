@@ -947,6 +947,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "Tillaga skriftslagið, sum verður brúkt í øllum nýtsluflatanum",
   "settings.general.row.toolTitleColor.title": "Litur á tólheiti",
   "settings.general.row.toolTitleColor.description": "Tilpass litin á tólheitum í sesjum",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "Eftirfylgjandi atferð",
   "settings.general.row.followup.description": "Vel um eftirfylgjandi boðini stýra beinanvegin ella bíða í bíðirøð",
   "settings.general.row.followup.option.queue": "Bíðirøð",

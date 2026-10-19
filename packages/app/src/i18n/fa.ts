@@ -945,6 +945,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "فونت مورد استفاده در سراسر رابط را سفارشی کنید",
   "settings.general.row.toolTitleColor.title": "رنگ عنوان ابزار",
   "settings.general.row.toolTitleColor.description": "رنگ عناوین ابزارها را در جلسات سفارشی کنید",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "رفتار پیگیری",
   "settings.general.row.followup.description":
     "انتخاب کنید که آیا درخواست پیگیری فوراً هدایت می شود یا در یک صف منتظر می ماند",

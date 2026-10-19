@@ -794,6 +794,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "Tilpass skrifttypen som brukes i hele grensesnittet",
   "settings.general.row.toolTitleColor.title": "Farge på verktøytitler",
   "settings.general.row.toolTitleColor.description": "Tilpass fargen på verktøytitler i økter",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "Oppfølgingsatferd",
   "settings.general.row.followup.description": "Velg om oppfølgingsspørsmål skal kjøres umiddelbart eller vente i kø",
   "settings.general.row.followup.option.queue": "Kø",

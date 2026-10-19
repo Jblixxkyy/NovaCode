@@ -965,6 +965,8 @@ export const dict: Record<string, string> = {
   "settings.general.row.uiFont.description": "ངོས་འདྲ་བ་ཆ་མཉམ་ལུ་ལག་ལེན་འཐབ་ཡོད་པའི་ཡིག་གཟུགས་སྲོལ་སྒྲིག་འབད།",
   "settings.general.row.toolTitleColor.title": "ལག་ཆའི་མགོ་མིང་གི་ཚོས་གཞི།",
   "settings.general.row.toolTitleColor.description": "ལཱ་སྒྲིག་ནང་ལག་ཆའི་མགོ་མིང་གི་ཚོས་གཞི་སྲོལ་སྒྲིག་འབད།",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "རྗེས་སུ་འབྲངས་པའི་སྤྱོད་ལམ།",
   "settings.general.row.followup.description":
     "རྗེས་འཇུག་འབོད་བརྡ་ཚུ་ དེ་འཕྲོ་ལས་ སྒུལ་ནི་ཨིན་ན་ ཡང་ན་ གྱལ་ནང་བསྒུག་སྡོད་ནི་ཨིན་ན་ གདམ་ཁ་རྐྱབས།",

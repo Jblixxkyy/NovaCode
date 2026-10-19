@@ -958,6 +958,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "پورے انٹرفیس میں استعمال ہونے والے فونٹ کو حسب ضرورت بنائیں",
   "settings.general.row.toolTitleColor.title": "ٹول عنوان کا رنگ",
   "settings.general.row.toolTitleColor.description": "سیشنوں میں ٹول عنوانات کا رنگ حسب ضرورت بنائیں",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "فالو اپ کا طرز عمل",
   "settings.general.row.followup.description":
     "منتخب کریں کہ آیا فالو اپ فوری طور پر آگے بڑھتا ہے یا قطار میں انتظار کرتا ہے۔",

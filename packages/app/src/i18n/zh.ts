@@ -919,6 +919,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "自定义整个界面使用的字体",
   "settings.general.row.toolTitleColor.title": "工具标题颜色",
   "settings.general.row.toolTitleColor.description": "自定义会话中工具标题的颜色",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "后续消息行为",
   "settings.general.row.followup.description": "选择后续提示是立即引导当前会话还是排队等待",
   "settings.general.row.followup.option.queue": "排队",

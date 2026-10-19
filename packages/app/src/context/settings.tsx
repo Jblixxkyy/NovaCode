@@ -47,6 +47,7 @@ export interface Settings {
     terminal: string
     wordmark: string
     toolTitleColor: string
+    groupTitleColor: string
   }
   keybinds: Record<string, string>
   permissions: {
@@ -217,6 +218,7 @@ const defaultSettings: Settings = {
     terminal: "",
     wordmark: "",
     toolTitleColor: "",
+    groupTitleColor: "",
   },
   keybinds: {},
   permissions: {
@@ -241,6 +243,7 @@ const defaultSettings: Settings = {
 function toolTitleColorVar(value: string | undefined) {
   return value && /^#[0-9a-f]{6}$/i.test(value) ? value : ""
 }
+const groupTitleColorVar = toolTitleColorVar
 
 function withFallback<T>(read: () => T | undefined, fallback: T) {
   return createMemo(() => read() ?? fallback)
@@ -371,6 +374,7 @@ export const { use: useSettings, provider: SettingsProvider } = createSimpleCont
       root.style.setProperty("--font-family-sans", sansFontFamily(store.appearance?.sans))
       root.style.setProperty("--font-family-wordmark", wordmarkFontFamily(store.appearance?.wordmark))
       root.style.setProperty("--tool-title-color", toolTitleColorVar(store.appearance?.toolTitleColor))
+      root.style.setProperty("--group-title-color", groupTitleColorVar(store.appearance?.groupTitleColor))
     })
 
     return {
@@ -497,6 +501,10 @@ export const { use: useSettings, provider: SettingsProvider } = createSimpleCont
         toolTitleColor: withFallback(() => store.appearance?.toolTitleColor, defaultSettings.appearance.toolTitleColor),
         setToolTitleColor(value: string) {
           setStore("appearance", "toolTitleColor", toolTitleColorVar(value.trim()))
+        },
+        groupTitleColor: withFallback(() => store.appearance?.groupTitleColor, defaultSettings.appearance.groupTitleColor),
+        setGroupTitleColor(value: string) {
+          setStore("appearance", "groupTitleColor", groupTitleColorVar(value.trim()))
         },
       },
       keybinds: {

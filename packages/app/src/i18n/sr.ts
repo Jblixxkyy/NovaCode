@@ -951,6 +951,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "Прилагодите фонт који се користи у интерфејсу",
   "settings.general.row.toolTitleColor.title": "Боја наслова алата",
   "settings.general.row.toolTitleColor.description": "Прилагодите боју наслова алата у сесијама",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "Праћење понашања",
   "settings.general.row.followup.description": "Одаберите да ли ће се пратећи упити усмеравати одмах или чекати у реду",
   "settings.general.row.followup.option.queue": "Ред",

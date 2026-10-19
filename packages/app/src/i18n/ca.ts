@@ -957,6 +957,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "Personalitzeu el tipus de lletra utilitzat a tota la interfície",
   "settings.general.row.toolTitleColor.title": "Color del títol de l'eina",
   "settings.general.row.toolTitleColor.description": "Personalitzeu el color dels títols de les eines a les sessions",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "Comportament de seguiment",
   "settings.general.row.followup.description":
     "Trieu si les indicacions de seguiment es dirigeixen immediatament o esperen en una cua",

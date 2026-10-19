@@ -959,6 +959,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "Tùy chỉnh phông chữ dùng trong toàn bộ giao diện",
   "settings.general.row.toolTitleColor.title": "Màu tiêu đề công cụ",
   "settings.general.row.toolTitleColor.description": "Tùy chỉnh màu tiêu đề công cụ trong phiên",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "Cách xử lý lời nhắc tiếp theo",
   "settings.general.row.followup.description":
     "Chọn để lời nhắc tiếp theo điều hướng phiên ngay lập tức hoặc chờ trong hàng đợi",

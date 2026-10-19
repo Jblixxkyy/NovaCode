@@ -181,6 +181,7 @@ const AppearanceSection: Component<{ controller: AppearanceSettingsController }>
         <FontSetting kind="terminal" fonts={props.controller.fonts} />
         <FontSetting kind="wordmark" fonts={props.controller.fonts} />
         <ToolTitleColorSetting />
+        <GroupTitleColorSetting />
       </SettingsListV2>
     </div>
   )
@@ -233,6 +234,30 @@ const ToolTitleColorSetting: Component = () => {
         />
         <Show when={settings.appearance.toolTitleColor()}>
           <ButtonV2 size="normal" variant="neutral" onClick={() => settings.appearance.setToolTitleColor("")}>
+            {language.t("common.reset")}
+          </ButtonV2>
+        </Show>
+      </div>
+    </SettingsRowV2>
+  )
+}
+
+const GroupTitleColorSetting: Component = () => {
+  const language = useLanguage()
+  const settings = useSettings()
+  const title = () => language.t("settings.general.row.groupTitleColor.title")
+  return (
+    <SettingsRowV2 title={title()} description={language.t("settings.general.row.groupTitleColor.description")}>
+      <div class="flex items-center gap-2" data-action="settings-group-title-color">
+        <input
+          type="color"
+          class="settings-v2-color-input"
+          value={settings.appearance.groupTitleColor() || settings.appearance.toolTitleColor() || "#00ff41"}
+          onInput={(event) => settings.appearance.setGroupTitleColor(event.currentTarget.value)}
+          aria-label={title()}
+        />
+        <Show when={settings.appearance.groupTitleColor()}>
+          <ButtonV2 size="normal" variant="neutral" onClick={() => settings.appearance.setGroupTitleColor("")}>
             {language.t("common.reset")}
           </ButtonV2>
         </Show>

@@ -79,6 +79,8 @@ export const dict = {
   "ui.sessionTurn.status.planning": "Банақшагирии қадамҳои оянда",
   "ui.sessionTurn.status.gatheringContext": "Таҳқиқ кардан",
   "ui.sessionTurn.status.gatheredContext": "Тадқиқ карда шуд",
+  "ui.sessionTurn.status.usingTools": "Using",
+  "ui.sessionTurn.status.usedTools": "Used",
   "ui.sessionTurn.status.searchingCodebase": "Ҷустуҷӯи пойгоҳи код",
   "ui.sessionTurn.status.searchingWeb": "Ҷустуҷӯ дар веб",
   "ui.sessionTurn.status.makingEdits": "Таҳрири таҳрир",

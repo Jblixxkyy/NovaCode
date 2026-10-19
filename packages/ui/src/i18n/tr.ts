@@ -90,6 +90,8 @@ export const dict = {
   "ui.sessionTurn.status.planning": "Sonraki adımlar planlanıyor",
   "ui.sessionTurn.status.gatheringContext": "Keşfediliyor",
   "ui.sessionTurn.status.gatheredContext": "Keşif tamamlandı",
+  "ui.sessionTurn.status.usingTools": "Using",
+  "ui.sessionTurn.status.usedTools": "Used",
   "ui.sessionTurn.status.searchingCodebase": "Kod tabanı aranıyor",
   "ui.sessionTurn.status.searchingWeb": "Web aranıyor",
   "ui.sessionTurn.status.makingEdits": "Düzenlemeler yapılıyor",

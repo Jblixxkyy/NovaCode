@@ -944,6 +944,8 @@ export const dict: Record<string, string> = {
   "settings.general.row.uiFont.description": "අතුරු මුහුණත පුරා භාවිතා කරන අකුරු අභිරුචිකරණය කරන්න",
   "settings.general.row.toolTitleColor.title": "මෙවලම් මාතෘකා පැහැය",
   "settings.general.row.toolTitleColor.description": "සැසිවල මෙවලම් මාතෘකාවල පැහැය අභිරුචිකරණය කරන්න",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "පසු විපරම් හැසිරීම",
   "settings.general.row.followup.description":
     "පසු විපරම් ප්‍රේරක ක්ෂණිකව ගමන් කරනවාද නැතිනම් පෝලිමක රැඳී සිටිනවාද යන්න තෝරන්න",

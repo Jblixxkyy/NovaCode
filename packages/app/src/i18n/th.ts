@@ -923,6 +923,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "ปรับแต่งแบบอักษรที่ใช้ทั่วทั้งอินเทอร์เฟซ",
   "settings.general.row.toolTitleColor.title": "สีของชื่อเครื่องมือ",
   "settings.general.row.toolTitleColor.description": "ปรับแต่งสีของชื่อเครื่องมือในเซสชัน",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "พฤติกรรมการติดตามผล",
   "settings.general.row.followup.description": "เลือกว่าจะให้พรอมต์ติดตามผลทำงานทันทีหรือรอในคิว",
   "settings.general.row.followup.option.queue": "คิว",

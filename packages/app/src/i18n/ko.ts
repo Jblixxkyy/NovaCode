@@ -611,6 +611,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "인터페이스 전반에 사용되는 글꼴을 사용자 지정",
   "settings.general.row.toolTitleColor.title": "도구 제목 색상",
   "settings.general.row.toolTitleColor.description": "세션에서 도구 제목의 색상을 사용자 지정합니다",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "후속 조치 동작",
   "settings.general.row.followup.description": "후속 프롬프트를 즉시 실행할지 대기열에 넣을지 선택하세요",
   "settings.general.row.followup.option.queue": "대기열",

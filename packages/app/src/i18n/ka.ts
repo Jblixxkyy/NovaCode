@@ -947,6 +947,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "დააყენეთ ინტერფეისში გამოყენებული შრიფტის მორგება",
   "settings.general.row.toolTitleColor.title": "ხელსაწყოს სათაურის ფერი",
   "settings.general.row.toolTitleColor.description": "მოირგეთ ხელსაწყოების სათაურების ფერი სესიებში",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "შემდეგი ქცევა",
   "settings.general.row.followup.description":
     "აირჩიეთ, შემდგომი დაკვირვების მოთხოვნა მყისიერად იხელმძღვანელეთ თუ დაელოდეთ რიგში",

@@ -868,6 +868,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "Personalizza il carattere utilizzato nell'interfaccia",
   "settings.general.row.toolTitleColor.title": "Colore del titolo dello strumento",
   "settings.general.row.toolTitleColor.description": "Personalizza il colore dei titoli degli strumenti nelle sessioni",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "Gestione dei prompt successivi",
   "settings.general.row.followup.description": "Scegli se i prompt successivi intervengono subito o attendono in coda",
   "settings.general.row.followup.option.queue": "Coda",

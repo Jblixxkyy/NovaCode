@@ -86,6 +86,8 @@ export const dict = {
   "ui.sessionTurn.status.planning": "正在规划下一步",
   "ui.sessionTurn.status.gatheringContext": "正在探索",
   "ui.sessionTurn.status.gatheredContext": "已探索",
+  "ui.sessionTurn.status.usingTools": "Using",
+  "ui.sessionTurn.status.usedTools": "Used",
   "ui.sessionTurn.status.searchingCodebase": "正在搜索代码库",
   "ui.sessionTurn.status.searchingWeb": "正在搜索网页",
   "ui.sessionTurn.status.makingEdits": "正在修改",

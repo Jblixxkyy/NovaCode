@@ -81,6 +81,8 @@ export const dict: Record<string, string> = {
   "ui.sessionTurn.status.planning": "Plánování dalších kroků",
   "ui.sessionTurn.status.gatheringContext": "Zkoumání",
   "ui.sessionTurn.status.gatheredContext": "Prozkoumáno",
+  "ui.sessionTurn.status.usingTools": "Using",
+  "ui.sessionTurn.status.usedTools": "Used",
   "ui.sessionTurn.status.searchingCodebase": "Prohledávání kódové základny",
   "ui.sessionTurn.status.searchingWeb": "Vyhledávání na webu",
   "ui.sessionTurn.status.makingEdits": "Provádění úprav",

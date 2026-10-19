@@ -946,6 +946,9 @@ export const dict = {
   "settings.general.row.uiFont.description": "Customise the font used throughout the interface",
   "settings.general.row.toolTitleColor.title": "Tool title color",
   "settings.general.row.toolTitleColor.description": "Customise the color of tool titles in sessions",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description":
+    "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "Follow-up behavior",
   "settings.general.row.followup.description": "Choose whether follow-up prompts steer immediately or wait in a queue",
   "settings.general.row.followup.option.queue": "Queue",

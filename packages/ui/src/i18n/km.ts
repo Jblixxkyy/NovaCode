@@ -80,6 +80,8 @@ export const dict = {
   "ui.sessionTurn.status.planning": "ការធ្វើផែនការជំហានបន្ទាប់",
   "ui.sessionTurn.status.gatheringContext": "ការរុករក",
   "ui.sessionTurn.status.gatheredContext": "រុករក",
+  "ui.sessionTurn.status.usingTools": "Using",
+  "ui.sessionTurn.status.usedTools": "Used",
   "ui.sessionTurn.status.searchingCodebase": "ស្វែងរកមូលដ្ឋានកូដ",
   "ui.sessionTurn.status.searchingWeb": "កំពុងស្វែងរកគេហទំព័រ",
   "ui.sessionTurn.status.makingEdits": "ធ្វើការកែសម្រួល",

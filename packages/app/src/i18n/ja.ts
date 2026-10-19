@@ -856,6 +856,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "インターフェース全体で使用するフォントをカスタマイズします",
   "settings.general.row.toolTitleColor.title": "ツールタイトルの色",
   "settings.general.row.toolTitleColor.description": "セッション内のツールタイトルの色をカスタマイズします",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "フォローアップの動作",
   "settings.general.row.followup.description":
     "フォローアッププロンプトを即座に実行するか、キューで待機させるかを選択します",

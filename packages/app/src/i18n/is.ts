@@ -950,6 +950,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "Sérsníddu leturgerðina sem notuð er í öllu viðmótinu",
   "settings.general.row.toolTitleColor.title": "Litur á verkfæraheiti",
   "settings.general.row.toolTitleColor.description": "Sérsníðu litinn á verkfæraheitum í setum",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "Eftirfylgnihegðun",
   "settings.general.row.followup.description": "Veldu hvort eftirfylgnibeiðnir stýra strax eða bíða í biðröð",
   "settings.general.row.followup.option.queue": "Biðröð",

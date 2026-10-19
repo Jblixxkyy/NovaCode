@@ -531,6 +531,34 @@ export const SettingsGeneral: Component = () => {
         </SettingsRow>
 
         <SettingsRow
+          title={language.t("settings.general.row.groupTitleColor.title")}
+          description={language.t("settings.general.row.groupTitleColor.description")}
+        >
+          <div class="flex items-center gap-2" data-action="settings-group-title-color">
+            <input
+              type="color"
+              aria-label={language.t("settings.general.row.groupTitleColor.title")}
+              value={settings.appearance.groupTitleColor() || settings.appearance.toolTitleColor() || "#00ff41"}
+              onInput={(event) => settings.appearance.setGroupTitleColor(event.currentTarget.value)}
+              style={{
+                width: "44px",
+                height: "28px",
+                padding: "2px",
+                border: "0.5px solid var(--border-weak-base)",
+                "border-radius": "6px",
+                "background-color": "transparent",
+                cursor: "pointer",
+              }}
+            />
+            <Show when={settings.appearance.groupTitleColor()}>
+              <Button size="small" variant="ghost" onClick={() => settings.appearance.setGroupTitleColor("")}>
+                {language.t("common.reset")}
+              </Button>
+            </Show>
+          </div>
+        </SettingsRow>
+
+        <SettingsRow
           title={language.t("settings.general.row.uiFont.title")}
           description={language.t("settings.general.row.uiFont.description")}
         >

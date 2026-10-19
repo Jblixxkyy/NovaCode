@@ -80,6 +80,8 @@ export const dict: Record<string, string> = {
   "ui.sessionTurn.status.planning": "Plāno nākamos soļus",
   "ui.sessionTurn.status.gatheringContext": "Izpēta",
   "ui.sessionTurn.status.gatheredContext": "Izpētīts",
+  "ui.sessionTurn.status.usingTools": "Using",
+  "ui.sessionTurn.status.usedTools": "Used",
   "ui.sessionTurn.status.searchingCodebase": "Meklē kodā",
   "ui.sessionTurn.status.searchingWeb": "Meklē tīmeklī",
   "ui.sessionTurn.status.makingEdits": "Veic izmaiņas",

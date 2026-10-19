@@ -942,6 +942,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "ປັບແຕ່ງຟອນທີ່ໃຊ້ໃນທົ່ວອິນເຕີເຟດ",
   "settings.general.row.toolTitleColor.title": "ສີຂອງຫົວຂໍ້ເຄື່ອງມື",
   "settings.general.row.toolTitleColor.description": "ປັບແຕ່ງສີຂອງຫົວຂໍ້ເຄື່ອງມືໃນເຊດຊັນ",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "ພຶດຕິກໍາການຕິດຕາມ",
   "settings.general.row.followup.description": "ເລືອກວ່າການຕິດຕາມການກະຕຸ້ນເຕືອນທັນທີຫຼືລໍຖ້າຢູ່ໃນຄິວ",
   "settings.general.row.followup.option.queue": "ຄິວ",

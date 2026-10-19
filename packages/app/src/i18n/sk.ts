@@ -952,6 +952,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "Prispôsobte písmo používané v celom rozhraní",
   "settings.general.row.toolTitleColor.title": "Farba názvu nástroja",
   "settings.general.row.toolTitleColor.description": "Prispôsobte farbu názvov nástrojov v reláciách",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "Správanie následných výziev",
   "settings.general.row.followup.description": "Vyberte, či sa následné výzvy vykonajú ihneď alebo čakajú v poradí",
   "settings.general.row.followup.option.queue": "Poradie",

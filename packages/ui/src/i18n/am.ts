@@ -78,6 +78,8 @@ export const dict: Record<string, string> = {
   "ui.sessionTurn.status.planning": "ቀጣዮቹን ደረጃዎች ማቀድ",
   "ui.sessionTurn.status.gatheringContext": "ማሰስ",
   "ui.sessionTurn.status.gatheredContext": "የተፈተሸ",
+  "ui.sessionTurn.status.usingTools": "Using",
+  "ui.sessionTurn.status.usedTools": "Used",
   "ui.sessionTurn.status.searchingCodebase": "የኮድ ቤዝ ፍለጋ",
   "ui.sessionTurn.status.searchingWeb": "ድሩን መፈለግ",
   "ui.sessionTurn.status.makingEdits": "ማስተካከል",

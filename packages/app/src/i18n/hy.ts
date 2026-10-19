@@ -955,6 +955,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "Անհատականացրեք ինտերֆեյսի ընթացքում օգտագործվող տառատեսակը",
   "settings.general.row.toolTitleColor.title": "Գործիքի վերնագրի գույն",
   "settings.general.row.toolTitleColor.description": "Հարմարեցրեք գործիքների վերնագրերի գույնը սեանսներում",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "Հետագա պահվածք",
   "settings.general.row.followup.description": "Ընտրեք՝ հետևելու հուշումներն անմիջապես կուղղվեն, թե սպասեք հերթում",
   "settings.general.row.followup.option.queue": "Հերթ",

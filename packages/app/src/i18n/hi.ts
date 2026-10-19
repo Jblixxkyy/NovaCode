@@ -956,6 +956,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "पूरे इंटरफ़ेस में उपयोग किए गए फ़ॉन्ट को कस्टमाइज़ करें",
   "settings.general.row.toolTitleColor.title": "टूल शीर्षक का रंग",
   "settings.general.row.toolTitleColor.description": "सत्रों में टूल शीर्षकों का रंग अनुकूलित करें",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "अनुवर्ती व्यवहार",
   "settings.general.row.followup.description":
     "चुनें कि क्या अनुवर्ती प्रॉम्प्ट तुरंत आगे बढ़ेगा या कतार में प्रतीक्षा करेगा",

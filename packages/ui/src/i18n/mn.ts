@@ -79,6 +79,8 @@ export const dict = {
   "ui.sessionTurn.status.planning": "Дараагийн алхамуудыг төлөвлөх",
   "ui.sessionTurn.status.gatheringContext": "Судалж байна",
   "ui.sessionTurn.status.gatheredContext": "Судалсан",
+  "ui.sessionTurn.status.usingTools": "Using",
+  "ui.sessionTurn.status.usedTools": "Used",
   "ui.sessionTurn.status.searchingCodebase": "Кодын санг хайж байна",
   "ui.sessionTurn.status.searchingWeb": "Вэбээс хайж байна",
   "ui.sessionTurn.status.makingEdits": "Засвар хийж байна",

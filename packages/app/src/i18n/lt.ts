@@ -962,6 +962,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "Tinkinkite visoje sąsajoje naudojamą šriftą",
   "settings.general.row.toolTitleColor.title": "Įrankio pavadinimo spalva",
   "settings.general.row.toolTitleColor.description": "Tinkinkite įrankių pavadinimų spalvą seansuose",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "Tolesnis elgesys",
   "settings.general.row.followup.description":
     "Pasirinkite, ar tolesni raginimai bus nukreipti nedelsiant, ar laukti eilėje",

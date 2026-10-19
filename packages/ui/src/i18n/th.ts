@@ -84,6 +84,8 @@ export const dict = {
   "ui.sessionTurn.status.planning": "กำลังวางแผนขั้นตอนถัดไป",
   "ui.sessionTurn.status.gatheringContext": "กำลังสำรวจ",
   "ui.sessionTurn.status.gatheredContext": "สำรวจแล้ว",
+  "ui.sessionTurn.status.usingTools": "Using",
+  "ui.sessionTurn.status.usedTools": "Used",
   "ui.sessionTurn.status.searchingCodebase": "กำลังค้นหาโค้ดเบส",
   "ui.sessionTurn.status.searchingWeb": "กำลังค้นหาบนเว็บ",
   "ui.sessionTurn.status.makingEdits": "กำลังแก้ไข",

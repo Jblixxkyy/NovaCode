@@ -1028,6 +1028,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "Sesuaikan font yang digunakan di seluruh antarmuka",
   "settings.general.row.toolTitleColor.title": "Warna judul alat",
   "settings.general.row.toolTitleColor.description": "Sesuaikan warna judul alat di sesi",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "Perilaku lanjutan",
   "settings.general.row.followup.description":
     "Pilih apakah prompt lanjutan segera mengarahkan atau menunggu dalam antrean",

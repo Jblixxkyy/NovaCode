@@ -957,6 +957,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "Testreszabhatja a felületen használt betűtípust",
   "settings.general.row.toolTitleColor.title": "Eszközcímek színe",
   "settings.general.row.toolTitleColor.description": "A munkamenetekben lévő eszközcímek színének testreszabása",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "Nyomon követési viselkedés",
   "settings.general.row.followup.description":
     "Válassza ki, hogy a nyomon követési felszólítások azonnal irányítsák, vagy várakozzanak a sorban",

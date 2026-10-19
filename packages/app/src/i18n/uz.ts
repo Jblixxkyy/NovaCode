@@ -956,6 +956,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "Interfeys davomida ishlatiladigan shriftni moslashtiring",
   "settings.general.row.toolTitleColor.title": "Asbob sarlavhasi rangi",
   "settings.general.row.toolTitleColor.description": "Sessiyalardagi asbob sarlavhalarining rangini sozlang",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "Kuzatuv xatti-harakati",
   "settings.general.row.followup.description":
     "Kuzatuv soʻrovlari darhol boshqarilishini yoki navbatda kutishini tanlang",

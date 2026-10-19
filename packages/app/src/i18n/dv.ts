@@ -963,6 +963,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "މުޅި އިންޓަރފޭސްގައި ބޭނުންކުރާ ފޮންޓް ކަސްޓަމައިޒް ކުރުން",
   "settings.general.row.toolTitleColor.title": "ޓޫލް ޓައިޓަލްގެ ކުލަ",
   "settings.general.row.toolTitleColor.description": "ސެޝަންތަކުގައި ޓޫލް ޓައިޓަލްތަކުގެ ކުލަ ކަސްޓަމައިޒް ކުރުން",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "ފޮލޯއަޕް ސުލޫކު",
   "settings.general.row.followup.description":
     "ފޮލޯއަޕް ޕްރޮމްޕްޓްސް ވަގުތުން ސްޓިއަރ ކުރުން ނުވަތަ ކިއުއެއްގައި މަޑުކުރުންތޯ ހޮވާށެވެ",

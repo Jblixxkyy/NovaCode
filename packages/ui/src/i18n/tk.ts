@@ -79,6 +79,8 @@ export const dict: Record<string, string> = {
   "ui.sessionTurn.status.planning": "Indiki ädimleri meýilleşdirmek",
   "ui.sessionTurn.status.gatheringContext": "Gözleg",
   "ui.sessionTurn.status.gatheredContext": "Gözleg",
+  "ui.sessionTurn.status.usingTools": "Using",
+  "ui.sessionTurn.status.usedTools": "Used",
   "ui.sessionTurn.status.searchingCodebase": "Kod bazasyny gözlemek",
   "ui.sessionTurn.status.searchingWeb": "Webde gözlemek",
   "ui.sessionTurn.status.makingEdits": "Üýtgetmeler girizmek",

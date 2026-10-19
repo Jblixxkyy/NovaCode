@@ -1043,6 +1043,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "Налаштуйте шрифт, який використовується в інтерфейсі",
   "settings.general.row.toolTitleColor.title": "Колір заголовка інструменту",
   "settings.general.row.toolTitleColor.description": "Налаштуйте колір заголовків інструментів у сесіях",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "Поведінка продовження",
   "settings.general.row.followup.description": "Виберіть, чи продовження виконується негайно, чи чекає в черзі",
   "settings.general.row.followup.option.queue": "Черга",

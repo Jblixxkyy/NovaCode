@@ -929,6 +929,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "በመገናኛው ሁሉ ጥቅም ላይ የዋለውን ቅርጸ-ቁምፊ አብጅ",
   "settings.general.row.toolTitleColor.title": "የመሣሪያ ርዕስ ቀለም",
   "settings.general.row.toolTitleColor.description": "በክፍለ ጊዜያት ውስጥ የመሣሪያ ርዕሶችን ቀለም ያስተካክሉ",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "መከታተያ ባህሪ",
   "settings.general.row.followup.description": "ክትትል የሚጠይቅ ከሆነ ወዲያውኑ ይመራ እንደሆነ ይምረጡ ወይም በሰልፍ ይጠብቁ",
   "settings.general.row.followup.option.queue": "ወረፋ",

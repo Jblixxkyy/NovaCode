@@ -936,6 +936,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "Prilagodi font koji se koristi u cijelom interfejsu",
   "settings.general.row.toolTitleColor.title": "Boja naslova alata",
   "settings.general.row.toolTitleColor.description": "Prilagodi boju naslova alata u sesijama",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "Ponašanje nadovezivanja",
   "settings.general.row.followup.description": "Odaberi da li upiti nadovezivanja usmjeravaju odmah ili čekaju u redu",
   "settings.general.row.followup.option.queue": "Red čekanja",

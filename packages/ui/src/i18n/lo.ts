@@ -79,6 +79,8 @@ export const dict = {
   "ui.sessionTurn.status.planning": "ການວາງແຜນຂັ້ນຕອນຕໍ່ໄປ",
   "ui.sessionTurn.status.gatheringContext": "ການສຳຫຼວດ",
   "ui.sessionTurn.status.gatheredContext": "ສຳຫຼວດແລ້ວ",
+  "ui.sessionTurn.status.usingTools": "Using",
+  "ui.sessionTurn.status.usedTools": "Used",
   "ui.sessionTurn.status.searchingCodebase": "ການຊອກຫາ codebase",
   "ui.sessionTurn.status.searchingWeb": "ຊອກຫາເວັບ",
   "ui.sessionTurn.status.makingEdits": "ກຳລັງແກ້ໄຂ",

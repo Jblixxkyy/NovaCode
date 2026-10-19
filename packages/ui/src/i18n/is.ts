@@ -79,6 +79,8 @@ export const dict: Record<string, string> = {
   "ui.sessionTurn.status.planning": "Skipuleggja næstu skref",
   "ui.sessionTurn.status.gatheringContext": "Að kanna",
   "ui.sessionTurn.status.gatheredContext": "Kannað",
+  "ui.sessionTurn.status.usingTools": "Using",
+  "ui.sessionTurn.status.usedTools": "Used",
   "ui.sessionTurn.status.searchingCodebase": "Leit í kóðagrunninum",
   "ui.sessionTurn.status.searchingWeb": "Leita á vefnum",
   "ui.sessionTurn.status.makingEdits": "Að gera breytingar",

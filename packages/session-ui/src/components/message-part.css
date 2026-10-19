@@ -893,6 +893,52 @@ body:not([data-new-layout])
   }
 }
 
+[data-component="used-tool-group-trigger"] {
+  width: 100%;
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  cursor: default;
+
+  [data-slot="used-tool-group-title"] {
+    flex-shrink: 1;
+    min-width: 0;
+    display: flex;
+    align-items: baseline;
+  }
+
+  [data-slot="used-tool-group-count"] {
+    flex-shrink: 0;
+  }
+
+  [data-slot="collapsible-arrow"] {
+    color: var(--icon-weaker);
+    cursor: pointer;
+  }
+}
+
+[data-component="used-tool-group-list"] {
+  padding-top: 0;
+  padding-right: 0;
+  padding-bottom: 0;
+  padding-left: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  [data-slot="used-tool-group-item"] {
+    min-width: 0;
+    padding: 0;
+
+    > [data-component="tool-trigger"] {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+  }
+}
+
 [data-slot="context-tool-attachments"] {
   display: flex;
   flex-wrap: wrap;

@@ -79,6 +79,8 @@ export const dict: Record<string, string> = {
   "ui.sessionTurn.status.planning": "Volgende stappen plannen",
   "ui.sessionTurn.status.gatheringContext": "Verkennen",
   "ui.sessionTurn.status.gatheredContext": "Verkend",
+  "ui.sessionTurn.status.usingTools": "Using",
+  "ui.sessionTurn.status.usedTools": "Used",
   "ui.sessionTurn.status.searchingCodebase": "De codebasis doorzoeken",
   "ui.sessionTurn.status.searchingWeb": "Zoeken op internet",
   "ui.sessionTurn.status.makingEdits": "Bewerkingen uitvoeren",

@@ -813,6 +813,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "Tilpas skrifttypen, der bruges i hele brugergrænsefladen",
   "settings.general.row.toolTitleColor.title": "Farve på værktøjstitler",
   "settings.general.row.toolTitleColor.description": "Tilpas farven på værktøjstitler i sessioner",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "Opfølgningsadfærd",
   "settings.general.row.followup.description": "Vælg om opfølgende forespørgsler skal styre straks eller vente i kø",
   "settings.general.row.followup.option.queue": "Kø",

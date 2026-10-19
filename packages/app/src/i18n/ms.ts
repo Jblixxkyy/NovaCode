@@ -947,6 +947,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "Sesuaikan fon yang digunakan di seluruh antara muka",
   "settings.general.row.toolTitleColor.title": "Warna tajuk alat",
   "settings.general.row.toolTitleColor.description": "Sesuaikan warna tajuk alat dalam sesi",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "Tingkah laku susulan",
   "settings.general.row.followup.description":
     "Pilih sama ada arahan susulan dilaksanakan serta-merta atau menunggu dalam barisan",

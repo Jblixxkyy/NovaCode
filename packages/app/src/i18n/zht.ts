@@ -914,6 +914,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "自訂整個介面使用的字型",
   "settings.general.row.toolTitleColor.title": "工具標題顏色",
   "settings.general.row.toolTitleColor.description": "自訂工作階段中工具標題的顏色",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "後續追問行為",
   "settings.general.row.followup.description": "選擇後續追問提示是立即引導還是進入佇列等待",
   "settings.general.row.followup.option.queue": "佇列",

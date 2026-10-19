@@ -79,6 +79,8 @@ export const dict: Record<string, string> = {
   "ui.sessionTurn.status.planning": "Planifikimi i hapave të ardhshëm",
   "ui.sessionTurn.status.gatheringContext": "duke eksploruar",
   "ui.sessionTurn.status.gatheredContext": "Eksploruar",
+  "ui.sessionTurn.status.usingTools": "Using",
+  "ui.sessionTurn.status.usedTools": "Used",
   "ui.sessionTurn.status.searchingCodebase": "Duke kërkuar në bazën e kodeve",
   "ui.sessionTurn.status.searchingWeb": "Duke kërkuar në ueb",
   "ui.sessionTurn.status.makingEdits": "Bërja e modifikimeve",

@@ -848,6 +848,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "Mukauta koko käyttöliittymässä käytettyä fonttia",
   "settings.general.row.toolTitleColor.title": "Työkalujen otsikoiden väri",
   "settings.general.row.toolTitleColor.description": "Mukauta työkalujen otsikoiden väriä istunnoissa",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "Jatkokehotteiden toiminta",
   "settings.general.row.followup.description": "Valitse, ohjaavatko jatkokehotteet heti vai odottavatko ne jonossa",
   "settings.general.row.followup.option.queue": "Jonota",

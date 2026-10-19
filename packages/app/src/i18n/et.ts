@@ -944,6 +944,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "Kohandage kogu liideses kasutatavat fonti",
   "settings.general.row.toolTitleColor.title": "Tööriista pealkirja värv",
   "settings.general.row.toolTitleColor.description": "Kohandage sessioonides tööriistade pealkirjade värvi",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "Järelkäitumine",
   "settings.general.row.followup.description": "Valige, kas järelviibad juhivad kohe või oodake järjekorras",
   "settings.general.row.followup.option.queue": "Järjekord",

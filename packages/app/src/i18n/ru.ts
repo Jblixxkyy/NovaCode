@@ -938,6 +938,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "Настройте шрифт, используемый во всём интерфейсе",
   "settings.general.row.toolTitleColor.title": "Цвет заголовка инструмента",
   "settings.general.row.toolTitleColor.description": "Настройте цвет заголовков инструментов в сессиях",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "Поведение уточняющих вопросов",
   "settings.general.row.followup.description":
     "Выберите, отправлять ли уточняющие вопросы сразу или помещать их в очередь",

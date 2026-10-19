@@ -81,6 +81,8 @@ export const dict: Record<string, string> = {
   "ui.sessionTurn.status.planning": "གོམ་པ་ཤུལ་མམ་གྱི་འཆར་གཞི་བཟོ་ནི།",
   "ui.sessionTurn.status.gatheringContext": "འཚོལ་ཞིབ་འབད་དོ།",
   "ui.sessionTurn.status.gatheredContext": "འཚོལ་ཞིབ་འབད་ཡོདཔ།",
+  "ui.sessionTurn.status.usingTools": "Using",
+  "ui.sessionTurn.status.usedTools": "Used",
   "ui.sessionTurn.status.searchingCodebase": "གསང་གྲངས་གཞི་རྟེན་འཚོལ་ཞིབ་འབད་དོ།",
   "ui.sessionTurn.status.searchingWeb": "ཡོངས་འབྲེལ་འཚོལ་ཞིབ་འབད་དོ།",
   "ui.sessionTurn.status.makingEdits": "ཞུན་དག་འབད་དོ།",

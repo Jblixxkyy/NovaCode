@@ -945,6 +945,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "ប្ដូរពុម្ពអក្សរតាមបំណងដែលបានប្រើទូទាំងចំណុចប្រទាក់",
   "settings.general.row.toolTitleColor.title": "ពណ៌ចំណងជើងឧបករណ៍",
   "settings.general.row.toolTitleColor.description": "ប្ដូរពណ៌ចំណងជើងឧបករណ៍ក្នុងសម័យកាលតាមតែចិត្ត",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "ឥរិយាបថតាមដាន",
   "settings.general.row.followup.description": "ជ្រើសរើសថាតើការតាមដានជំរុញភ្លាមៗ ឬរង់ចាំជាជួរ",
   "settings.general.row.followup.option.queue": "ជួរ",

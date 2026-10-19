@@ -80,6 +80,8 @@ export const dict = {
   "ui.sessionTurn.status.planning": "နောက်အဆင့်များကို စီစဉ်ခြင်း။",
   "ui.sessionTurn.status.gatheringContext": "စူးစမ်းလေ့လာခြင်း။",
   "ui.sessionTurn.status.gatheredContext": "စူးစမ်းလေ့လာခဲ့သည်။",
+  "ui.sessionTurn.status.usingTools": "Using",
+  "ui.sessionTurn.status.usedTools": "Used",
   "ui.sessionTurn.status.searchingCodebase": "ကုဒ်ဘေ့စ်ကို ရှာဖွေခြင်း။",
   "ui.sessionTurn.status.searchingWeb": "ဝဘ်ကို ရှာဖွေခြင်း။",
   "ui.sessionTurn.status.makingEdits": "တည်းဖြတ်မှုများ ပြုလုပ်ခြင်း။",

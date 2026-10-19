@@ -606,6 +606,8 @@ function taskSession(
 
 const CONTEXT_GROUP_TOOLS = new Set(["read", "glob", "grep", "list"])
 const HIDDEN_TOOLS = new Set(["todowrite"])
+// Tools whose completed UI is interactive; they render as standalone parts, never inside a "used" group.
+const USED_GROUP_BLOCKED = new Set(["question", "todowrite"])
 
 function list<T>(value: T[] | undefined | null, fallback: T[]) {
   if (Array.isArray(value)) return value
@@ -635,6 +637,11 @@ export type PartGroup =
       type: "context"
       refs: PartRef[]
     }
+  | {
+      key: string
+      type: "used"
+      refs: PartRef[]
+    }
 
 function sameRef(a: PartRef, b: PartRef) {
   return a.messageID === b.messageID && a.partID === b.partID
@@ -644,13 +651,11 @@ function sameGroup(a: PartGroup, b: PartGroup) {
   if (a === b) return true
   if (a.key !== b.key) return false
   if (a.type !== b.type) return false
-  if (a.type === "part") {
-    if (b.type !== "part") return false
-    return sameRef(a.ref, b.ref)
+  if (a.type === "part" && b.type === "part") return sameRef(a.ref, b.ref)
+  if (a.type !== "part" && b.type !== "part") {
+    return a.refs.length === b.refs.length && a.refs.every((ref, i) => sameRef(ref, b.refs[i]!))
   }
-  if (b.type !== "context") return false
-  if (a.refs.length !== b.refs.length) return false
-  return a.refs.every((ref, i) => sameRef(ref, b.refs[i]!))
+  return false
 }
 
 export function sameGroups(a: readonly PartGroup[] | undefined, b: readonly PartGroup[] | undefined) {
@@ -660,47 +665,90 @@ export function sameGroups(a: readonly PartGroup[] | undefined, b: readonly Part
   return a.every((item, i) => sameGroup(item, b[i]!))
 }
 
+function toolRunning(part: PartType): part is ToolPart {
+  return part.type === "tool" && (part.state.status === "pending" || part.state.status === "running")
+}
+
+function isUsedGroupTool(part: PartType): part is ToolPart {
+  return part.type === "tool" && !CONTEXT_GROUP_TOOLS.has(part.tool) && !USED_GROUP_BLOCKED.has(part.tool)
+}
+export { isUsedGroupTool }
+
+function partRef(item: { messageID: string; part: PartType }): PartRef {
+  return { messageID: item.messageID, partID: item.part.id }
+}
+
+function singleton(item: { messageID: string; part: PartType }): PartGroup {
+  return {
+    key: `part:${item.messageID}:${item.part.id}`,
+    type: "part",
+    ref: partRef(item),
+  }
+}
+
 export function groupParts(parts: { messageID: string; part: PartType }[]) {
   const result: PartGroup[] = []
-  let start = -1
+  let contextStart = -1
+  let usedStart = -1
 
-  const flush = (end: number) => {
-    if (start < 0) return
-    const first = parts[start]
-    const last = parts[end]
-    if (!first || !last) {
-      start = -1
+  const flushContext = (end: number) => {
+    if (contextStart < 0) return
+    const first = parts[contextStart]
+    if (!first || !parts[end]) {
+      contextStart = -1
       return
     }
     result.push({
       key: `context:${first.part.id}`,
       type: "context",
-      refs: parts.slice(start, end + 1).map((item) => ({
-        messageID: item.messageID,
-        partID: item.part.id,
-      })),
+      refs: parts.slice(contextStart, end + 1).map(partRef),
     })
-    start = -1
+    contextStart = -1
+  }
+
+  const flushUsed = (end: number) => {
+    if (usedStart < 0) return
+    const items = parts.slice(usedStart, end + 1)
+    usedStart = -1
+    if (items.length <= 1) {
+      if (items[0]) result.push(singleton(items[0]))
+      return
+    }
+    result.push({
+      key: `used:${items[0]!.part.id}`,
+      type: "used",
+      refs: items.map(partRef),
+    })
+  }
+
+  const flushBoth = (index: number) => {
+    flushUsed(index)
+    flushContext(index)
   }
 
   parts.forEach((item, index) => {
+    // Context tools keep accumulating even while running; the group shows the "Exploring" state.
     if (isContextGroupTool(item.part)) {
-      if (start < 0) start = index
+      flushUsed(index - 1)
+      if (contextStart < 0) contextStart = index
       return
     }
-
-    flush(index - 1)
-    result.push({
-      key: `part:${item.messageID}:${item.part.id}`,
-      type: "part",
-      ref: {
-        messageID: item.messageID,
-        partID: item.part.id,
-      },
-    })
+    if (toolRunning(item.part)) {
+      // A still-running call renders as its own full card; completed calls collapse into groups.
+      flushBoth(index - 1)
+      result.push(singleton(item))
+      return
+    }
+    if (isUsedGroupTool(item.part)) {
+      flushContext(index - 1)
+      if (usedStart < 0) usedStart = index
+      return
+    }
+    flushBoth(index - 1)
+    result.push(singleton(item))
   })
 
-  flush(parts.length - 1)
+  flushBoth(parts.length - 1)
   return result
 }
 
@@ -834,6 +882,28 @@ export function AssistantParts(props: {
                 )
               })()}
             </Match>
+            <Match when={entryType() === "used"}>
+              {(() => {
+                const parts = createMemo(
+                  () => {
+                    const entry = entryAccessor()
+                    if (entry.type !== "used") return emptyTools
+                    return entry.refs
+                      .map((ref) => part().get(ref.messageID)?.get(ref.partID))
+                      .filter((part): part is ToolPart => !!part && isUsedGroupTool(part))
+                  },
+                  emptyTools,
+                  { equals: same },
+                )
+                const busy = createMemo(() => props.working && last() === entryAccessor().key)
+
+                return (
+                  <Show when={parts().length > 0}>
+                    <UsedToolGroup parts={parts()} busy={busy()} />
+                  </Show>
+                )
+              })()}
+            </Match>
             <Match when={entryType() === "part"}>
               {(() => {
                 const message = createMemo(() => {
@@ -948,6 +1018,151 @@ function contextToolSummary(parts: ToolPart[]) {
   return { read, search, list }
 }
 
+const FILE_DIFF_TOOLS = new Set(["edit", "write", "patch", "apply_patch"])
+
+function usedToolTrigger(part: ToolPart) {
+  const info = getToolInfo(
+    part.tool,
+    part.state.input ?? {},
+    "metadata" in part.state ? part.state.metadata : undefined,
+  )
+  // shell/bash rows read best in the code font
+  const mono = part.tool === "bash" || part.tool === "shell"
+  return { title: info.title, subtitle: info.subtitle, mono }
+}
+
+function usedToolDiff(part: ToolPart) {
+  if (!FILE_DIFF_TOOLS.has(part.tool)) return
+  if (part.state.status !== "completed") return
+  const filediff = (part.state as unknown as { metadata?: { filediff?: { additions?: number; deletions?: number } } })
+    .metadata?.filediff
+  if (!filediff) return
+  if (typeof filediff.additions !== "number" || typeof filediff.deletions !== "number") return
+  return { additions: filediff.additions, deletions: filediff.deletions }
+}
+
+function usedToolDiffSummary(parts: ToolPart[]) {
+  const diffs = parts.flatMap((part) => usedToolDiff(part) ?? [])
+  if (diffs.length === 0) return
+  return {
+    additions: diffs.reduce((acc, diff) => acc + diff.additions, 0),
+    deletions: diffs.reduce((acc, diff) => acc + diff.deletions, 0),
+  }
+}
+
+export function UsedToolGroup(props: {
+  parts: ToolPart[]
+  busy?: boolean
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  onSizeChange?: () => void
+}) {
+  const i18n = useI18n()
+  const [localOpen, setLocalOpen] = createSignal(false)
+  const open = () => props.open ?? localOpen()
+  const pending = createMemo(
+    () =>
+      !!props.busy || props.parts.some((part) => part.state.status === "pending" || part.state.status === "running"),
+  )
+  const count = createMemo(() => props.parts.length)
+  const names = createMemo(() => {
+    const seen = new Set<string>()
+    props.parts.forEach((part) => {
+      const info = getToolInfo(
+        part.tool,
+        part.state.input ?? {},
+        "metadata" in part.state ? part.state.metadata : undefined,
+      )
+      if (info.title) seen.add(info.title)
+    })
+    return [...seen]
+  })
+  const diff = createMemo(() => usedToolDiffSummary(props.parts))
+  const handleOpenChange = (value: boolean) => {
+    if (props.open === undefined) setLocalOpen(value)
+    props.onOpenChange?.(value)
+    props.onSizeChange?.()
+  }
+
+  return (
+    <Collapsible
+      open={open()}
+      onOpenChange={handleOpenChange}
+      variant="ghost"
+      class="tool-collapsible"
+      data-timeline-part-ids={props.parts.map((part) => part.id).join(",")}
+    >
+      <Collapsible.Trigger>
+        <div data-component="used-tool-group-trigger">
+          <span
+            data-slot="used-tool-group-title"
+            class="min-w-0 flex items-center gap-2 text-14-medium"
+            style={{ color: "var(--group-title-color, var(--tool-title-color, #00ff41))" }}
+          >
+            <span data-slot="used-tool-group-label" class="shrink-0">
+              <ToolStatusTitle
+                active={pending()}
+                activeText={i18n.t("ui.sessionTurn.status.usingTools")}
+                doneText={i18n.t("ui.sessionTurn.status.usedTools")}
+                split={false}
+              />
+            </span>
+            <span data-slot="used-tool-group-count" class="shrink-0 font-medium text-text-base">
+              {count()}
+            </span>
+            <span
+              data-slot="used-tool-group-summary"
+              class="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap font-normal text-text-base"
+            >
+              {names().join(", ")}
+            </span>
+          </span>
+          <Show when={diff()}>{(value) => <DiffChanges changes={value()} />}</Show>
+          <Collapsible.Arrow />
+        </div>
+      </Collapsible.Trigger>
+      <Collapsible.Content>
+        <div data-component="used-tool-group-list">
+          <Index each={props.parts}>
+            {(partAccessor) => {
+              const part = () => partAccessor()
+              const running = createMemo(() => part().state.status === "pending" || part().state.status === "running")
+              const trigger = createMemo(() => usedToolTrigger(part()))
+              const diff = createMemo(() => usedToolDiff(part()))
+              return (
+                <div data-slot="used-tool-group-item">
+                  <div data-component="tool-trigger">
+                    <div data-slot="basic-tool-tool-trigger-content">
+                      <div data-slot="basic-tool-tool-info">
+                        <div data-slot="basic-tool-tool-info-structured">
+                          <div data-slot="basic-tool-tool-info-main">
+                            <span data-slot="basic-tool-tool-title">
+                              <TextShimmer text={trigger().title} active={running()} />
+                            </span>
+                            <Show when={trigger().subtitle}>
+                              <span
+                                data-slot="basic-tool-tool-subtitle"
+                                style={trigger().mono ? { "font-family": "var(--font-family-mono)" } : undefined}
+                              >
+                                {trigger().subtitle}
+                              </span>
+                            </Show>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <Show when={diff()}>{(value) => <DiffChanges changes={value()} />}</Show>
+                  </div>
+                </div>
+              )
+            }}
+          </Index>
+        </div>
+      </Collapsible.Content>
+    </Collapsible>
+  )
+}
+
 function ExaOutput(props: { output?: string }) {
   const links = createMemo(() => urls(props.output))
 
@@ -1058,6 +1273,27 @@ export function AssistantMessageDisplay(props: {
                 )
               })()}
             </Match>
+            <Match when={entryType() === "used"}>
+              {(() => {
+                const parts = createMemo(
+                  () => {
+                    const entry = entryAccessor()
+                    if (entry.type !== "used") return emptyTools
+                    return entry.refs
+                      .map((ref) => part().get(ref.partID))
+                      .filter((part): part is ToolPart => !!part && isUsedGroupTool(part))
+                  },
+                  emptyTools,
+                  { equals: same },
+                )
+
+                return (
+                  <Show when={parts().length > 0}>
+                    <UsedToolGroup parts={parts()} />
+                  </Show>
+                )
+              })()}
+            </Match>
             <Match when={entryType() === "part"}>
               {(() => {
                 const item = createMemo(() => {
@@ -1120,7 +1356,7 @@ export function ContextToolGroup(props: {
           <span
             data-slot="context-tool-group-title"
             class="min-w-0 flex items-center gap-2 text-14-medium"
-            style={{ color: "var(--tool-title-color, #00ff41)" }}
+            style={{ color: "var(--group-title-color, var(--tool-title-color, #00ff41))" }}
           >
             <span data-slot="context-tool-group-label" class="shrink-0">
               <ToolStatusTitle

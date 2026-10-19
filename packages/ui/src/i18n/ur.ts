@@ -80,6 +80,8 @@ export const dict: Record<string, string> = {
   "ui.sessionTurn.status.planning": "اگلے اقدامات کی منصوبہ بندی کی جا رہی ہے",
   "ui.sessionTurn.status.gatheringContext": "دریافت کرنا",
   "ui.sessionTurn.status.gatheredContext": "دریافت کیا۔",
+  "ui.sessionTurn.status.usingTools": "Using",
+  "ui.sessionTurn.status.usedTools": "Used",
   "ui.sessionTurn.status.searchingCodebase": "کوڈ بیس میں تلاش کی جا رہی ہے",
   "ui.sessionTurn.status.searchingWeb": "ویب پر تلاش کی جا رہی ہے",
   "ui.sessionTurn.status.makingEdits": "ترامیم کی جا رہی ہیں",

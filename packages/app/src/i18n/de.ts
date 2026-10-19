@@ -763,6 +763,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "Die in der gesamten Benutzeroberfläche verwendete Schriftart anpassen",
   "settings.general.row.toolTitleColor.title": "Farbe der Tool-Titel",
   "settings.general.row.toolTitleColor.description": "Die Farbe der Tool-Titel in Sitzungen anpassen",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "Verhalten bei Folgeeingaben",
   "settings.general.row.followup.description":
     "Wählen Sie, ob Folgeeingaben die laufende Sitzung sofort steuern oder in einer Warteschlange warten",

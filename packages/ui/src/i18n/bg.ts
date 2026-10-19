@@ -79,6 +79,8 @@ export const dict = {
   "ui.sessionTurn.status.planning": "Планиране на следващите стъпки",
   "ui.sessionTurn.status.gatheringContext": "Изследване",
   "ui.sessionTurn.status.gatheredContext": "Изследвани",
+  "ui.sessionTurn.status.usingTools": "Using",
+  "ui.sessionTurn.status.usedTools": "Used",
   "ui.sessionTurn.status.searchingCodebase": "Търсене в кодовата база",
   "ui.sessionTurn.status.searchingWeb": "Търсене в мрежата",
   "ui.sessionTurn.status.makingEdits": "Правене на редакции",

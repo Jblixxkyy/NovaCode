@@ -954,6 +954,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "Pielāgojiet fontu visā saskarnē",
   "settings.general.row.toolTitleColor.title": "Rīka virsraksta krāsa",
   "settings.general.row.toolTitleColor.description": "Pielāgojiet rīku virsrakstu krāsu sesijās",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "Turpmākā darbība",
   "settings.general.row.followup.description": "Izvēlieties, vai turpmākie uzvedumi tiek izpildīti uzreiz vai rindā",
   "settings.general.row.followup.option.queue": "Rinda",

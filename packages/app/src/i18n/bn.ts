@@ -946,6 +946,8 @@ export const dict: Record<string, string> = {
   "settings.general.row.uiFont.description": "ইন্টারফেস জুড়ে ব্যবহৃত ফন্ট কাস্টমাইজ করুন",
   "settings.general.row.toolTitleColor.title": "টুল শিরোনামের রঙ",
   "settings.general.row.toolTitleColor.description": "সেশনে টুল শিরোনামের রঙ কাস্টমাইজ করুন",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "ফলো-আপ আচরণ",
   "settings.general.row.followup.description": "ফলো-আপ প্রম্পট অবিলম্বে বাছা বা একটি সারিতে অপেক্ষা করুন চয়ন করুন",
   "settings.general.row.followup.option.queue": "সারি",

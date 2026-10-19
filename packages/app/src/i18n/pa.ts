@@ -954,6 +954,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "پورے انٹرفیس تے استعمال ہون آلے فونٹ نو اپنی مرضی دے مطابق بناؤ",
   "settings.general.row.toolTitleColor.title": "ਟੂਲ ਸਿਰਲੇਖ ਦਾ ਰੰਗ",
   "settings.general.row.toolTitleColor.description": "ਸੈਸ਼ਨਾਂ ਵਿੱਚ ਟੂਲ ਸਿਰਲੇਖਾਂ ਦਾ ਰੰਗ ਕਸਟਮਾਈਜ਼ ਕਰੋ",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "فالو اپ رویہ",
   "settings.general.row.followup.description": "چنو کہ فالو اپ اشارے فوری طور تے چلدے نیں یا قطار چ انتظار کردے نیں",
   "settings.general.row.followup.option.queue": "قطار",

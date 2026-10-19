@@ -80,6 +80,8 @@ export const dict: Record<string, string> = {
   "ui.sessionTurn.status.planning": "ދެން އަޅަންޖެހޭ ފިޔަވަޅުތައް ރޭވުން",
   "ui.sessionTurn.status.gatheringContext": "އެކްސްޕްލޯރ ކުރަމުންނެވެ",
   "ui.sessionTurn.status.gatheredContext": "އެކްސްޕްލޯރ ކުރެވިއްޖެއެވެ",
+  "ui.sessionTurn.status.usingTools": "Using",
+  "ui.sessionTurn.status.usedTools": "Used",
   "ui.sessionTurn.status.searchingCodebase": "ކޯޑްބޭސް ހޯދުން",
   "ui.sessionTurn.status.searchingWeb": "ވެބްގައި ހޯދުން",
   "ui.sessionTurn.status.makingEdits": "އެޑިޓްތައް ހެދުން",

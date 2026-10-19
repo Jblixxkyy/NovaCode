@@ -876,6 +876,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "Personnaliser la police utilisée dans toute l'interface",
   "settings.general.row.toolTitleColor.title": "Couleur des titres d'outils",
   "settings.general.row.toolTitleColor.description": "Personnalisez la couleur des titres d'outils dans les sessions",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "Comportement des messages de suivi",
   "settings.general.row.followup.description":
     "Choisissez si les messages de suivi orientent immédiatement l'agent ou sont placés dans une file d'attente",

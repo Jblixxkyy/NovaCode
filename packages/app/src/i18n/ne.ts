@@ -948,6 +948,8 @@ export const dict: Record<string, string> = {
   "settings.general.row.uiFont.description": "इन्टरफेसमा प्रयोग गरिएको फन्ट अनुकूलित गर्नुहोस्",
   "settings.general.row.toolTitleColor.title": "उपकरण शीर्षकको रङ",
   "settings.general.row.toolTitleColor.description": "सेसनहरूमा उपकरण शीर्षकहरूको रङ अनुकूलन गर्नुहोस्",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "अनुगमन व्यवहार",
   "settings.general.row.followup.description": "छनोट गर्नुहोस् कि फलो-अपले तुरुन्तै स्टेयर गर्ने वा लाममा पर्खनुहोस्",
   "settings.general.row.followup.option.queue": "लाम",

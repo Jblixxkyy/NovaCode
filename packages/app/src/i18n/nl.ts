@@ -958,6 +958,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "Pas het lettertype aan dat in de hele interface wordt gebruikt",
   "settings.general.row.toolTitleColor.title": "Kleur van tooltitels",
   "settings.general.row.toolTitleColor.description": "Pas de kleur van tooltitels in sessies aan",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "Vervolggedrag",
   "settings.general.row.followup.description":
     "Kies of vervolgprompts de sessie direct bijsturen of in een wachtrij wachten",

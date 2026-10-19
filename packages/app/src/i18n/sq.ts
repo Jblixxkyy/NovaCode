@@ -952,6 +952,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "Personalizoni fontin e përdorur në të gjithë ndërfaqen",
   "settings.general.row.toolTitleColor.title": "Ngjyra e titullit të veglës",
   "settings.general.row.toolTitleColor.description": "Përshtatni ngjyrën e titujve të veglave në sesione",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "Sjellja pasuese",
   "settings.general.row.followup.description":
     "Zgjidhni nëse kërkesat e ndjekjes drejtohen menjëherë ose prisni në një radhë",

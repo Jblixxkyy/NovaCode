@@ -953,6 +953,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "Anpassa typsnittet som används i hela gränssnittet",
   "settings.general.row.toolTitleColor.title": "Färg på verktygstitlar",
   "settings.general.row.toolTitleColor.description": "Anpassa färgen på verktygstitlar i sessioner",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "Uppföljningsbeteende",
   "settings.general.row.followup.description": "Välj om uppföljningsmeddelanden ska styra direkt eller vänta i kö",
   "settings.general.row.followup.option.queue": "Kö",

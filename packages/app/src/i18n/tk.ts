@@ -949,6 +949,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "Interfeýsiň hemme ýerinde ulanylýan şrifti düzüň",
   "settings.general.row.toolTitleColor.title": "Gural başlygynyň reňki",
   "settings.general.row.toolTitleColor.description": "Sesiýalarda gural başlyklarynyň reňkini saýlaň",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "Gözegçilik",
   "settings.general.row.followup.description":
     "Gözegçiligiň haýal etmän dolandyrjakdygyny ýa-da nobata garaşýandygyny saýlaň",

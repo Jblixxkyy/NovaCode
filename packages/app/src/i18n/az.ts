@@ -958,6 +958,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "Bütün interfeysdə istifadə olunan şrifti fərdiləşdirin",
   "settings.general.row.toolTitleColor.title": "Alət başlığının rəngi",
   "settings.general.row.toolTitleColor.description": "Sessiyalarda alət başlıqlarının rəngini fərdiləşdirin",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "Sonrakı sorğuların davranışı",
   "settings.general.row.followup.description":
     "Sonrakı sorğuların dərhal yönləndirilməsini və ya növbədə gözləməsini seçin",

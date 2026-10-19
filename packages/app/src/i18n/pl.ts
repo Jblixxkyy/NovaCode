@@ -873,6 +873,8 @@ export const dict = {
   "settings.general.row.uiFont.description": "Dostosuj czcionkę używaną w całym interfejsie",
   "settings.general.row.toolTitleColor.title": "Kolor tytułów narzędzi",
   "settings.general.row.toolTitleColor.description": "Dostosuj kolor tytułów narzędzi w sesjach",
+  "settings.general.row.groupTitleColor.title": "Group title color",
+  "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
   "settings.general.row.followup.title": "Zachowanie kontynuacji",
   "settings.general.row.followup.description": "Wybierz, czy kontynuacja ma być natychmiastowa, czy czekać w kolejce",
   "settings.general.row.followup.option.queue": "Kolejka",
