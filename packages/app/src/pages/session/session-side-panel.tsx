@@ -31,6 +31,7 @@ import { useDialog } from "@novacode-ai/ui/context/dialog"
 import FileTree from "@/components/file-tree"
 import { normalizeFileTreeV2Path } from "@/components/file-tree-v2-model"
 import { SessionContextUsage } from "@/components/session-context-usage"
+import { BrowserPanel } from "@/components/browser/BrowserPanel"
 
 const reviewTabID = "session-side-panel-review-tab"
 const reviewTabPanelID = "session-side-panel-review-tabpanel"
@@ -107,6 +108,7 @@ export function SessionSidePanel(props: {
   const open = createMemo(() => reviewOpen() || fileOpen())
   const fileTreeWidth = createMemo(() => Math.max(FILE_TREE_WIDTH_MIN, layout.fileTree.width()))
   const reviewTab = createMemo(() => isDesktop())
+  const browserPanelTab = createMemo(() => isDesktop())
   const panelWidth = createMemo(() => {
     if (!open()) return "0px"
     if (reviewOpen()) return "auto"
@@ -238,7 +240,7 @@ export function SessionSidePanel(props: {
   })
   const fileBrowserVisible = createMemo(() => {
     const active = activeTab()
-    return active !== "review" && active !== "context" && active !== "empty"
+    return active !== "review" && active !== "context" && active !== "browser" && active !== "empty"
   })
   const openFileKeybind = createMemo(() => command.keybindParts("file.open"))
   const closeTabKeybind = createMemo(() => command.keybindParts("tab.close"))
@@ -363,6 +365,13 @@ export function SessionSidePanel(props: {
                                   </div>
                                 </Tabs.Trigger>
                               </Show>
+                              <Show when={browserPanelTab()}>
+                                <Tabs.Trigger value="browser">
+                                  <div class="flex items-center gap-1.5">
+                                    <div>{language.t("session.tab.browser")}</div>
+                                  </div>
+                                </Tabs.Trigger>
+                              </Show>
                               <Show when={contextOpen()}>
                                 <Tabs.Trigger
                                   value="context"
@@ -477,6 +486,17 @@ export function SessionSidePanel(props: {
                             </div>
                           </Show>
 
+                          <Show when={browserPanelTab() && activeTab() === "browser"}>
+                            <div
+                              role="tabpanel"
+                              aria-label={language.t("session.tab.browser")}
+                              data-slot="tabs-content"
+                              class="flex flex-col h-full overflow-hidden contain-strict"
+                            >
+                              <BrowserPanel />
+                            </div>
+                          </Show>
+
                           <Show when={activeTab() === "empty"}>
                             <Tabs.Content value="empty" class="flex flex-col h-full overflow-hidden contain-strict">
                               <div class="relative pt-2 flex-1 min-h-0 overflow-hidden">
@@ -570,6 +590,9 @@ export function SessionSidePanel(props: {
                                   ? language.t("session.review.filesChanged", { count: props.reviewCount() })
                                   : language.t("session.tab.review")}
                               </Tabs.Trigger>
+                            </Show>
+                            <Show when={browserPanelTab()}>
+                              <Tabs.Trigger value="browser">{language.t("session.tab.browser")}</Tabs.Trigger>
                             </Show>
                             <Show when={contextOpen()}>
                               <Tabs.Trigger
@@ -691,6 +714,17 @@ export function SessionSidePanel(props: {
                             <OpenInAppV2 directory={projectDirectory} />
                           </div>
                         </div>
+
+                        <Show when={browserPanelTab() && activeTab() === "browser"}>
+                          <div
+                            role="tabpanel"
+                            aria-label={language.t("session.tab.browser")}
+                            data-slot="tabs-content"
+                            class="flex flex-col h-full overflow-hidden contain-strict"
+                          >
+                            <BrowserPanel />
+                          </div>
+                        </Show>
 
                         <Show when={reviewTab() && props.canReview() && activeTab() === "review"}>
                           <div

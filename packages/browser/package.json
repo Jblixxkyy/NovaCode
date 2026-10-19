@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "dependencies": {
+    "effect": "catalog:",
+    "lighthouse": "^12.8.0",
+    "playwright": "catalog:"
+  },
+  "description": "Server-side browser automation for NovaCode \u2014 Playwright Chromium, 44 browser tools, Effect schemas",
+  "devDependencies": {
+    "@tsconfig/bun": "catalog:",
+    "@types/node": "catalog:",
+    "@typescript/native-preview": "catalog:",
+    "typescript": "catalog:",
+    "@types/bun": "catalog:"
+  },
+  "exports": {
+    "./files": "./src/files.ts",
+    "./permissions": "./src/permissions.ts",
+    "./rpc": "./src/rpc.ts",
+    "./session": "./src/session.ts",
+    "./tools": "./src/tools.ts"
+  },
+  "license": "MIT",
+  "name": "@novacode-ai/browser",
+  "scripts": {
+    "test": "bun test --timeout 60000",
+    "typecheck": "tsgo --noEmit"
+  },
+  "type": "module",
+  "version": "0.1.0"
+}
