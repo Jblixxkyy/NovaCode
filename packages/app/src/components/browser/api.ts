@@ -45,7 +45,11 @@ export function createBrowserApi(input: {
 }): BrowserApi {
   const headers = () => {
     const out: Record<string, string> = { "Content-Type": "application/json" }
-    if (input.server.type === "http" && input.server.http.password) {
+    // Every connection type carries credentials on `http` (sidecar and ssh
+    // included), and the desktop sidecar always runs with a password — so
+    // send the header whenever a password exists, not just for web "http"
+    // connections, or every panel call is rejected as unauthorized.
+    if (input.server.http.password) {
       out["Authorization"] = `Basic ${authTokenFromCredentials({
         username: input.server.http.username,
         password: input.server.http.password,
