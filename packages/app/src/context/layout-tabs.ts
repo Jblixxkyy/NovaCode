@@ -56,6 +56,13 @@ export function openSessionTab(current: SessionTabState, tab: string): SessionTa
     }
   }
 
+  if (tab === "browser") {
+    return {
+      tabs: { all: [tab, ...current.tabs.all.filter((item) => item !== tab)], active: tab },
+      preview,
+    }
+  }
+
   const previewIndex = preview ? current.tabs.all.indexOf(preview) : -1
   const existingIndex = current.tabs.all.indexOf(tab)
   if (existingIndex !== -1) {

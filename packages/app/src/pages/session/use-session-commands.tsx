@@ -267,6 +267,12 @@ export const useSessionCommands = (actions: SessionCommandContext) => {
     )
   }
 
+  const openBrowser = () => {
+    if (!view().reviewPanel.opened()) view().reviewPanel.open()
+    void tabs().open("browser")
+    tabs().setActive("browser")
+  }
+
   const closeTab = () => {
     const tab = closableTab()
     if (!tab) return
@@ -564,6 +570,12 @@ export const useSessionCommands = (actions: SessionCommandContext) => {
       title: language.t("command.review.toggle"),
       keybind: "mod+shift+r",
       onSelect: () => view().reviewPanel.toggle(),
+    }),
+    viewCommand({
+      id: "browser.open",
+      title: language.t("command.browser.open"),
+      keybind: "mod+shift+b",
+      onSelect: openBrowser,
     }),
     ...(shown()
       ? [

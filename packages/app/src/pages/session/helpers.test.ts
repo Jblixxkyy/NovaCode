@@ -191,6 +191,47 @@ describe("createSessionTabs", () => {
     })
   })
 
+  test("exposes the Browser tab only while it is open, without treating it as a file tab", () => {
+    createRoot((dispose) => {
+      const [state] = createStore({
+        active: "browser" as string | undefined,
+        all: ["browser", "file://src/a.ts"],
+      })
+      const tabs = createMemo(() => ({ active: () => state.active, all: () => state.all }))
+      const result = createSessionTabs({
+        tabs,
+        pathFromTab: (tab) => (tab.startsWith("file://") ? tab.slice("file://".length) : undefined),
+        normalizeTab: (tab) => tab,
+        fileBrowser: () => true,
+      })
+
+      expect(result.browserOpen()).toBe(true)
+      expect(result.panelTabs()).toEqual(["file://src/a.ts"])
+      expect(result.openedTabs()).toEqual(["file://src/a.ts"])
+      expect(result.activeTab()).toBe("browser")
+      expect(result.activeFileTab()).toBeUndefined()
+      expect(result.closableTab()).toBe("browser")
+      dispose()
+    })
+
+    createRoot((dispose) => {
+      const [state] = createStore({
+        active: "file://src/a.ts" as string | undefined,
+        all: ["file://src/a.ts"],
+      })
+      const tabs = createMemo(() => ({ active: () => state.active, all: () => state.all }))
+      const result = createSessionTabs({
+        tabs,
+        pathFromTab: (tab) => (tab.startsWith("file://") ? tab.slice("file://".length) : undefined),
+        normalizeTab: (tab) => tab,
+        fileBrowser: () => true,
+      })
+
+      expect(result.browserOpen()).toBe(false)
+      dispose()
+    })
+  })
+
   test("hides the Open File placeholder when the file browser is unavailable", () => {
     createRoot((dispose) => {
       const [state] = createStore({
