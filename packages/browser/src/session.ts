@@ -1,3 +1,5 @@
+import { mkdir, readFile, stat } from "node:fs/promises"
+import path from "node:path"
 import { Schema } from "effect"
 import type { BrowserContext, CDPSession, Dialog, Download, ElementHandle, Frame, Page } from "playwright"
 import { Browser } from "./rpc"
@@ -86,7 +88,8 @@ export class Driver {
     if (this.context) return
     this.acl = await BrowserPermissions.loadACL(this.options.configDir)
     const { chromium } = await import("playwright")
-    await Bun.$`mkdir -p ${this.options.profileDir} ${this.options.captureDir}`.quiet()
+    await mkdir(this.options.profileDir, { recursive: true })
+    await mkdir(this.options.captureDir, { recursive: true })
     try {
       this.context = await chromium.launchPersistentContext(this.options.profileDir, {
         headless: this.options.headless,
@@ -808,18 +811,17 @@ export class Driver {
     const tab = [...this.tabs.values()].find((candidate) => candidate.page === page)
     if (!tab) return
     const name = BrowserFiles.captureName(download.suggestedFilename())
-    const path = `${this.options.captureDir}/downloads/${Date.now()}-${name}`
+    const filePath = path.join(this.options.captureDir, "downloads", `${Date.now()}-${name}`)
     void download
-      .saveAs(path)
+      .saveAs(filePath)
       .then(async () => {
-        const file = Bun.file(path)
-        const mime = (file.type || "application/octet-stream").split(";")[0]!.trim() || "application/octet-stream"
+        const info = await stat(filePath)
         tab.downloads.push({
           id: Browser.FileID.make(`file_${crypto.randomUUID()}`),
           name,
-          mime,
-          bytes: file.size,
-          path,
+          mime: BrowserFiles.mimeFor(filePath),
+          bytes: info.size,
+          path: filePath,
         })
       })
       .catch(() => {})
@@ -838,7 +840,7 @@ export class Driver {
     const tab = this.requireTab(tabID)
     const found = [...tab.downloads, ...tab.captures].find((info) => info.id === fileID)
     if (!found) throw new BrowserError({ message: `Unknown file ${fileID}. List files with browser.files.list first.` })
-    const data = new Uint8Array(await Bun.file(found.path).arrayBuffer())
+    const data = new Uint8Array(await readFile(found.path))
     const saved = await BrowserFiles.save(
       [{ id: found.id, name: found.name, mime: found.mime, data }],
       this.options.captureDir,
@@ -1009,7 +1011,7 @@ export class Driver {
   private async readTraceEvents(tab: TabRecord, fileID: string): Promise<Array<{ name: string; dur?: number }>> {
     const found = tab.captures.find((info) => info.id === fileID)
     if (!found) throw new BrowserError({ message: `Unknown file ${fileID}.` })
-    const parsed = JSON.parse(await Bun.file(found.path).text()) as { traceEvents?: Array<{ name: string; dur?: number }> }
+    const parsed = JSON.parse(await readFile(found.path, "utf8")) as { traceEvents?: Array<{ name: string; dur?: number }> }
     return parsed.traceEvents ?? []
   }
 
@@ -1059,7 +1061,7 @@ export class Driver {
     const tab = this.requireTab(tabID)
     const found = tab.captures.find((info) => info.id === options.fileID)
     if (!found) throw new BrowserError({ message: `Unknown file ${options.fileID}.` })
-    const profile = (await Bun.file(found.path).json()) as {
+    const profile = JSON.parse(await readFile(found.path, "utf8")) as {
       nodes: Array<{ id: number; hitCount?: number; callFrame: { functionName: string; url: string; lineNumber: number } }>
       samples?: number[]
       timeDeltas?: number[]
@@ -1126,7 +1128,7 @@ export class Driver {
   private async readHeap(tab: TabRecord, fileID: string): Promise<ParsedHeap> {
     const found = tab.captures.find((info) => info.id === fileID)
     if (!found) throw new BrowserError({ message: `Unknown file ${fileID}.` })
-    return parseHeapSnapshot(await Bun.file(found.path).text())
+    return parseHeapSnapshot(await readFile(found.path, "utf8"))
   }
 
   async heapSummary(
@@ -1302,8 +1304,7 @@ export class Driver {
   }
 
   async preview(path: string): Promise<{ path: string }> {
-    const file = Bun.file(path)
-    if (!(await file.exists())) throw new BrowserError({ message: `File not found: ${path}` })
+    if (!(await stat(path).catch(() => undefined))) throw new BrowserError({ message: `File not found: ${path}` })
     return { path }
   }
 
