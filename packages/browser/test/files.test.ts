@@ -79,6 +79,26 @@ describe("read", () => {
     expect(files).toHaveLength(1)
   })
 
+  test("reads back the absolute path returned by save", async () => {
+    const dir = await makeDir()
+    const saved = await BrowserFiles.save(
+      [
+        {
+          id: Browser.FileID.make(`file_${crypto.randomUUID()}`),
+          name: "a.txt",
+          mime: "text/plain",
+          data: new TextEncoder().encode("round trip"),
+        },
+      ],
+      dir,
+    )
+    // save() returns a platform-native absolute path; read() must accept it verbatim on every OS.
+    const files = await BrowserFiles.read([saved[0]!.path], "/nope")
+    expect(files).toHaveLength(1)
+    expect(files[0]!.name).toBe("a.txt")
+    expect(new TextDecoder().decode(files[0]!.data)).toBe("round trip")
+  })
+
   test("rejects missing files", async () => {
     const dir = await makeDir()
     await expect(BrowserFiles.read(["missing.txt"], dir)).rejects.toThrow("does not exist")

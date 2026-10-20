@@ -1,4 +1,5 @@
-
+import { mkdir, readFile, stat, writeFile } from "node:fs/promises"
+import path from "node:path"
 import { Schema } from "effect"
 import { Browser } from "./rpc"
 
@@ -10,18 +11,20 @@ export class FileTransferError extends Schema.TaggedErrorClass<FileTransferError
 export async function read(paths: ReadonlyArray<string>, directory: string): Promise<Browser.File[]> {
   const files: Browser.File[] = []
   for (const input of paths) {
-    const resolved = input.startsWith("/") ? input : `${directory}/${input}`
-    const file = Bun.file(resolved)
-    if (!(await file.exists())) throw new FileTransferError({ message: `Upload path does not exist: ${input}` })
-    if (file.size > Browser.MAX_FILE_BYTES)
+    // path.resolve handles both relative inputs and absolute paths on any platform
+    // (POSIX `/...` and Windows `C:\...` alike); a startsWith("/") check misreads the latter as relative.
+    const resolved = path.resolve(directory, input)
+    const info = await stat(resolved).catch(() => undefined)
+    if (!info) throw new FileTransferError({ message: `Upload path does not exist: ${input}` })
+    if (info.size > Browser.MAX_FILE_BYTES)
       throw new FileTransferError({
-        message: `Upload is ${file.size} bytes; the limit is ${Browser.MAX_FILE_BYTES} bytes (5 MiB). Select a smaller file; do not retry the same upload.`,
+        message: `Upload is ${info.size} bytes; the limit is ${Browser.MAX_FILE_BYTES} bytes (5 MiB). Select a smaller file; do not retry the same upload.`,
       })
     files.push({
       id: Browser.FileID.make(`file_${crypto.randomUUID()}`),
-      name: input.split("/").pop() ?? input,
-      mime: (file.type || mimeFor(input)).split(";")[0]!.trim() || "application/octet-stream",
-      data: new Uint8Array(await file.arrayBuffer()),
+      name: path.basename(input),
+      mime: mimeFor(input),
+      data: new Uint8Array(await readFile(resolved)),
     })
   }
   if (files.reduce((size, file) => size + file.data.byteLength, 0) > Browser.MAX_FILE_BYTES)
@@ -42,11 +45,11 @@ export async function save(files: ReadonlyArray<Browser.File>, directory: string
   const saved: Browser.FileInfo[] = []
   for (const [index, file] of files.entries()) {
     const name = captureName(file.name)
-    const dir = `${directory}/${Date.now()}-${index}`
-    await Bun.$`mkdir -p ${dir}`.quiet()
-    const path = `${dir}/${name}`
-    await Bun.write(path, file.data, { createPath: false })
-    saved.push({ id: file.id, name: file.name, mime: file.mime, bytes: file.data.byteLength, path })
+    const dir = path.join(directory, `${Date.now()}-${index}`)
+    await mkdir(dir, { recursive: true })
+    const filePath = path.join(dir, name)
+    await writeFile(filePath, file.data)
+    saved.push({ id: file.id, name: file.name, mime: file.mime, bytes: file.data.byteLength, path: filePath })
   }
   return saved
 }
@@ -59,8 +62,8 @@ export function captureName(name: string): string {
   return sanitized
 }
 
-function mimeFor(path: string): string {
-  const ext = path.split(".").pop()?.toLowerCase() ?? ""
+export function mimeFor(filePath: string): string {
+  const ext = filePath.split(".").pop()?.toLowerCase() ?? ""
   return (
     {
       txt: "text/plain",

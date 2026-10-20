@@ -1,4 +1,6 @@
 
+import { readFile } from "node:fs/promises"
+import path from "node:path"
 import { Schema } from "effect"
 
 /** Operations that can change web state or submit data: always ask, even with a broad browser grant. */
@@ -26,10 +28,8 @@ const emptyACL: DomainACL = { allow: [], deny: [] }
 
 /** Load the domain allow/deny list from the NovaCode config dir. Missing or invalid file means no list. */
 export async function loadACL(configDir: string): Promise<DomainACL> {
-  const file = Bun.file(`${configDir}/browser-acl.json`)
-  if (!(await file.exists())) return emptyACL
   try {
-    const parsed = (await file.json()) as Partial<DomainACL>
+    const parsed = JSON.parse(await readFile(path.join(configDir, "browser-acl.json"), "utf8")) as Partial<DomainACL>
     return {
       allow: Array.isArray(parsed.allow) ? parsed.allow.filter((d) => typeof d === "string") : [],
       deny: Array.isArray(parsed.deny) ? parsed.deny.filter((d) => typeof d === "string") : [],
