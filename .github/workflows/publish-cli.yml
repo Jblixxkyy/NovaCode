@@ -21,7 +21,7 @@ on:
 concurrency: publish-cli-${{ github.ref }}
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   publish:
@@ -31,12 +31,38 @@ jobs:
 
       - uses: ./.github/actions/setup-bun
 
+      - name: Bump version
+        run: |
+          override='${{ inputs.version }}'
+          bump='${{ inputs.bump }}'
+          current=$(bun -e 'console.log((await Bun.file("packages/cli/package.json").json()).version)')
+          if [ -n "$override" ]; then
+            next="$override"
+          else
+            IFS=. read -r major minor patch <<< "${current%%-*}"
+            case "$bump" in
+              major) next="$((major + 1)).0.0" ;;
+              minor) next="$major.$((minor + 1)).0" ;;
+              *) next="$major.$minor.$((patch + 1))" ;;
+            esac
+          fi
+          echo "Bumping $current -> $next"
+          VERSION="$next" bun -e 'const path = "packages/cli/package.json"; const pkg = await Bun.file(path).json(); pkg.version = process.env.VERSION; await Bun.write(path, JSON.stringify(pkg, null, 2) + "\n")'
+          echo "VERSION=$next" >> "$GITHUB_ENV"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add packages/cli/package.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "chore(cli): bump to $next" --no-verify
+          git push --no-verify
+
       - name: Build CLI binaries
-        run: bun run ./packages/cli/script/build.ts
+        # Ship the same entrypoint `bun dev` runs (packages/novacode), not the
+        # slim packages/cli surface, so npm users get the full CLI.
+        run: bun run ./packages/novacode/script/build.ts
         env:
           NOVACODE_CHANNEL: latest
-          NOVACODE_BUMP: ${{ inputs.bump }}
-          NOVACODE_VERSION: ${{ inputs.version }}
+          NOVACODE_VERSION: ${{ env.VERSION }}
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
@@ -47,7 +73,6 @@ jobs:
         run: bun run ./packages/cli/script/publish.ts
         env:
           NOVACODE_CHANNEL: latest
-          NOVACODE_BUMP: ${{ inputs.bump }}
-          NOVACODE_VERSION: ${{ inputs.version }}
+          NOVACODE_VERSION: ${{ env.VERSION }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: "false"
