@@ -338,3 +338,38 @@ tools, legacy bridge, panel handlers) inherits it:
   the host client only for the **local** sidecar (v1 + v2 flows started
   in `main/index.ts`). Sessions on remote servers keep the Playwright
   fallback on that server — no regression, no desktop tabs there.
+
+## Implementation status (phase 1, as built)
+
+Built on branch `desktop-webview` exactly as designed above:
+
+- `packages/browser/src/desktop.ts` — wire schemas + `DesktopHost`
+  singleton (attach/replace, long-poll queue, per-scope published state,
+  30s TTL, 120s command timeout). `session.ts` routes at the Driver seam;
+  unrouted operations throw a typed "not available on desktop browser
+  tabs yet (phase 1)" error while attached. Playwright paths are
+  byte-for-byte unchanged when no desktop is attached.
+- `packages/novacode` — `BrowserDesktopApi` on the Root API
+  (attach/commands/result/state/detach) with thin handlers over the host;
+  `Browser.PanelState` gained optional `desktop` + `viewport`.
+- `packages/desktop/src/main/browser/` — `tabs.ts` (WebContentsView tab
+  manager, one persistent partition, popup→tab, embed placement with a
+  created-views-only sweep), `executor.ts` (CDP action surface mirroring
+  the Playwright driver's snapshot format and semantics), `cdp.ts`
+  (lazy `webContents.debugger`), `host.ts` (attach/poll/execute/publish
+  client, 2s backoff, 10s publish heartbeat), `embed.ts`. Wired into both
+  sidecar flows in `main/index.ts`, stopped in `killSidecar`, with
+  `browser-embed-set`/`browser-embed-clear` IPC + preload surface.
+- `packages/app` — `Platform.browserEmbed` contract; BrowserPanel hosts
+  the native view via an embed placeholder in desktop mode, freezes to
+  the still frame while inspecting or while the comment editor is open,
+  and scales pick/click coordinates by the panel-reported viewport.
+
+Verification (headless): packages/browser 47/47 tests (incl. a protocol
+test driving a fake desktop over the real host against real Chromium),
+packages/desktop 91/91 (incl. 13 new executor tests), packages/novacode
+tunnel HTTP tests + browser tool tests pass, app unit 724 pass with only
+the 4 pre-existing i18n parity failures, app test:browser 41/41, and
+typechecks clean for browser/app/desktop (novacode/core show only the
+pre-existing baseline errors). The Electron GUI itself can only be
+verified on Josh's PC.
