@@ -519,10 +519,10 @@ async function takeSnapshot(
 const INSPECT_HIGHLIGHT = {
   showInfo: true,
   showStyles: false,
-  contentColor: { r: 76, g: 140, b: 246, alpha: 0.35 },
-  paddingColor: { r: 76, g: 246, b: 140, alpha: 0.35 },
-  borderColor: { r: 246, g: 200, b: 76, alpha: 0.6 },
-  marginColor: { r: 246, g: 140, b: 76, alpha: 0.35 },
+  contentColor: { r: 76, g: 140, b: 246, a: 0.35 },
+  paddingColor: { r: 76, g: 246, b: 140, a: 0.35 },
+  borderColor: { r: 246, g: 200, b: 76, a: 0.6 },
+  marginColor: { r: 246, g: 140, b: 76, a: 0.35 },
 }
 
 /**

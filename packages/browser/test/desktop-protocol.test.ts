@@ -504,7 +504,7 @@ class FakeDesktop {
         }
         await tab.session.send("Overlay.setInspectMode", {
           mode: "searchForNode",
-          highlightConfig: { showInfo: true, contentColor: { r: 76, g: 140, b: 246, alpha: 0.35 } },
+          highlightConfig: { showInfo: true, contentColor: { r: 76, g: 140, b: 246, a: 0.35 } },
         })
         return this.tab(tab)
       }
@@ -513,7 +513,7 @@ class FakeDesktop {
         await tab.session
           .send("Overlay.setInspectMode", {
             mode: "none",
-            highlightConfig: { showInfo: true, contentColor: { r: 76, g: 140, b: 246, alpha: 0.35 } },
+            highlightConfig: { showInfo: true, contentColor: { r: 76, g: 140, b: 246, a: 0.35 } },
           })
           .catch(() => {})
         return this.tab(tab)
