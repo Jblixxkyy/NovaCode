@@ -30,6 +30,8 @@ interface FakeTab {
   captureSession: BrowserCapture.CaptureSession
   trace?: { chunks: unknown[]; startedAt: number; onData: (params: { value: unknown[] }) => void }
   cpu?: { startedAt: number }
+  refsByBackend: Map<number, string>
+  inspectWired?: boolean
 }
 
 /** Adapt a Playwright CDPSession to the shared capture session shape. */
@@ -200,6 +202,7 @@ class FakeDesktop {
       }
       await tab.session.send("Runtime.releaseObject", { objectId: resolved.object.objectId })
     }
+    tab.refsByBackend = new Map([...refs].map(([ref, backendNodeId]) => [backendNodeId, ref]))
     tab.generation += 1
     const content = lines.join("\n")
     return {
@@ -208,6 +211,11 @@ class FakeDesktop {
       truncated: false,
       ...(boxes ? { boxes: Object.fromEntries(tab.boxes) } : {}),
     }
+  }
+
+  /** A real user-style click at page coordinates (the live-inspect pick gesture). */
+  async clickAt(tabID: string, x: number, y: number) {
+    await this.require(tabID).page.mouse.click(x, y)
   }
 
   private async resolve(tab: FakeTab, ref: string) {
@@ -240,6 +248,7 @@ class FakeDesktop {
           boxes: new Map(),
           capture: BrowserCapture.createCapture(),
           captureSession: captureSessionOf(session),
+          refsByBackend: new Map(),
         }
         // Wire console/network/dialog capture before the first navigation,
         // the same order the real desktop executor uses.
@@ -476,6 +485,38 @@ class FakeDesktop {
             "Lighthouse is not available on desktop tabs in this build: an Electron webview exposes no remote-debugging port for Lighthouse to attach to. Set NOVACODE_DESKTOP_LIGHTHOUSE_CHROME to a Chrome/Chromium executable to run audits from the desktop, or run browser.lighthouse when no desktop is attached.",
           )
         throw new Error("Fake desktop never runs lighthouse")
+      }
+      case "inspect.start": {
+        const tab = this.require(action.tabID)
+        await tab.session.send("DOM.enable").catch(() => {})
+        await tab.session.send("Overlay.enable").catch(() => {})
+        if (!tab.inspectWired) {
+          tab.inspectWired = true
+          tab.session.on("Overlay.inspectNodeRequested", (params) => {
+            void (async () => {
+              await this.snapshot(tab, true)
+              const ref = tab.refsByBackend.get(params.backendNodeId)
+              const box = ref ? tab.boxes.get(ref) : undefined
+              if (ref && box)
+                this.host.publishInspect(this.attachment, SCOPE, { type: "picked", tabID: tab.id, ref, box })
+            })().catch(() => {})
+          })
+        }
+        await tab.session.send("Overlay.setInspectMode", {
+          mode: "searchForNode",
+          highlightConfig: { showInfo: true, contentColor: { r: 76, g: 140, b: 246, alpha: 0.35 } },
+        })
+        return this.tab(tab)
+      }
+      case "inspect.stop": {
+        const tab = this.require(action.tabID)
+        await tab.session
+          .send("Overlay.setInspectMode", {
+            mode: "none",
+            highlightConfig: { showInfo: true, contentColor: { r: 76, g: 140, b: 246, alpha: 0.35 } },
+          })
+          .catch(() => {})
+        return this.tab(tab)
       }
       case "dialog": {
         const tab = this.require(action.tabID)
@@ -724,6 +765,25 @@ describe("desktop tunnel protocol with a routed Driver", () => {
 
     // Lighthouse reports its missing prerequisite instead of a fake audit.
     await expect(driver.lighthouse(tab.id)).rejects.toThrow(/NOVACODE_DESKTOP_LIGHTHOUSE_CHROME/)
+
+    // Live inspect: engage the CDP Overlay, click the link in the page
+    // (the inspector intercepts the click instead of navigating), and the
+    // pick arrives in the next panel state, drained exactly once.
+    await driver.inspectStart(tab.id)
+    const linkBox = fake.boxOf(tab.id, linkRef!)!
+    await fake.clickAt(tab.id, linkBox.x + linkBox.width / 2, linkBox.y + linkBox.height / 2)
+    let inspected = await driver.panelSnapshot()
+    for (let attempt = 0; attempt < 50 && !inspected.inspectPick; attempt++) {
+      await Bun.sleep(100)
+      inspected = await driver.panelSnapshot()
+    }
+    expect(inspected.inspectPick?.tabID).toBe(tab.id)
+    expect(inspected.inspectPick?.ref).toBe(linkRef)
+    expect(inspected.inspectPick?.box.width).toBeGreaterThan(0)
+    const drained = await driver.panelSnapshot()
+    expect(drained.inspectPick).toBeUndefined()
+    await driver.inspectStop(tab.id)
+    expect((await driver.fetchState()).tabs[0]?.url).toBe(`${base}/`)
 
     const after = await driver.click(tab.id, { ref: linkRef! })
     expect(after.url).toBe(`${base}/two`)

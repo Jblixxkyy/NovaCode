@@ -1,5 +1,7 @@
 import { WebContentsView, type BrowserWindow, type Rectangle, type WebContents } from "electron"
 import { BrowserPermissions } from "@novacode-ai/browser/permissions"
+import type { BrowserDesktop } from "@novacode-ai/browser/desktop"
+import type { Browser } from "@novacode-ai/browser/rpc"
 import { attachCdp, type CdpSession } from "./cdp"
 import { ensureCapture, partitionFor, type PageContents, type TabHandle, type TabInventory } from "./executor"
 
@@ -165,6 +167,20 @@ export class BrowserTabManager implements TabInventory {
     BrowserPermissions.checkDomain(url, this.acl)
   }
 
+  private inspectListeners = new Set<(scope: string, event: BrowserDesktop.InspectEvent) => void>()
+
+  /** Subscribe to live-inspect events (picks, cancellations, in-page shortcut). */
+  onInspectEvent(listener: (scope: string, event: BrowserDesktop.InspectEvent) => void): () => void {
+    this.inspectListeners.add(listener)
+    return () => {
+      this.inspectListeners.delete(listener)
+    }
+  }
+
+  inspectEvent(scope: string, event: BrowserDesktop.InspectEvent): void {
+    for (const listener of this.inspectListeners) listener(scope, event)
+  }
+
   onChange(listener: (scope: string) => void): () => void {
     this.listeners.add(listener)
     return () => {
@@ -263,6 +279,15 @@ export class BrowserTabManager implements TabInventory {
       // Popups become regular tabs in the same scope instead of windows.
       void this.open(scope, popupUrl, true).catch(() => {})
       return { action: "deny" }
+    })
+    contents.on("before-input-event", (event, input) => {
+      // Ctrl+Shift+C (Cmd+Shift+C on macOS) inside the page asks the panel
+      // to enter live inspect for this tab, mirroring browser devtools.
+      if (input.type !== "keyDown") return
+      if (!(input.control || input.meta) || !input.shift) return
+      if (input.code !== "KeyC" && input.key.toLowerCase() !== "c") return
+      event.preventDefault()
+      this.inspectEvent(scope, { type: "inspectKey", tabID: handle.id as Browser.TabID })
     })
     contents.on("will-navigate", (event, target) => {
       if (!isAllowedURL(target)) event.preventDefault()

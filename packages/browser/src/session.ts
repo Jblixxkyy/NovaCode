@@ -1709,6 +1709,20 @@ export class Driver {
   }
 
   /** Fresh state for the web app's browser panel, including a live screenshot. */
+  /** Engage CDP Overlay live inspect on a desktop tab (no-op without a desktop). */
+  async inspectStart(tabID: string): Promise<Browser.Tab> {
+    if (this.desktopAttached)
+      return this.forwardDesktop({ type: "inspect.start", tabID: tabID as Browser.TabID })
+    return this.captureTab(tabID)
+  }
+
+  /** Disengage live inspect on a desktop tab (no-op without a desktop). */
+  async inspectStop(tabID: string): Promise<Browser.Tab> {
+    if (this.desktopAttached)
+      return this.forwardDesktop({ type: "inspect.stop", tabID: tabID as Browser.TabID })
+    return this.captureTab(tabID)
+  }
+
   async panelSnapshot(): Promise<{
     tabs: ReadonlyArray<Browser.Tab>
     focusedTabID: Browser.TabID | null
@@ -1716,13 +1730,31 @@ export class Driver {
     screenshot?: { mime: string; data: string }
     desktop?: boolean
     viewport?: { width: number; height: number }
+    inspectPick?: { tabID: Browser.TabID; ref: string; box: { x: number; y: number; width: number; height: number } }
+    inspectKeyTabID?: Browser.TabID
+    inspectCanceledTabID?: Browser.TabID
   }> {
     if (this.desktopAttached) {
       const published = BrowserDesktop.host.stateFor(this.options.scope)
       const state = published?.state ?? (await this.panelState())
       this.foldRecent(state)
+      // Drain live-inspect events queued since the previous poll.
+      let inspectPick: { tabID: Browser.TabID; ref: string; box: { x: number; y: number; width: number; height: number } } | undefined
+      let inspectKeyTabID: Browser.TabID | undefined
+      let inspectCanceledTabID: Browser.TabID | undefined
+      for (const event of BrowserDesktop.host.takeInspectEvents(this.options.scope)) {
+        if (event.type === "picked") inspectPick = { tabID: event.tabID, ref: event.ref, box: event.box }
+        else if (event.type === "inspectKey") inspectKeyTabID = event.tabID
+        else inspectCanceledTabID = event.tabID
+      }
+      const drained = {
+        ...(inspectPick ? { inspectPick } : {}),
+        ...(inspectKeyTabID ? { inspectKeyTabID } : {}),
+        ...(inspectCanceledTabID ? { inspectCanceledTabID } : {}),
+      }
       const focused = state.focusedTabID
-      if (!focused) return { ...state, recent: this.recent, screenshot: undefined, desktop: true, viewport: published?.viewport }
+      if (!focused)
+        return { ...state, recent: this.recent, screenshot: undefined, desktop: true, viewport: published?.viewport, ...drained }
       const still = await this.forwardDesktop<BrowserDesktop.DesktopStillResult>(
         {
           type: "panelStill",
@@ -1730,7 +1762,7 @@ export class Driver {
         },
         PANEL_STILL_TIMEOUT_MS,
       ).catch(() => undefined)
-      return { ...state, recent: this.recent, screenshot: still, desktop: true, viewport: published?.viewport }
+      return { ...state, recent: this.recent, screenshot: still, desktop: true, viewport: published?.viewport, ...drained }
     }
     const state = this.state()
     const focused = this.focusedTabID ? this.tabs.get(this.focusedTabID) : undefined

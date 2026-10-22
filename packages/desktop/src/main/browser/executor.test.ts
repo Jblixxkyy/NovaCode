@@ -140,7 +140,12 @@ class FakeInventory implements TabInventory {
   focused: string | null = null
   opened: Array<{ url: string | undefined; focus: boolean }> = []
   deniedHosts: string[] = []
+  inspectEvents: Array<{ scope: string; event: unknown }> = []
   private counter = 0
+
+  inspectEvent(scope: string, event: unknown) {
+    this.inspectEvents.push({ scope, event })
+  }
 
   checkNavigation(url: string) {
     const host = new URL(url).hostname
@@ -645,6 +650,40 @@ describe("executeDesktopAction", () => {
     expect(state.tabs[0]?.url).toBe("https://example.com/later")
     expect(state.tabs[0]?.title).toBe("https://example.com/later")
     expect(state.tabs[0]?.loading).toBe(false)
+  })
+
+  test("live inspect engages the Overlay and resolves picks to snapshot refs", async () => {
+    const { cdp, inventory } = setup()
+    const handle = await inventory.open("/work", "https://example.com", true)
+    await executeDesktopAction(inventory, "/work", { type: "inspect.start", tabID: handle.id as never })
+    expect(cdp.calls).toContainEqual({
+      method: "Overlay.setInspectMode",
+      params: expect.objectContaining({ mode: "searchForNode" }),
+    })
+    await executeDesktopAction(inventory, "/work", { type: "inspect.stop", tabID: handle.id as never })
+    expect(cdp.calls).toContainEqual({
+      method: "Overlay.setInspectMode",
+      params: expect.objectContaining({ mode: "none" }),
+    })
+    // A pick in the page resolves the backend node through a fresh snapshot.
+    await executeDesktopAction(inventory, "/work", { type: "inspect.start", tabID: handle.id as never })
+    cdp.emit("Overlay.inspectNodeRequested", { backendNodeId: 3 })
+    for (let attempt = 0; attempt < 50 && inventory.inspectEvents.length === 0; attempt++)
+      await Bun.sleep(20)
+    expect(inventory.inspectEvents).toEqual([
+      {
+        scope: "/work",
+        event: { type: "picked", tabID: handle.id, ref: "e3", box: { x: 0, y: 0, width: 10, height: 10 } },
+      },
+    ])
+  })
+
+  test("inspect cancellation from the page is forwarded once per engagement", async () => {
+    const { cdp, inventory } = setup()
+    const handle = await inventory.open("/work", "https://example.com", true)
+    await executeDesktopAction(inventory, "/work", { type: "inspect.start", tabID: handle.id as never })
+    cdp.emit("Overlay.inspectModeCanceled", {})
+    expect(inventory.inspectEvents).toEqual([{ scope: "/work", event: { type: "canceled", tabID: handle.id } }])
   })
 
   test("unsupported actions raise DesktopUnsupportedError", async () => {

@@ -72,6 +72,9 @@ export interface TabHandle {
   traceResult?: { chunks: unknown[]; durationMs: number; incomplete: boolean }
   cpu?: { startedAt: number; timer: ReturnType<typeof setTimeout> }
   cpuResult?: { profile: unknown; durationMs: number }
+  /** CDP Overlay inspect mode is engaged on this tab. */
+  inspecting?: boolean
+  inspectWired?: boolean
   boxes: Map<string, { x: number; y: number; width: number; height: number }>
 }
 
@@ -144,6 +147,8 @@ export interface TabInventory {
    * manager implements it; test inventories may omit it.
    */
   checkNavigation?(url: string): void
+  /** Optional sink for live-inspect events (picks, cancellations) bound for the server. */
+  inspectEvent?(scope: string, event: BrowserDesktop.InspectEvent): void
 }
 
 export function tabOf(handle: TabHandle): Browser.Tab {
@@ -454,6 +459,100 @@ async function navigate(inventory: TabInventory, handle: TabHandle, rawUrl: stri
   return tabOf(handle)
 }
 
+/** Take an accessibility snapshot, (re)registering refs and optionally measuring boxes. */
+async function takeSnapshot(
+  handle: TabHandle,
+  options: { depth?: number; boxes?: boolean },
+): Promise<{
+  content: string
+  truncated: boolean
+  boxes: Record<string, { x: number; y: number; width: number; height: number }>
+  refsByBackend: Map<number, string>
+}> {
+  const cdp = handle.contents.cdp
+  const maxDepth = options.depth ?? 20
+  const tree = (await cdp.send("Accessibility.getFullAXTree", { depth: options.depth })) as { nodes?: AXNodeLike[] }
+  const nodes = tree.nodes ?? []
+  const { lines, refs } = formatSnapshot(nodes, maxDepth)
+  handle.boxes.clear()
+  const boxes: Record<string, { x: number; y: number; width: number; height: number }> = {}
+  for (const [ref, backendNodeId] of refs) {
+    try {
+      const resolved = (await cdp.send("DOM.resolveNode", { backendNodeId })) as { object: { objectId: string } }
+      await cdp.send("Runtime.callFunctionOn", {
+        objectId: resolved.object.objectId,
+        functionDeclaration: `function(ref) { (globalThis.__novacodeRefs = globalThis.__novacodeRefs || new Map()).set(ref, this) }`,
+        arguments: [{ value: ref }],
+      })
+      if (options.boxes) {
+        const box = (await cdp
+          .send("DOM.getBoxModel", { backendNodeId })
+          .catch(() => undefined)) as { model: { content: number[] } } | undefined
+        const content = box?.model.content
+        if (content && content.length >= 8) {
+          const xs = [content[0]!, content[2]!, content[4]!, content[6]!]
+          const ys = [content[1]!, content[3]!, content[5]!, content[7]!]
+          const x = Math.min(...xs)
+          const y = Math.min(...ys)
+          const entry = { x, y, width: Math.max(...xs) - x, height: Math.max(...ys) - y }
+          handle.boxes.set(ref, entry)
+          boxes[ref] = entry
+        }
+      }
+      await cdp.send("Runtime.releaseObject", { objectId: resolved.object.objectId })
+    } catch {
+      // Node vanished mid-snapshot; skip it.
+    }
+  }
+  handle.generation += 1
+  const content = lines.join("\n")
+  const truncated = content.length > Browser.MAX_TEXT
+  return {
+    content: truncated ? content.slice(0, Browser.MAX_TEXT) : content,
+    truncated,
+    boxes,
+    refsByBackend: new Map([...refs].map(([ref, backendNodeId]) => [backendNodeId, ref])),
+  }
+}
+
+/** Overlay highlight shown while live inspect is engaged (accent-tinted box model). */
+const INSPECT_HIGHLIGHT = {
+  showInfo: true,
+  showStyles: false,
+  contentColor: { r: 76, g: 140, b: 246, alpha: 0.35 },
+  paddingColor: { r: 76, g: 246, b: 140, alpha: 0.35 },
+  borderColor: { r: 246, g: 200, b: 76, alpha: 0.6 },
+  marginColor: { r: 246, g: 140, b: 76, alpha: 0.35 },
+}
+
+/**
+ * Subscribe to Overlay inspect events for a tab (once). A pick resolves the
+ * backend node to the same ref + box the snapshot machinery produces, so the
+ * panel's comment flow cannot tell live picks from still-frame picks.
+ * searchForNode exits inspect mode after one pick; the flag follows.
+ */
+function wireInspect(handle: TabHandle, emit: (event: BrowserDesktop.InspectEvent) => void): void {
+  if (handle.inspectWired) return
+  handle.inspectWired = true
+  const cdp = handle.contents.cdp
+  cdp.on("Overlay.inspectNodeRequested", (params) => {
+    handle.inspecting = false
+    const backendNodeId = params.backendNodeId
+    if (typeof backendNodeId !== "number") return
+    void (async () => {
+      const snap = await takeSnapshot(handle, { boxes: true })
+      const ref = snap.refsByBackend.get(backendNodeId)
+      const box = ref ? snap.boxes[ref] : undefined
+      if (ref && box) emit({ type: "picked", tabID: handle.id as Browser.TabID, ref, box })
+    })().catch(() => {})
+  })
+  cdp.on("Overlay.inspectModeCanceled", () => {
+    if (!handle.inspecting) return
+    handle.inspecting = false
+    emit({ type: "canceled", tabID: handle.id as Browser.TabID })
+  })
+}
+
 // ---------------------------------------------------------------------------
 // Action execution
 // ---------------------------------------------------------------------------
@@ -517,51 +616,38 @@ export async function executeDesktopAction(
     }
     case "snapshot": {
       const handle = requireTab(inventory, scope, action.tabID)
-      const cdp = handle.contents.cdp
-      const maxDepth = action.depth ?? 20
-      const tree = (await cdp.send("Accessibility.getFullAXTree", { depth: action.depth })) as { nodes?: AXNodeLike[] }
-      const nodes = tree.nodes ?? []
-      const { lines, refs } = formatSnapshot(nodes, maxDepth)
-      handle.boxes.clear()
-      const boxes: Record<string, { x: number; y: number; width: number; height: number }> = {}
-      for (const [ref, backendNodeId] of refs) {
-        try {
-          const resolved = (await cdp.send("DOM.resolveNode", { backendNodeId })) as { object: { objectId: string } }
-          await cdp.send("Runtime.callFunctionOn", {
-            objectId: resolved.object.objectId,
-            functionDeclaration: `function(ref) { (globalThis.__novacodeRefs = globalThis.__novacodeRefs || new Map()).set(ref, this) }`,
-            arguments: [{ value: ref }],
-          })
-          if (action.boxes) {
-            const box = (await cdp
-              .send("DOM.getBoxModel", { backendNodeId })
-              .catch(() => undefined)) as { model: { content: number[] } } | undefined
-            const content = box?.model.content
-            if (content && content.length >= 8) {
-              const xs = [content[0]!, content[2]!, content[4]!, content[6]!]
-              const ys = [content[1]!, content[3]!, content[5]!, content[7]!]
-              const x = Math.min(...xs)
-              const y = Math.min(...ys)
-              const entry = { x, y, width: Math.max(...xs) - x, height: Math.max(...ys) - y }
-              handle.boxes.set(ref, entry)
-              boxes[ref] = entry
-            }
-          }
-          await cdp.send("Runtime.releaseObject", { objectId: resolved.object.objectId })
-        } catch {
-          // Node vanished mid-snapshot; skip it.
-        }
-      }
-      handle.generation += 1
-      const content = lines.join("\n")
-      const truncated = content.length > Browser.MAX_TEXT
+      const snap = await takeSnapshot(handle, { depth: action.depth, boxes: action.boxes })
       const result: BrowserDesktop.DesktopSnapshotResult = {
         tab: tabOf(handle),
-        content: truncated ? content.slice(0, Browser.MAX_TEXT) : content,
-        truncated,
-        ...(action.boxes ? { boxes } : {}),
+        content: snap.content,
+        truncated: snap.truncated,
+        ...(action.boxes ? { boxes: snap.boxes } : {}),
       }
       return result
+    }
+    case "inspect.start": {
+      const handle = requireTab(inventory, scope, action.tabID)
+      const cdp = handle.contents.cdp
+      await cdp.send("DOM.enable").catch(() => {})
+      await cdp.send("Overlay.enable").catch(() => {})
+      wireInspect(handle, (event) => inventory.inspectEvent?.(scope, event))
+      await cdp.send("Overlay.setInspectMode", {
+        mode: "searchForNode",
+        highlightConfig: INSPECT_HIGHLIGHT,
+      })
+      handle.inspecting = true
+      return tabOf(handle)
+    }
+    case "inspect.stop": {
+      const handle = requireTab(inventory, scope, action.tabID)
+      if (handle.inspecting) {
+        handle.inspecting = false
+        // CDP requires a highlight config even when disabling inspect mode.
+        await handle.contents.cdp
+          .send("Overlay.setInspectMode", { mode: "none", highlightConfig: INSPECT_HIGHLIGHT })
+          .catch(() => {})
+      }
+      return tabOf(handle)
     }
     case "evaluate": {
       const handle = requireTab(inventory, scope, action.tabID)

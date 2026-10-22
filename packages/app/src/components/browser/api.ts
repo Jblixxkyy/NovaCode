@@ -23,6 +23,12 @@ export interface BrowserPanelState {
   desktop?: boolean
   /** The serving backend's page viewport in CSS pixels. */
   viewport?: { width: number; height: number }
+  /** A live-inspect element pick drained since the previous poll (desktop tabs only). */
+  inspectPick?: { tabID: string; ref: string; box: { x: number; y: number; width: number; height: number } }
+  /** The tab whose page asked to enter inspect (Ctrl+Shift+C), drained since the previous poll. */
+  inspectKeyTabID?: string
+  /** The tab whose in-page inspect mode was canceled, drained since the previous poll. */
+  inspectCanceledTabID?: string
 }
 
 export interface BrowserApi {
@@ -41,6 +47,8 @@ export interface BrowserApi {
     y: number,
   ) => Promise<{ ref?: string; box?: { x: number; y: number; width: number; height: number } }>
   click: (tabID: string, x: number, y: number) => Promise<BrowserPanelState>
+  inspectStart: (tabID: string) => Promise<BrowserPanelState>
+  inspectStop: (tabID: string) => Promise<BrowserPanelState>
   clearHistory: () => Promise<BrowserPanelState>
 }
 
@@ -101,6 +109,8 @@ export function createBrowserApi(input: {
         y,
       }),
     click: (tabID: string, x: number, y: number) => call<BrowserPanelState>("/browser/click", { tabID, x, y }),
+    inspectStart: tabAction("/browser/inspect/start"),
+    inspectStop: tabAction("/browser/inspect/stop"),
     clearHistory: () => call<BrowserPanelState>("/browser/clear-history", {}),
   }
 }

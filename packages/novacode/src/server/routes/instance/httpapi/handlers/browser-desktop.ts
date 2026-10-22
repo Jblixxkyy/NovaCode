@@ -47,6 +47,14 @@ export const browserDesktopHandlers = HttpApiBuilder.group(RootHttpApi, "browser
       )
     })
 
+    const inspect = Effect.fn("BrowserDesktopHttpApi.inspect")(function* (ctx: {
+      payload: { attachment: string; scope: string; event: BrowserDesktop.InspectEvent }
+    }) {
+      return yield* Effect.sync(() =>
+        host.publishInspect(ctx.payload.attachment, ctx.payload.scope, ctx.payload.event),
+      )
+    })
+
     const detach = Effect.fn("BrowserDesktopHttpApi.detach")(function* (ctx: { payload: { attachment: string } }) {
       return yield* Effect.sync(() => host.detach(ctx.payload.attachment))
     })
@@ -56,6 +64,7 @@ export const browserDesktopHandlers = HttpApiBuilder.group(RootHttpApi, "browser
       .handle("commands", commands)
       .handle("result", result)
       .handle("state", state)
+      .handle("inspect", inspect)
       .handle("detach", detach)
   }),
 )

@@ -38,6 +38,9 @@ export function BrowserPanel() {
     loading: true,
     error: undefined as string | undefined,
     inspecting: false,
+    // True while CDP Overlay live inspect is engaged on the focused desktop
+    // tab: the native view stays visible and picks happen in the live page.
+    liveInspect: false,
     comment: undefined as
       | { x: number; y: number; ref: string; box?: { x: number; y: number; width: number; height: number } }
       | undefined,
@@ -67,9 +70,11 @@ export function BrowserPanel() {
       !isBlank(focusedTab()?.url) &&
       !failed(),
   )
-  // Frozen = native view hidden, still frame shown: while inspecting or
-  // while the comment editor is open (the OpenCode freeze-to-still trick).
-  const frozen = () => store.inspecting || !!store.comment
+  // Frozen = native view hidden, still frame shown: while the comment
+  // editor is open, or while inspecting via the still-frame pick flow.
+  // Live inspect (CDP Overlay on a desktop tab) is the exception: the
+  // native view stays visible and the pick happens in the live page.
+  const frozen = () => !!store.comment || (store.inspecting && !(store.liveInspect && embedActive()))
   const embedVisible = () => embedActive() && !frozen()
   const screenshotSrc = createMemo(() => {
     const shot = store.panel?.screenshot
@@ -80,9 +85,70 @@ export function BrowserPanel() {
     try {
       const panel = await api().state()
       setStore({ panel, error: undefined, loading: false })
+      handleInspectEvents(panel)
     } catch (error) {
       setStore({ error: error instanceof Error ? error.message : String(error), loading: false })
     }
+  }
+
+  // Live-inspect events arrive drained inside panel state (each exactly
+  // once): a pick opens the comment editor anchored to the picked element,
+  // an in-page Ctrl+Shift+C enters inspect, an in-page cancel exits it.
+  const handleInspectEvents = (panel: BrowserPanelState) => {
+    const tab = focusedTab()
+    if (!tab) return
+    if (panel.inspectCanceledTabID === tab.id && store.inspecting && !store.comment)
+      setStore({ inspecting: false, liveInspect: false })
+    if (
+      panel.inspectKeyTabID === tab.id &&
+      !store.inspecting &&
+      !store.comment &&
+      !isBlank(tab.url) &&
+      !tab.loadError
+    )
+      enterInspect()
+    const pick = panel.inspectPick
+    if (!pick || pick.tabID !== tab.id || !store.inspecting || store.comment) return
+    const area = (embedEl ?? container)?.getBoundingClientRect()
+    const origin = container?.getBoundingClientRect()
+    if (!area || !origin) return
+    const outline = {
+      x: area.left - origin.left + (pick.box.x / viewport().width) * area.width,
+      y: area.top - origin.top + (pick.box.y / viewport().height) * area.height,
+      width: (pick.box.width / viewport().width) * area.width,
+      height: (pick.box.height / viewport().height) * area.height,
+    }
+    commentDraftEmpty = true
+    setStore({
+      inspecting: false,
+      liveInspect: false,
+      comment: { x: outline.x, y: outline.y, ref: pick.ref, box: outline },
+    })
+  }
+
+  // Enter inspect mode: on desktop tabs engage the CDP Overlay in the live
+  // view; if that fails (or there is no desktop) fall back to the
+  // freeze-to-still pick flow by simply refreshing for a still.
+  const enterInspect = () => {
+    const tab = focusedTab()
+    setStore({ inspecting: true, comment: undefined })
+    if (tab && store.panel?.desktop) {
+      void api()
+        .inspectStart(tab.id)
+        .then(
+          (panel) => {
+            if (store.inspecting && focusedTab()?.id === tab.id) setStore({ panel, liveInspect: true })
+          },
+          () => void refresh(),
+        )
+    } else void refresh()
+  }
+
+  const exitInspect = () => {
+    const tab = focusedTab()
+    const wasLive = store.liveInspect
+    setStore({ inspecting: false, liveInspect: false })
+    if (tab && wasLive) void api().inspectStop(tab.id).catch(() => {})
   }
 
   const act = async (run: (api: BrowserApi) => Promise<BrowserPanelState>) => {
@@ -126,7 +192,7 @@ export function BrowserPanel() {
       // Escape dismisses an open comment editor first, then inspect mode,
       // regardless of where focus currently is.
       if (store.comment) setStore("comment", undefined)
-      else if (store.inspecting) setStore("inspecting", false)
+      else if (store.inspecting) exitInspect()
     })
     onCleanup(stop)
   })
@@ -148,7 +214,10 @@ export function BrowserPanel() {
     on(
       () => focusedTab()?.id,
       (id, previous) => {
-        if (previous && id !== previous) setStore({ comment: undefined, inspecting: false })
+        if (previous && id !== previous) {
+          if (store.liveInspect) void api().inspectStop(previous).catch(() => {})
+          setStore({ comment: undefined, inspecting: false, liveInspect: false })
+        }
       },
     ),
   )
@@ -176,6 +245,7 @@ export function BrowserPanel() {
     void store.panel?.desktop
     void store.panel?.focusedTabID
     void store.inspecting
+    void store.liveInspect
     void store.comment
     reportEmbed()
   })
@@ -185,7 +255,11 @@ export function BrowserPanel() {
     observer.observe(container)
     onCleanup(() => observer.disconnect())
   })
-  onCleanup(() => platform.browserEmbed?.clear())
+  onCleanup(() => {
+    platform.browserEmbed?.clear()
+    const tab = focusedTab()
+    if (tab && store.liveInspect) void api().inspectStop(tab.id).catch(() => {})
+  })
 
   const go = (url: string) => {
     const tab = focusedTab()
@@ -353,11 +427,8 @@ export function BrowserPanel() {
               aria-pressed={store.inspecting}
               aria-label={language.t("browser.action.inspect")}
               onClick={() => {
-                const entering = !store.inspecting
-                setStore({ inspecting: entering, comment: undefined })
-                // Entering inspect freezes the desktop view onto a still:
-                // fetch it now instead of waiting for the next poll.
-                if (entering) void refresh()
+                if (store.inspecting) exitInspect()
+                else enterInspect()
               }}
               classList={{ "text-v2-icon-icon-accent": store.inspecting }}
             />

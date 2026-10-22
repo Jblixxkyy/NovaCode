@@ -46,10 +46,54 @@ export const FilesDeliverAction = Schema.Struct({
   ),
 }).annotate({ identifier: "Browser.DesktopFilesDeliver" })
 
+/** Engage the CDP Overlay live inspect mode on a desktop tab. */
+export const InspectStartAction = Schema.Struct({
+  type: Schema.Literal("inspect.start"),
+  tabID: Browser.TabID,
+}).annotate({ identifier: "Browser.DesktopInspectStart" })
+
+/** Disengage the CDP Overlay inspect mode on a desktop tab. */
+export const InspectStopAction = Schema.Struct({
+  type: Schema.Literal("inspect.stop"),
+  tabID: Browser.TabID,
+}).annotate({ identifier: "Browser.DesktopInspectStop" })
+
 /** Everything that may travel from the server to an attached desktop. */
-export const DesktopAction = Schema.Union([Browser.Action, ClickAtPointAction, PanelStillAction, FilesDeliverAction]).annotate({
+export const DesktopAction = Schema.Union([
+  Browser.Action,
+  ClickAtPointAction,
+  PanelStillAction,
+  FilesDeliverAction,
+  InspectStartAction,
+  InspectStopAction,
+]).annotate({
   identifier: "Browser.DesktopAction",
 })
+
+const inspectBox = Schema.Struct({
+  x: Schema.Number,
+  y: Schema.Number,
+  width: Schema.Number,
+  height: Schema.Number,
+})
+
+/**
+ * Events that travel from the desktop back to the server outside the
+ * command/response flow: live-inspect picks and cancellations, and the
+ * in-page Ctrl+Shift+C request. The server queues them per scope and the
+ * Driver drains them into the panel state.
+ */
+export const InspectEvent = Schema.Union([
+  Schema.Struct({
+    type: Schema.Literal("picked"),
+    tabID: Browser.TabID,
+    ref: Schema.String,
+    box: inspectBox,
+  }),
+  Schema.Struct({ type: Schema.Literal("canceled"), tabID: Browser.TabID }),
+  Schema.Struct({ type: Schema.Literal("inspectKey"), tabID: Browser.TabID }),
+]).annotate({ identifier: "Browser.DesktopInspectEvent" })
+export type InspectEvent = typeof InspectEvent.Type
 export type DesktopAction = typeof DesktopAction.Type
 
 export const DesktopOutcome = Schema.Union([
@@ -155,6 +199,7 @@ export class DesktopHost {
     []
   private pending = new Map<string, Pending>()
   private published = new Map<string, PublishedState>()
+  private inspectEvents = new Map<string, InspectEvent[]>()
   /**
    * The server's effective domain ACL (browser-acl.json), handed to each
    * attaching desktop so webview navigation enforces the same allow/deny
@@ -230,6 +275,24 @@ export class DesktopHost {
     return true
   }
 
+  /** Queue a live-inspect event from the desktop for the panel to drain. Bounded; picks are user-paced. */
+  publishInspect(attachment: string, scope: string, event: InspectEvent): boolean {
+    if (!this.touch(attachment)) return false
+    const queue = this.inspectEvents.get(scope) ?? []
+    queue.push(event)
+    if (queue.length > 20) queue.splice(0, queue.length - 20)
+    this.inspectEvents.set(scope, queue)
+    return true
+  }
+
+  /** Drain a scope's queued inspect events (each event is delivered exactly once). */
+  takeInspectEvents(scope: string): InspectEvent[] {
+    const queue = this.inspectEvents.get(scope)
+    if (!queue || queue.length === 0) return []
+    this.inspectEvents.delete(scope)
+    return queue
+  }
+
   stateFor(scope: string): PublishedState | undefined {
     if (!this.attached()) return undefined
     return this.published.get(scope)
@@ -291,6 +354,7 @@ export class DesktopHost {
     }
     this.pollers = []
     this.published.clear()
+    this.inspectEvents.clear()
   }
 }
 

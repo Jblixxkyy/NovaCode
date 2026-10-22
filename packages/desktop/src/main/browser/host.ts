@@ -80,6 +80,10 @@ export function startBrowserHost(input: {
   const unsubscribe = manager.onChange((scope) => {
     void publish(scope)
   })
+  const unsubscribeInspect = manager.onInspectEvent((scope, event) => {
+    if (!attachment || stopped) return
+    void post("/browser/desktop/inspect", { attachment, scope, event }).catch(() => undefined)
+  })
   const heartbeat = setInterval(publishAll, PUBLISH_HEARTBEAT_MS)
   heartbeat.unref()
 
@@ -155,6 +159,7 @@ export function startBrowserHost(input: {
       stopped = true
       clearInterval(heartbeat)
       unsubscribe()
+      unsubscribeInspect()
       const current = attachment
       attachment = undefined
       if (current) {

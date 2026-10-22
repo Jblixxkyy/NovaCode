@@ -29,6 +29,23 @@ export const BrowserPanelState = Schema.Struct({
       height: Schema.Number,
     }),
   ),
+  // Live-inspect events drained since the previous poll (desktop tabs
+  // only): an element picked in the live view, an in-page inspect shortcut,
+  // or an inspect cancellation from the page. Each is delivered once.
+  inspectPick: Schema.optional(
+    Schema.Struct({
+      tabID: Browser.TabID,
+      ref: Schema.String,
+      box: Schema.Struct({
+        x: Schema.Number,
+        y: Schema.Number,
+        width: Schema.Number,
+        height: Schema.Number,
+      }),
+    }),
+  ),
+  inspectKeyTabID: Schema.optional(Browser.TabID),
+  inspectCanceledTabID: Schema.optional(Browser.TabID),
 }).annotate({ identifier: "Browser.PanelState" })
 
 export const BrowserTabIDPayload = Schema.Struct({
@@ -172,6 +189,29 @@ export const BrowserApi = HttpApi.make("browser")
             identifier: "browser.pick",
             summary: "Pick element",
             description: "Map a CSS-pixel point on the page to the smallest containing element ref.",
+          }),
+        ),
+        HttpApiEndpoint.post("inspectStart", "/browser/inspect/start", {
+          query: WorkspaceRoutingQuery,
+          payload: BrowserTabIDPayload,
+          success: described(BrowserPanelState, "Browser panel state"),
+        }).annotateMerge(
+          OpenApi.annotations({
+            identifier: "browser.inspectStart",
+            summary: "Start live inspect",
+            description:
+              "Engage CDP Overlay live inspect on a desktop tab. Without a desktop this is a no-op and the panel keeps its screenshot pick flow.",
+          }),
+        ),
+        HttpApiEndpoint.post("inspectStop", "/browser/inspect/stop", {
+          query: WorkspaceRoutingQuery,
+          payload: BrowserTabIDPayload,
+          success: described(BrowserPanelState, "Browser panel state"),
+        }).annotateMerge(
+          OpenApi.annotations({
+            identifier: "browser.inspectStop",
+            summary: "Stop live inspect",
+            description: "Disengage live inspect on a desktop tab.",
           }),
         ),
         HttpApiEndpoint.post("click", "/browser/click", {

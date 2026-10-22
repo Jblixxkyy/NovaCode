@@ -102,6 +102,21 @@ export const BrowserDesktopApi = HttpApi.make("browser-desktop")
               "Publish the desktop's authoritative tab inventory for one location scope; also serves as a heartbeat.",
           }),
         ),
+        HttpApiEndpoint.post("inspect", "/browser/desktop/inspect", {
+          payload: Schema.Struct({
+            attachment: Schema.String,
+            scope: Schema.String,
+            event: BrowserDesktop.InspectEvent,
+          }),
+          success: described(Schema.Boolean, "Whether the inspect event was accepted"),
+        }).annotateMerge(
+          OpenApi.annotations({
+            identifier: "browser.desktop.inspect",
+            summary: "Report a live-inspect event",
+            description:
+              "Queue a live-inspect event (element pick, inspect cancellation, or an in-page inspect shortcut) for the browser panel to drain with its next state poll.",
+          }),
+        ),
         HttpApiEndpoint.post("detach", "/browser/desktop/detach", {
           payload: Schema.Struct({
             attachment: Schema.String,
