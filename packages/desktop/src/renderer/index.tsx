@@ -292,6 +292,11 @@ const createPlatform = (windowState: DesktopWindowState): Platform => {
       await window.api.setDisplayBackend(backend)
     },
 
+    browserEmbed: {
+      set: (input) => window.api.browserEmbedSet(input),
+      clear: () => window.api.browserEmbedClear(),
+    },
+
     webviewZoom,
 
     windowFullscreen,

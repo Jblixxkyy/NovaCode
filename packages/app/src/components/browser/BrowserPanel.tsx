@@ -5,6 +5,7 @@ import { IconButton } from "@novacode-ai/ui/icon-button"
 import { Tooltip } from "@novacode-ai/ui/tooltip"
 import { DropdownMenu } from "@novacode-ai/ui/dropdown-menu"
 import { useLanguage } from "@/context/language"
+import { usePlatform } from "@/context/platform"
 import { useSDK } from "@/context/sdk"
 import { useServerSDK } from "@/context/server-sdk"
 import { showToast } from "@/utils/toast"
@@ -14,7 +15,8 @@ import { BrowserCommentEditor } from "./BrowserCommentEditor"
 import { createBrowserApi, type BrowserApi, type BrowserPanelState } from "./api"
 
 const POLL_MS = 2000
-// The driver's fixed headless viewport; screenshot clicks scale into it.
+// Fallback page viewport (the Playwright driver's fixed size); the panel
+// state reports the real one, which differs on desktop webview tabs.
 const VIEWPORT_WIDTH = 1280
 const VIEWPORT_HEIGHT = 800
 
@@ -22,6 +24,7 @@ const isBlank = (url: string | undefined) => !url || url === "about:blank"
 
 export function BrowserPanel() {
   const language = useLanguage()
+  const platform = usePlatform()
   const sdk = useSDK()
   const serverSDK = useServerSDK()
 
@@ -42,6 +45,7 @@ export function BrowserPanel() {
 
   let container: HTMLDivElement | undefined
   let img: HTMLImageElement | undefined
+  let embedEl: HTMLDivElement | undefined
   let addressApi: { focus: () => void } | undefined
 
   const focusedTab = createMemo(() => {
@@ -51,6 +55,22 @@ export function BrowserPanel() {
   })
   const failed = () => !!focusedTab()?.loadError
   const empty = () => !store.loading && !failed() && isBlank(focusedTab()?.url)
+  const viewport = createMemo(() => store.panel?.viewport ?? { width: VIEWPORT_WIDTH, height: VIEWPORT_HEIGHT })
+  // Desktop embed mode: a desktop is attached, this platform can host the
+  // native view, and the focused tab has a real page. The native webview
+  // is then the live page; the screenshot flow only renders while frozen.
+  const embedActive = createMemo(
+    () =>
+      !!platform.browserEmbed &&
+      store.panel?.desktop === true &&
+      !!focusedTab() &&
+      !isBlank(focusedTab()?.url) &&
+      !failed(),
+  )
+  // Frozen = native view hidden, still frame shown: while inspecting or
+  // while the comment editor is open (the OpenCode freeze-to-still trick).
+  const frozen = () => store.inspecting || !!store.comment
+  const embedVisible = () => embedActive() && !frozen()
   const screenshotSrc = createMemo(() => {
     const shot = store.panel?.screenshot
     return shot ? `data:${shot.mime};base64,${shot.data}` : undefined
@@ -133,6 +153,40 @@ export function BrowserPanel() {
     ),
   )
 
+  // Report the page area's rect to the desktop main process so it can
+  // place the native webview there. Reads the reactive inputs (panel
+  // desktop flag, focused tab, freeze state) so the effect re-reports on
+  // every change; the ResizeObserver covers pure layout changes.
+  const reportEmbed = () => {
+    const embed = platform.browserEmbed
+    if (!embed) return
+    if (!embedActive() || !embedEl) {
+      embed.clear()
+      return
+    }
+    const rect = embedEl.getBoundingClientRect()
+    embed.set({
+      scope: sdk().directory,
+      tabID: store.panel?.focusedTabID ?? null,
+      rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
+      visible: embedVisible(),
+    })
+  }
+  createEffect(() => {
+    void store.panel?.desktop
+    void store.panel?.focusedTabID
+    void store.inspecting
+    void store.comment
+    reportEmbed()
+  })
+  onMount(() => {
+    if (!container || typeof ResizeObserver === "undefined") return
+    const observer = new ResizeObserver(() => reportEmbed())
+    observer.observe(container)
+    onCleanup(() => observer.disconnect())
+  })
+  onCleanup(() => platform.browserEmbed?.clear())
+
   const go = (url: string) => {
     const tab = focusedTab()
     if (!tab) return act((api) => api.open(url))
@@ -155,11 +209,11 @@ export function BrowserPanel() {
     const tab = focusedTab()
     if (!tab || !img || !container) return
     // Coordinates are measured against the rendered <img> rect (which is the
-    // letterboxed page image), then scaled into the driver's viewport.
+    // letterboxed page image), then scaled into the serving viewport.
     const rect = img.getBoundingClientRect()
     if (rect.width === 0 || rect.height === 0) return
-    const x = Math.round(((event.clientX - rect.left) / rect.width) * VIEWPORT_WIDTH)
-    const y = Math.round(((event.clientY - rect.top) / rect.height) * VIEWPORT_HEIGHT)
+    const x = Math.round(((event.clientX - rect.left) / rect.width) * viewport().width)
+    const y = Math.round(((event.clientY - rect.top) / rect.height) * viewport().height)
     if (!store.inspecting) {
       // Normal click: forward it to the page so links/buttons work.
       await act((api) => api.click(tab.id, x, y))
@@ -181,10 +235,10 @@ export function BrowserPanel() {
       // so the overlay can outline the actual element.
       const outline = picked.box
         ? {
-            x: rect.left - box.left + (picked.box.x / VIEWPORT_WIDTH) * rect.width,
-            y: rect.top - box.top + (picked.box.y / VIEWPORT_HEIGHT) * rect.height,
-            width: (picked.box.width / VIEWPORT_WIDTH) * rect.width,
-            height: (picked.box.height / VIEWPORT_HEIGHT) * rect.height,
+            x: rect.left - box.left + (picked.box.x / viewport().width) * rect.width,
+            y: rect.top - box.top + (picked.box.y / viewport().height) * rect.height,
+            width: (picked.box.width / viewport().width) * rect.width,
+            height: (picked.box.height / viewport().height) * rect.height,
           }
         : undefined
       commentDraftEmpty = true
@@ -299,7 +353,11 @@ export function BrowserPanel() {
               aria-pressed={store.inspecting}
               aria-label={language.t("browser.action.inspect")}
               onClick={() => {
-                setStore({ inspecting: !store.inspecting, comment: undefined })
+                const entering = !store.inspecting
+                setStore({ inspecting: entering, comment: undefined })
+                // Entering inspect freezes the desktop view onto a still:
+                // fetch it now instead of waiting for the next poll.
+                if (entering) void refresh()
               }}
               classList={{ "text-v2-icon-icon-accent": store.inspecting }}
             />
@@ -411,7 +469,10 @@ export function BrowserPanel() {
             <div class="text-13-regular text-v2-text-text-muted">{language.t("browser.failed.description")}</div>
           </div>
         </Show>
-        <Show when={!empty() && !failed() && screenshotSrc()}>
+        <Show when={embedActive()}>
+          <div ref={embedEl} data-component="browser-embed" class="absolute inset-0" />
+        </Show>
+        <Show when={(!embedActive() || frozen()) && !empty() && !failed() && screenshotSrc()}>
           {(src) => (
             <img
               ref={img}

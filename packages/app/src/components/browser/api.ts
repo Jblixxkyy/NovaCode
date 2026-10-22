@@ -17,6 +17,10 @@ export interface BrowserPanelState {
   focusedTabID: string | null
   recent: string[]
   screenshot?: { mime: string; data: string }
+  /** True when a desktop is attached and the page is a live webview. */
+  desktop?: boolean
+  /** The serving backend's page viewport in CSS pixels. */
+  viewport?: { width: number; height: number }
 }
 
 export interface BrowserApi {

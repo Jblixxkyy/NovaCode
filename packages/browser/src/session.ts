@@ -3,6 +3,7 @@ import path from "node:path"
 import { Schema } from "effect"
 import type { BrowserContext, CDPSession, Dialog, Download, ElementHandle, Frame, Page } from "playwright"
 import { Browser } from "./rpc"
+import { BrowserDesktop } from "./desktop"
 import { BrowserFiles } from "./files"
 import { BrowserPermissions } from "./permissions"
 
@@ -22,6 +23,8 @@ export interface DriverOptions {
   readonly captureDir: string
   /** NovaCode config dir, for browser-acl.json */
   readonly configDir: string
+  /** Location scope (directory) this driver serves; scopes desktop tunnel commands and state. */
+  readonly scope?: string
   readonly headless?: boolean
 }
 
@@ -70,17 +73,73 @@ export class Driver {
   private focusedTabID: Browser.TabID | undefined
   private acl: BrowserPermissions.DomainACL = { allow: [], deny: [] }
   private recent: string[] = []
-  private readonly options: Required<DriverOptions>
+  private readonly options: Required<Omit<DriverOptions, "scope">> & { readonly scope: string }
+  /** Element boxes from the latest desktop snapshot per tab (inspect picking is server-side). */
+  private remoteBoxes = new Map<Browser.TabID, Map<string, { x: number; y: number; width: number; height: number }>>()
+  /** Desktop screenshots materialized into the capture dir by the forwarder. */
+  private remoteFiles = new Map<Browser.FileID, { tabID: Browser.TabID; info: Browser.FileInfo }>()
 
   constructor(options: DriverOptions) {
-    this.options = { headless: true, ...options }
+    this.options = { headless: true, ...options, scope: options.scope ?? "" }
   }
 
   get launched(): boolean {
     return this.context !== undefined
   }
 
+  /**
+   * Desktop routing: while a desktop app is attached, tabs live in its
+   * WebContentsViews and calls forward over the tunnel; otherwise every
+   * method runs the local Playwright implementation below, unchanged.
+   * Attachment is re-checked per call, so a desktop detaching mid-session
+   * degrades to Playwright on the next call (tabs do not transfer).
+   */
+  private get desktopAttached(): boolean {
+    return BrowserDesktop.host.attached()
+  }
+
+  private async forwardDesktop<T>(action: BrowserDesktop.DesktopAction): Promise<T> {
+    return BrowserDesktop.host.execute(this.options.scope, action).catch((error) => {
+      throw BrowserError.from(error, "Desktop browser")
+    }) as Promise<T>
+  }
+
+  private guardDesktop(name: string): void {
+    if (!this.desktopAttached) return
+    throw new BrowserError({
+      message: `${name} is not available on desktop browser tabs yet (phase 1). It remains available when no desktop is attached.`,
+    })
+  }
+
+  private noteRecent(url: string): void {
+    if (!/^https?:/.test(url)) return
+    this.recent = [url, ...this.recent.filter((item) => item !== url)].slice(0, 5)
+  }
+
+  private foldRecent(state: Browser.State): void {
+    for (const tab of state.tabs) this.noteRecent(tab.url)
+  }
+
+  private remoteTab(tabID: string): Browser.Tab {
+    const state = BrowserDesktop.host.stateFor(this.options.scope)?.state
+    const tab = state?.tabs.find((candidate) => candidate.id === tabID)
+    if (!tab) throw new BrowserError({ message: `Unknown tab ${tabID}. List tabs with browser.tabs.list first.` })
+    return tab
+  }
+
+  /** Authoritative tab state: the desktop's live inventory when attached, else the local one. */
+  async fetchState(): Promise<Browser.State> {
+    if (this.desktopAttached) {
+      const state = await this.forwardDesktop<Browser.State>({ type: "tabs.list" })
+      this.foldRecent(state)
+      return state
+    }
+    return this.state()
+  }
+
   async ready(): Promise<void> {
+    // A desktop-backed session must not spin up a local Chromium.
+    if (this.desktopAttached) return
     if (!this.launched) await this.launch()
   }
 
@@ -107,6 +166,8 @@ export class Driver {
   async dispose(): Promise<void> {
     for (const tab of this.tabs.values()) await tab.cdp?.detach().catch(() => {})
     this.tabs.clear()
+    this.remoteBoxes.clear()
+    this.remoteFiles.clear()
     await this.context?.close().catch(() => {})
     this.context = undefined
   }
@@ -233,6 +294,8 @@ export class Driver {
   }
 
   state(): Browser.State {
+    if (this.desktopAttached)
+      return BrowserDesktop.host.stateFor(this.options.scope)?.state ?? { tabs: [], focusedTabID: null }
     return {
       tabs: [...this.tabs.values()].map((tab) => this.toTab(tab)),
       focusedTabID: this.focusedTabID ?? null,
@@ -240,6 +303,15 @@ export class Driver {
   }
 
   async openTab(url: string | undefined, focus: boolean | undefined): Promise<Browser.Tab> {
+    if (this.desktopAttached) {
+      const tab = await this.forwardDesktop<Browser.Tab>({
+        type: "tabs.open",
+        ...(url !== undefined ? { url } : {}),
+        ...(focus !== undefined ? { focus } : {}),
+      })
+      this.noteRecent(tab.url)
+      return tab
+    }
     const context = this.requireContext()
     const page = await context.newPage().catch((error) => {
       throw BrowserError.from(error, "Cannot open tab")
@@ -273,6 +345,7 @@ export class Driver {
   }
 
   async focusTab(tabID: string): Promise<Browser.Tab> {
+    if (this.desktopAttached) return this.forwardDesktop<Browser.Tab>({ type: "tabs.focus", tabID: tabID as Browser.TabID })
     const tab = this.requireTab(tabID)
     if (this.focusedTabID && this.focusedTabID !== tab.id) {
       const previous = this.tabs.get(this.focusedTabID)
@@ -287,6 +360,11 @@ export class Driver {
   }
 
   async closeTab(tabID: string): Promise<Browser.State> {
+    if (this.desktopAttached) {
+      const state = await this.forwardDesktop<Browser.State>({ type: "tabs.close", tabID: tabID as Browser.TabID })
+      this.remoteBoxes.delete(tabID as Browser.TabID)
+      return state
+    }
     const tab = this.requireTab(tabID)
     await tab.cdp?.detach().catch(() => {})
     await tab.page.close().catch(() => {})
@@ -300,6 +378,11 @@ export class Driver {
   }
 
   async navigate(tabID: string, rawUrl: string): Promise<Browser.Tab> {
+    if (this.desktopAttached) {
+      const tab = await this.forwardDesktop<Browser.Tab>({ type: "navigate", tabID: tabID as Browser.TabID, url: rawUrl })
+      this.noteRecent(tab.url)
+      return tab
+    }
     const tab = this.requireTab(tabID)
     const action = Browser.normalizeAction({ type: "navigate", tabID: tab.id, url: rawUrl })
     if (action.type !== "navigate") throw new BrowserError({ message: "URL normalization failed" })
@@ -326,6 +409,7 @@ export class Driver {
   }
 
   async back(tabID: string): Promise<Browser.Tab> {
+    if (this.desktopAttached) return this.forwardDesktop<Browser.Tab>({ type: "back", tabID: tabID as Browser.TabID })
     const tab = this.requireTab(tabID)
     await tab.page.goBack({ waitUntil: "load", timeout: DEFAULT_NAV_TIMEOUT }).catch((error) => {
       throw BrowserError.from(error, "Cannot go back")
@@ -335,6 +419,7 @@ export class Driver {
   }
 
   async forward(tabID: string): Promise<Browser.Tab> {
+    if (this.desktopAttached) return this.forwardDesktop<Browser.Tab>({ type: "forward", tabID: tabID as Browser.TabID })
     const tab = this.requireTab(tabID)
     await tab.page.goForward({ waitUntil: "load", timeout: DEFAULT_NAV_TIMEOUT }).catch((error) => {
       throw BrowserError.from(error, "Cannot go forward")
@@ -344,6 +429,7 @@ export class Driver {
   }
 
   async reload(tabID: string): Promise<Browser.Tab> {
+    if (this.desktopAttached) return this.forwardDesktop<Browser.Tab>({ type: "reload", tabID: tabID as Browser.TabID })
     const tab = this.requireTab(tabID)
     await tab.page.reload({ waitUntil: "load", timeout: DEFAULT_NAV_TIMEOUT }).catch((error) => {
       throw BrowserError.from(error, "Cannot reload")
@@ -353,6 +439,7 @@ export class Driver {
   }
 
   async stop(tabID: string): Promise<Browser.Tab> {
+    if (this.desktopAttached) return this.forwardDesktop<Browser.Tab>({ type: "stop", tabID: tabID as Browser.TabID })
     const tab = this.requireTab(tabID)
     await tab.page.evaluate("window.stop()").catch(() => {})
     tab.loading = false
@@ -360,6 +447,7 @@ export class Driver {
   }
 
   async frames(tabID: string): Promise<{ tab: Browser.Tab; frames: Array<{ id: string; parentID?: string; url: string; name: string }> }> {
+    if (this.desktopAttached) return this.forwardDesktop({ type: "frames", tabID: tabID as Browser.TabID })
     const tab = this.requireTab(tabID)
     const frames = tab.page.frames().map((frame) => ({
       id: frameIdOf(frame),
@@ -403,6 +491,18 @@ export class Driver {
     tabID: string,
     options?: { frameID?: string; ref?: string; depth?: number; boxes?: boolean },
   ): Promise<{ tab: Browser.Tab; content: string; truncated: boolean }> {
+    if (this.desktopAttached) {
+      const result = await this.forwardDesktop<BrowserDesktop.DesktopSnapshotResult>({
+        type: "snapshot",
+        tabID: tabID as Browser.TabID,
+        ...(options?.frameID ? { frameID: options.frameID } : {}),
+        ...(options?.ref ? { ref: options.ref as Browser.Ref } : {}),
+        ...(options?.depth !== undefined ? { depth: options.depth } : {}),
+        ...(options?.boxes ? { boxes: true } : {}),
+      })
+      if (result.boxes) this.remoteBoxes.set(tabID as Browser.TabID, new Map(Object.entries(result.boxes)))
+      return { tab: result.tab, content: result.content, truncated: result.truncated }
+    }
     const tab = this.requireTab(tabID)
     const frame = await this.frameFor(tab, options?.frameID)
     const session = await this.cdp(tab)
@@ -486,6 +586,14 @@ export class Driver {
     tabID: string,
     options: { frameID?: string; ref?: string; script: string },
   ): Promise<{ tab: Browser.Tab; value: unknown }> {
+    if (this.desktopAttached)
+      return this.forwardDesktop({
+        type: "evaluate",
+        tabID: tabID as Browser.TabID,
+        ...(options.frameID ? { frameID: options.frameID } : {}),
+        ...(options.ref ? { ref: options.ref as Browser.Ref } : {}),
+        script: options.script,
+      })
     const tab = this.requireTab(tabID)
     const frame = await this.frameFor(tab, options.frameID)
     let value: unknown
@@ -510,6 +618,15 @@ export class Driver {
     tabID: string,
     options: { ref: string; button?: "left" | "right" | "middle"; count?: 1 | 2; modifiers?: Array<"Alt" | "Control" | "Meta" | "Shift"> },
   ): Promise<Browser.Tab> {
+    if (this.desktopAttached)
+      return this.forwardDesktop<Browser.Tab>({
+        type: "click",
+        tabID: tabID as Browser.TabID,
+        ref: options.ref as Browser.Ref,
+        ...(options.button ? { button: options.button } : {}),
+        ...(options.count ? { count: options.count } : {}),
+        ...(options.modifiers ? { modifiers: options.modifiers } : {}),
+      })
     const tab = this.requireTab(tabID)
     const frame = await this.frameFor(tab)
     const element = await this.resolveElement(frame, options.ref)
@@ -525,6 +642,13 @@ export class Driver {
 
   /** Click a raw viewport point (used by the panel for normal, non-inspect clicks). */
   async clickAtPoint(tabID: string, options: { x: number; y: number }): Promise<Browser.Tab> {
+    if (this.desktopAttached)
+      return this.forwardDesktop<Browser.Tab>({
+        type: "clickAtPoint",
+        tabID: tabID as Browser.TabID,
+        x: options.x,
+        y: options.y,
+      })
     const tab = this.requireTab(tabID)
     try {
       await tab.page.mouse.click(options.x, options.y)
@@ -535,6 +659,8 @@ export class Driver {
   }
 
   async hover(tabID: string, options: { ref: string }): Promise<Browser.Tab> {
+    if (this.desktopAttached)
+      return this.forwardDesktop<Browser.Tab>({ type: "hover", tabID: tabID as Browser.TabID, ref: options.ref as Browser.Ref })
     const tab = this.requireTab(tabID)
     const frame = await this.frameFor(tab)
     const element = await this.resolveElement(frame, options.ref)
@@ -549,6 +675,7 @@ export class Driver {
   }
 
   async drag(tabID: string, options: { from: string; to: string }): Promise<Browser.Tab> {
+    this.guardDesktop("browser.drag")
     const tab = this.requireTab(tabID)
     const frame = await this.frameFor(tab)
     const from = await this.resolveElement(frame, options.from)
@@ -571,6 +698,13 @@ export class Driver {
   }
 
   async fill(tabID: string, options: { ref: string; text: string }): Promise<Browser.Tab> {
+    if (this.desktopAttached)
+      return this.forwardDesktop<Browser.Tab>({
+        type: "fill",
+        tabID: tabID as Browser.TabID,
+        ref: options.ref as Browser.Ref,
+        text: options.text,
+      })
     const tab = this.requireTab(tabID)
     const frame = await this.frameFor(tab)
     const element = await this.resolveElement(frame, options.ref)
@@ -594,6 +728,18 @@ export class Driver {
       >
     },
   ): Promise<Browser.Tab> {
+    if (this.desktopAttached)
+      return this.forwardDesktop<Browser.Tab>({
+        type: "fill_form",
+        tabID: tabID as Browser.TabID,
+        fields: options.fields.map((field) =>
+          field.type === "text"
+            ? { ref: field.ref as Browser.Ref, type: "text" as const, value: field.value }
+            : field.type === "select"
+              ? { ref: field.ref as Browser.Ref, type: "select" as const, values: [...field.values] }
+              : { ref: field.ref as Browser.Ref, type: "check" as const, checked: field.checked },
+        ),
+      })
     const tab = this.requireTab(tabID)
     const frame = await this.frameFor(tab)
     for (const field of options.fields) {
@@ -612,6 +758,13 @@ export class Driver {
   }
 
   async select(tabID: string, options: { ref: string; values: ReadonlyArray<string> }): Promise<Browser.Tab> {
+    if (this.desktopAttached)
+      return this.forwardDesktop<Browser.Tab>({
+        type: "select",
+        tabID: tabID as Browser.TabID,
+        ref: options.ref as Browser.Ref,
+        values: [...options.values],
+      })
     const tab = this.requireTab(tabID)
     const frame = await this.frameFor(tab)
     const element = await this.resolveElement(frame, options.ref)
@@ -626,6 +779,13 @@ export class Driver {
   }
 
   async check(tabID: string, options: { ref: string; checked: boolean }): Promise<Browser.Tab> {
+    if (this.desktopAttached)
+      return this.forwardDesktop<Browser.Tab>({
+        type: "check",
+        tabID: tabID as Browser.TabID,
+        ref: options.ref as Browser.Ref,
+        checked: options.checked,
+      })
     const tab = this.requireTab(tabID)
     const frame = await this.frameFor(tab)
     const element = await this.resolveElement(frame, options.ref)
@@ -640,6 +800,8 @@ export class Driver {
   }
 
   async press(tabID: string, options: { ref?: string; key: string }): Promise<Browser.Tab> {
+    if (this.desktopAttached)
+      return this.forwardDesktop<Browser.Tab>({ type: "press", tabID: tabID as Browser.TabID, key: options.key })
     const tab = this.requireTab(tabID)
     const frame = await this.frameFor(tab)
     try {
@@ -661,6 +823,13 @@ export class Driver {
   }
 
   async scroll(tabID: string, options: { deltaX?: number; deltaY: number }): Promise<Browser.Tab> {
+    if (this.desktopAttached)
+      return this.forwardDesktop<Browser.Tab>({
+        type: "scroll",
+        tabID: tabID as Browser.TabID,
+        ...(options.deltaX !== undefined ? { deltaX: options.deltaX } : {}),
+        deltaY: options.deltaY,
+      })
     const tab = this.requireTab(tabID)
     await tab.page.mouse.wheel(options.deltaX ?? 0, options.deltaY).catch((error) => {
       throw BrowserError.from(error, "Scroll failed")
@@ -672,6 +841,15 @@ export class Driver {
     tabID: string,
     options: { frameID?: string; condition: "load" | "text" | "textGone"; text?: string; timeoutMs?: number },
   ): Promise<Browser.Tab> {
+    if (this.desktopAttached)
+      return this.forwardDesktop<Browser.Tab>({
+        type: "wait",
+        tabID: tabID as Browser.TabID,
+        ...(options.frameID ? { frameID: options.frameID } : {}),
+        condition: options.condition,
+        ...(options.text !== undefined ? { text: options.text } : {}),
+        ...(options.timeoutMs !== undefined ? { timeoutMs: options.timeoutMs } : {}),
+      })
     const tab = this.requireTab(tabID)
     const frame = await this.frameFor(tab, options.frameID)
     const timeout = options.timeoutMs ?? 10_000
@@ -696,6 +874,34 @@ export class Driver {
     tabID: string,
     options?: { ref?: string; fullPage?: boolean; format?: "png" | "jpeg" | "webp"; quality?: number; maxWidth?: number },
   ): Promise<{ tab: Browser.Tab; files: Browser.FileInfo[]; mime: string; data: Uint8Array }> {
+    if (this.desktopAttached) {
+      const shot = await this.forwardDesktop<BrowserDesktop.DesktopScreenshotResult>({
+        type: "screenshot",
+        tabID: tabID as Browser.TabID,
+        ...(options?.ref ? { ref: options.ref as Browser.Ref } : {}),
+        ...(options?.fullPage !== undefined ? { fullPage: options.fullPage } : {}),
+        ...(options?.format ? { format: options.format } : {}),
+        ...(options?.quality !== undefined ? { quality: options.quality } : {}),
+        ...(options?.maxWidth !== undefined ? { maxWidth: options.maxWidth } : {}),
+      })
+      // Captures materialize server-side exactly like local ones, so file
+      // IDs, the model-image stash, and files.get behave the same.
+      const bytes = new Uint8Array(Buffer.from(shot.data, "base64"))
+      const format = options?.format ?? (shot.mime === "image/jpeg" ? "jpeg" : shot.mime === "image/webp" ? "webp" : "png")
+      const saved = await BrowserFiles.save(
+        [
+          {
+            id: Browser.FileID.make(`file_${crypto.randomUUID()}`),
+            name: `screenshot-${Date.now()}.${format}`,
+            mime: shot.mime,
+            data: bytes,
+          },
+        ],
+        this.options.captureDir,
+      )
+      for (const info of saved) this.remoteFiles.set(info.id, { tabID: tabID as Browser.TabID, info })
+      return { tab: shot.tab, files: saved, mime: shot.mime, data: bytes }
+    }
     const tab = this.requireTab(tabID)
     const format = options?.format ?? "png"
     const mime = format === "png" ? "image/png" : format === "jpeg" ? "image/jpeg" : "image/webp"
@@ -763,6 +969,7 @@ export class Driver {
     tabID: string,
     options: { action: "get" | "accept" | "dismiss"; promptText?: string },
   ): Promise<{ tab: Browser.Tab; dialog: { type: string; message: string; defaultValue: string } | null }> {
+    this.guardDesktop("browser.dialog")
     const tab = this.requireTab(tabID)
     if (options.action === "get") return { tab: this.toTab(tab), dialog: tab.dialog ?? null }
     const pending = tab.pendingDialog
@@ -780,6 +987,7 @@ export class Driver {
   }
 
   async filesUpload(tabID: string, options: { ref: string; files: ReadonlyArray<Browser.File> }): Promise<Browser.Tab> {
+    this.guardDesktop("browser.files.upload")
     const tab = this.requireTab(tabID)
     const frame = await this.frameFor(tab)
     const element = await this.resolveElement(frame, options.ref)
@@ -796,6 +1004,7 @@ export class Driver {
   }
 
   async filesDrop(tabID: string, options: { ref: string; files: ReadonlyArray<Browser.File> }): Promise<Browser.Tab> {
+    this.guardDesktop("browser.files.drop")
     const tab = this.requireTab(tabID)
     const frame = await this.frameFor(tab)
     try {
@@ -839,6 +1048,13 @@ export class Driver {
   }
 
   filesList(tabID: string): { tab: Browser.Tab; files: Array<Browser.FileInfo & { state: "pending" | "completed" | "failed" }> } {
+    if (this.desktopAttached) {
+      // Only server-materialized desktop captures exist in this registry.
+      const files = [...this.remoteFiles.values()]
+        .filter((entry) => entry.tabID === tabID)
+        .map((entry) => ({ ...entry.info, state: "completed" as const }))
+      return { tab: this.remoteTab(tabID), files }
+    }
     const tab = this.requireTab(tabID)
     const files = [
       ...tab.downloads.map((info) => ({ ...info, state: "completed" as const })),
@@ -848,6 +1064,13 @@ export class Driver {
   }
 
   async filesGet(tabID: string, fileID: string): Promise<{ tab: Browser.Tab; files: Browser.FileInfo[] }> {
+    if (this.desktopAttached) {
+      const entry = this.remoteFiles.get(fileID as Browser.FileID)
+      if (!entry || entry.tabID !== tabID)
+        throw new BrowserError({ message: `Unknown file ${fileID}. List files with browser.files.list first.` })
+      // The capture already lives in the server capture dir.
+      return { tab: this.remoteTab(tabID), files: [entry.info] }
+    }
     const tab = this.requireTab(tabID)
     const found = [...tab.downloads, ...tab.captures].find((info) => info.id === fileID)
     if (!found) throw new BrowserError({ message: `Unknown file ${fileID}. List files with browser.files.list first.` })
@@ -863,6 +1086,7 @@ export class Driver {
     tabID: string,
     options?: { level?: "debug" | "info" | "warning" | "error"; limit?: number },
   ): { tab: Browser.Tab; messages: Browser.ConsoleEntry[]; truncated: boolean; dropped: number } {
+    this.guardDesktop("browser.console")
     const tab = this.requireTab(tabID)
     const minRank = severityRankOf(options?.level ?? "debug")
     const messages = tab.console.filter((entry) => severityRankOf(entry.level) >= minRank)
@@ -875,6 +1099,7 @@ export class Driver {
     tabID: string,
     options?: { urlContains?: string; resourceType?: Browser.ResourceType; limit?: number },
   ): { tab: Browser.Tab; requests: Browser.NetworkRequest[]; truncated: boolean; dropped: number } {
+    this.guardDesktop("browser.network.list")
     const tab = this.requireTab(tabID)
     let requests = tab.network.map((record) => record.request)
     if (options?.urlContains) requests = requests.filter((request) => request.url.includes(options.urlContains!))
@@ -896,6 +1121,7 @@ export class Driver {
     requestBody: Browser.Body
     responseBody: Browser.Body
   }> {
+    this.guardDesktop("browser.network.get")
     const tab = this.requireTab(tabID)
     const record = tab.network.find((item) => item.request.id === options.id)
     if (!record) throw new BrowserError({ message: `Unknown request ${options.id}. List requests with browser.network.list first.` })
@@ -927,6 +1153,7 @@ export class Driver {
   }
 
   async traceStart(tabID: string, durationMs?: number): Promise<{ tab: Browser.Tab; recording: boolean }> {
+    this.guardDesktop("browser.trace.start")
     const tab = this.requireTab(tabID)
     if (tab.trace) throw new BrowserError({ message: "A trace recording is already running for this tab." })
     const session = await this.cdp(tab)
@@ -947,6 +1174,7 @@ export class Driver {
   }
 
   async traceStop(tabID: string): Promise<{ tab: Browser.Tab; files: Browser.FileInfo[]; durationMs: number; incomplete: boolean }> {
+    this.guardDesktop("browser.trace.stop")
     const tab = this.requireTab(tabID)
     const trace = tab.trace
     if (!trace) throw new BrowserError({ message: "No trace recording is running for this tab." })
@@ -988,6 +1216,7 @@ export class Driver {
     events: Array<{ name: string; count: number; totalMs: number; maxMs: number }>
     insights: string[]
   }> {
+    this.guardDesktop("browser.trace.analyze")
     const tab = this.requireTab(tabID)
     const events = await this.readTraceEvents(tab, options.fileID)
     const byName = new Map<string, { count: number; totalMs: number; maxMs: number }>()
@@ -1027,6 +1256,7 @@ export class Driver {
   }
 
   async cpuStart(tabID: string): Promise<{ tab: Browser.Tab; recording: boolean }> {
+    this.guardDesktop("browser.cpu.start")
     const tab = this.requireTab(tabID)
     if (tab.cpu) throw new BrowserError({ message: "CPU sampling is already running for this tab." })
     const session = await this.cdp(tab)
@@ -1043,6 +1273,7 @@ export class Driver {
   }
 
   async cpuStop(tabID: string): Promise<{ tab: Browser.Tab; files: Browser.FileInfo[]; durationMs: number }> {
+    this.guardDesktop("browser.cpu.stop")
     const tab = this.requireTab(tabID)
     const cpu = tab.cpu
     if (!cpu) throw new BrowserError({ message: "CPU sampling is not running for this tab." })
@@ -1069,6 +1300,7 @@ export class Driver {
     durationMs: number
     functions: Array<{ name: string; url: string; line: number; selfMs: number }>
   }> {
+    this.guardDesktop("browser.cpu.analyze")
     const tab = this.requireTab(tabID)
     const found = tab.captures.find((info) => info.id === options.fileID)
     if (!found) throw new BrowserError({ message: `Unknown file ${options.fileID}.` })
@@ -1110,6 +1342,7 @@ export class Driver {
   }
 
   async heapSnapshot(tabID: string): Promise<{ tab: Browser.Tab; files: Browser.FileInfo[] }> {
+    this.guardDesktop("browser.heap.snapshot")
     const tab = this.requireTab(tabID)
     const session = await this.cdp(tab)
     await session.send("HeapProfiler.enable").catch((error) => {
@@ -1146,6 +1379,7 @@ export class Driver {
     tabID: string,
     options: { fileID: string; limit?: number },
   ): Promise<{ tab: Browser.Tab; nodes: number; edges: number; selfBytes: number; classes: Array<{ name: string; count: number; bytes: number }> }> {
+    this.guardDesktop("browser.heap.summary")
     const tab = this.requireTab(tabID)
     const heap = await this.readHeap(tab, options.fileID)
     const byClass = new Map<string, { count: number; bytes: number }>()
@@ -1168,6 +1402,7 @@ export class Driver {
     tabID: string,
     options: { fileID: string; name?: string; limit?: number },
   ): Promise<{ tab: Browser.Tab; nodes: Array<{ id: number; name: string; type: string; selfBytes: number; edgeCount: number }>; truncated: boolean }> {
+    this.guardDesktop("browser.heap.query")
     const tab = this.requireTab(tabID)
     const heap = await this.readHeap(tab, options.fileID)
     const needle = (options.name ?? "").toLowerCase()
@@ -1198,6 +1433,7 @@ export class Driver {
     retainers: Array<{ name: string; node: { id: number; name: string; type: string; selfBytes: number; edgeCount: number } }>
     truncated: boolean
   }> {
+    this.guardDesktop("browser.heap.object")
     const tab = this.requireTab(tabID)
     const heap = await this.readHeap(tab, options.fileID)
     const index = heap.nodes.findIndex((node) => node.id === options.id)
@@ -1225,6 +1461,7 @@ export class Driver {
     tabID: string,
     options: { before: string; after: string; limit?: number },
   ): Promise<{ tab: Browser.Tab; classes: Array<{ name: string; countDelta: number; bytesDelta: number }> }> {
+    this.guardDesktop("browser.heap.compare")
     const tab = this.requireTab(tabID)
     const before = await this.readHeap(tab, options.before)
     const after = await this.readHeap(tab, options.after)
@@ -1259,6 +1496,7 @@ export class Driver {
     scores: Array<{ id: string; title: string; score: number | null }>
     failures: Array<{ id: string; title: string; description: string }>
   }> {
+    this.guardDesktop("browser.lighthouse")
     const tab = this.requireTab(tabID)
     const url = tab.page.url()
     if (!/^https?:/.test(url)) throw new BrowserError({ message: `Lighthouse needs an http(s) page, got ${url}` })
@@ -1329,11 +1567,13 @@ export class Driver {
     x: number,
     y: number,
   ): Promise<{ ref?: string; box?: { x: number; y: number; width: number; height: number } }> {
-    const tab = this.requireTab(tabID)
+    const boxes = this.desktopAttached
+      ? (this.remoteBoxes.get(tabID as Browser.TabID) ?? new Map<string, { x: number; y: number; width: number; height: number }>())
+      : this.requireTab(tabID).boxes
     let best: string | undefined
     let bestBox: { x: number; y: number; width: number; height: number } | undefined
     let bestArea = Number.POSITIVE_INFINITY
-    for (const [ref, box] of tab.boxes) {
+    for (const [ref, box] of boxes) {
       if (x < box.x || y < box.y || x > box.x + box.width || y > box.y + box.height) continue
       const area = box.width * box.height
       if (area < bestArea) {
@@ -1356,7 +1596,21 @@ export class Driver {
     focusedTabID: Browser.TabID | null
     recent: string[]
     screenshot?: { mime: string; data: string }
+    desktop?: boolean
+    viewport?: { width: number; height: number }
   }> {
+    if (this.desktopAttached) {
+      const published = BrowserDesktop.host.stateFor(this.options.scope)
+      const state = published?.state ?? (await this.fetchState())
+      this.foldRecent(state)
+      const focused = state.focusedTabID
+      if (!focused) return { ...state, recent: this.recent, screenshot: undefined, desktop: true, viewport: published?.viewport }
+      const still = await this.forwardDesktop<BrowserDesktop.DesktopStillResult>({
+        type: "panelStill",
+        tabID: focused,
+      }).catch(() => undefined)
+      return { ...state, recent: this.recent, screenshot: still, desktop: true, viewport: published?.viewport }
+    }
     const state = this.state()
     const focused = this.focusedTabID ? this.tabs.get(this.focusedTabID) : undefined
     if (!focused) return { ...state, recent: this.recent, screenshot: undefined }

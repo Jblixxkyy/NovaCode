@@ -37,6 +37,9 @@ const layer = Layer.effect(
       profileDir: `${Global.Path.data}/browser-profile`,
       captureDir: `${Global.Path.tmp}/browser`,
       configDir: Global.Path.config,
+      // Scopes desktop-tunnel commands and published state to this Location;
+      // ignored while no desktop is attached (Playwright serves the calls).
+      scope: location.directory,
     })
     yield* Effect.addFinalizer(() => Effect.promise(() => driver.dispose().catch(() => {})))
 
