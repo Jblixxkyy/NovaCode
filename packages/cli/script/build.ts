@@ -78,11 +78,11 @@ for (const item of targets) {
       autoloadPackageJson: true,
       target: target.replace(binary, "bun") as Bun.Build.CompileTarget,
       outfile: `./dist/${name}/bin/${binary}`,
-      execArgv: [`--user-agent=${binary}/${Script.version}`, "--use-system-ca", "--"],
+      execArgv: [`--user-agent=${binary}/${pkg.version}`, "--use-system-ca", "--"],
       windows: {},
     },
     define: {
-      NOVACODE_VERSION: `'${Script.version}'`,
+      NOVACODE_VERSION: `'${pkg.version}'`,
       NOVACODE_CLI_NAME: `'${binary}'`,
       NOVACODE_MODELS_DEV: modelsData,
       NOVACODE_CHANNEL: `'${Script.channel}'`,
