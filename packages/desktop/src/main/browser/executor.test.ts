@@ -88,6 +88,11 @@ class FakeContents implements PageContents {
   getViewportSize() {
     return { width: 1280, height: 800 }
   }
+  stillCaptures = 0
+  async capturePage() {
+    this.stillCaptures += 1
+    return { toPNG: () => Buffer.from("hello") }
+  }
 }
 
 class FakeInventory implements TabInventory {
@@ -277,7 +282,7 @@ describe("executeDesktopAction", () => {
   })
 
   test("screenshot and panelStill return base64 captures", async () => {
-    const { inventory } = setup()
+    const { cdp, inventory } = setup()
     const handle = await inventory.open("/work", "https://example.com", true)
     const shot = (await executeDesktopAction(inventory, "/work", {
       type: "screenshot",
@@ -289,6 +294,11 @@ describe("executeDesktopAction", () => {
       tabID: handle.id as never,
     })) as { mime: string; data: string }
     expect(still).toEqual({ mime: "image/png", data: "aGVsbG8=" })
+    // The still must come from capturePage: a CDP capture waits on a
+    // compositor frame that an unpresented view never produces. Only the
+    // screenshot action above may use CDP Page.captureScreenshot.
+    expect((handle.contents as FakeContents).stillCaptures).toBe(1)
+    expect(cdp.calls.filter((call) => call.method === "Page.captureScreenshot")).toHaveLength(1)
   })
 
   test("unsupported actions raise DesktopUnsupportedError", async () => {

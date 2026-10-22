@@ -54,6 +54,9 @@ class FakeDesktop {
   private focused: Browser.TabID | null = null
   stopped = false
   loop: Promise<void> | undefined
+  /** When set, panelStill never answers — the unpresented-view capture hang. */
+  hangPanelStill = false
+  private releaseStill: (() => void) | undefined
 
   constructor(
     private host: BrowserDesktop.DesktopHost,
@@ -83,6 +86,7 @@ class FakeDesktop {
 
   async stop() {
     this.stopped = true
+    this.releaseStill?.()
     for (const tab of this.tabs.values()) await tab.page.close().catch(() => {})
     await this.loop?.catch(() => {})
   }
@@ -278,6 +282,11 @@ class FakeDesktop {
       }
       case "panelStill": {
         const tab = this.require(action.tabID)
+        if (this.hangPanelStill) {
+          await new Promise<void>((resolve) => {
+            this.releaseStill = resolve
+          })
+        }
         const data = await tab.page.screenshot({ type: "png" })
         return { mime: "image/png", data: Buffer.from(data).toString("base64") }
       }
@@ -390,6 +399,19 @@ describe("desktop tunnel protocol with a routed Driver", () => {
     expect(got.files[0]?.id).toBe(shot.files[0]?.id)
 
     expect(() => driver.console(tab.id)).toThrow(/not available on desktop/)
+    expect(driver.launched).toBe(false)
+  })
+
+  test("panel state resolves promptly when the desktop never answers a panel still", async () => {
+    fake.hangPanelStill = true
+    const started = Date.now()
+    const panel = await driver.panelSnapshot()
+    const elapsed = Date.now() - started
+    expect(panel.desktop).toBe(true)
+    expect(panel.tabs).toHaveLength(1)
+    expect(panel.screenshot).toBeUndefined()
+    // Bounded by the panel's still timeout (4s), nowhere near the tunnel's 120s default.
+    expect(elapsed).toBeLessThan(20_000)
     expect(driver.launched).toBe(false)
   })
 })

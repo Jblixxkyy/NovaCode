@@ -36,6 +36,11 @@ export interface PageContents {
   /** Resolves when the current load finishes (or immediately when idle). */
   onceLoaded(timeoutMs: number): Promise<void>
   getViewportSize(): { width: number; height: number }
+  /**
+   * Capture the tab's current frame. Unlike CDP Page.captureScreenshot
+   * this resolves for views that have never been presented in a window.
+   */
+  capturePage(): Promise<{ toPNG(): Uint8Array }>
   readonly cdp: CdpSession
 }
 
@@ -574,12 +579,37 @@ export async function executeDesktopAction(
     }
     case "panelStill": {
       const handle = requireTab(inventory, scope, action.tabID)
-      const shot = (await handle.contents.cdp.send("Page.captureScreenshot", { format: "png" })) as { data: string }
-      const result: BrowserDesktop.DesktopStillResult = { mime: "image/png", data: shot.data }
+      const result: BrowserDesktop.DesktopStillResult = { mime: "image/png", data: await captureStill(handle.contents) }
       return result
     }
     default:
       throw new DesktopUnsupportedError(action.type)
+  }
+}
+
+const PANEL_STILL_CAPTURE_TIMEOUT_MS = 5_000
+
+/**
+ * Panel stills go through webContents.capturePage, never CDP
+ * Page.captureScreenshot: a CDP capture waits for a compositor frame, and
+ * a view that has never been presented never produces one — the call can
+ * hang forever, and the panel cannot present the view until the server
+ * returns state built from this still (deadlock). The race bound keeps a
+ * wedged capture from stalling the host loop; the server treats a failed
+ * still as "no screenshot".
+ */
+async function captureStill(contents: PageContents): Promise<string> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  try {
+    const image = await Promise.race([
+      contents.capturePage(),
+      new Promise<never>((_resolve, reject) => {
+        timer = setTimeout(() => reject(new Error("Panel still capture timed out.")), PANEL_STILL_CAPTURE_TIMEOUT_MS)
+      }),
+    ])
+    return Buffer.from(image.toPNG()).toString("base64")
+  } finally {
+    if (timer) clearTimeout(timer)
   }
 }
 
