@@ -100,10 +100,10 @@ describeChromium("BrowserSession.Driver", () => {
     expect(shot.data[1]).toBe(0x50)
     expect(await Bun.file(shot.files[0]!.path).exists()).toBe(true)
 
-    const logs = driver.console(tab.id, {})
+    const logs = await driver.console(tab.id, {})
     expect(logs.messages.some((message) => message.text.includes("page ready"))).toBe(true)
 
-    const network = driver.networkList(tab.id, {})
+    const network = await driver.networkList(tab.id, {})
     expect(network.requests.some((request) => request.url.includes("127.0.0.1"))).toBe(true)
 
     const panel = await driver.panelSnapshot()

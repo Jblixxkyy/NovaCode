@@ -215,14 +215,14 @@ export const definitions: ReadonlyArray<Definition> = [
   }),
   define("console", {
     resources: tabResources,
-    run: (driver, input) => Promise.resolve(done(driver.console(input.tabID, { level: input.level, limit: input.limit }))),
+    run: (driver, input) => driver.console(input.tabID, { level: input.level, limit: input.limit }).then(done),
   }),
   define("network.list", {
     resources: tabResources,
     run: (driver, input) =>
-      Promise.resolve(
-        done(driver.networkList(input.tabID, { urlContains: input.urlContains, resourceType: input.resourceType, limit: input.limit })),
-      ),
+      driver
+        .networkList(input.tabID, { urlContains: input.urlContains, resourceType: input.resourceType, limit: input.limit })
+        .then(done),
   }),
   define("network.get", {
     resources: tabResources,

@@ -1,4 +1,5 @@
 import { Browser } from "@novacode-ai/browser/rpc"
+import { BrowserCapture } from "@novacode-ai/browser/capture"
 import type { BrowserDesktop } from "@novacode-ai/browser/desktop"
 import type { CdpSession } from "./cdp"
 
@@ -53,7 +54,22 @@ export interface TabHandle {
   favicon?: string
   /** Restored tab whose first load is deferred until activation. */
   pendingURL?: string
+  /** Console/network/dialog capture buffers, wired lazily by ensureCapture. */
+  capture?: BrowserCapture.TabCapture
+  captureReady?: Promise<void>
   boxes: Map<string, { x: number; y: number; width: number; height: number }>
+}
+
+/**
+ * Wire CDP console/network/dialog capture for a tab (idempotent). Called
+ * when a tab is created and again defensively before capture-backed
+ * actions, so popup tabs created outside the executor are covered too.
+ */
+export async function ensureCapture(handle: TabHandle): Promise<BrowserCapture.TabCapture> {
+  if (!handle.capture) handle.capture = BrowserCapture.createCapture()
+  if (!handle.captureReady) handle.captureReady = BrowserCapture.wireCapture(handle.contents.cdp, handle.capture)
+  await handle.captureReady
+  return handle.capture
 }
 
 export interface TabInventory {
@@ -347,6 +363,7 @@ export async function executeDesktopAction(
       const normalized = Browser.normalizeAction(action)
       const url = normalized.type === "tabs.open" ? normalized.url : undefined
       const handle = await inventory.open(scope, url, action.focus ?? true)
+      await ensureCapture(handle).catch(() => {})
       return tabOf(handle)
     }
     case "tabs.focus": {
@@ -586,6 +603,54 @@ export async function executeDesktopAction(
       const handle = requireTab(inventory, scope, action.tabID)
       const result: BrowserDesktop.DesktopStillResult = { mime: "image/png", data: await captureStill(handle.contents) }
       return result
+    }
+    case "console": {
+      const handle = requireTab(inventory, scope, action.tabID)
+      const capture = await ensureCapture(handle)
+      const minRank = BrowserCapture.severityRankOf(action.level ?? "debug")
+      const messages = capture.console.filter((entry) => BrowserCapture.severityRankOf(entry.level) >= minRank)
+      const limit = action.limit ?? 100
+      return {
+        tab: tabOf(handle),
+        messages: messages.slice(-limit),
+        truncated: messages.length > limit,
+        dropped: capture.consoleDropped,
+      }
+    }
+    case "network.list": {
+      const handle = requireTab(inventory, scope, action.tabID)
+      const capture = await ensureCapture(handle)
+      let requests = capture.network.map((record) => record.request)
+      if (action.urlContains) requests = requests.filter((request) => request.url.includes(action.urlContains!))
+      if (action.resourceType) requests = requests.filter((request) => request.resourceType === action.resourceType)
+      const limit = action.limit ?? 100
+      return {
+        tab: tabOf(handle),
+        requests: requests.slice(-limit),
+        truncated: requests.length > limit,
+        dropped: capture.networkDropped,
+      }
+    }
+    case "network.get": {
+      const handle = requireTab(inventory, scope, action.tabID)
+      const capture = await ensureCapture(handle)
+      const record = capture.network.find((item) => item.request.id === action.id)
+      if (!record) throw new Error(`Unknown request ${action.id}. List requests with browser.network.list first.`)
+      const maxChars = action.maxBodyChars ?? 20_000
+      return {
+        tab: tabOf(handle),
+        request: record.request,
+        requestHeaders: [...record.requestHeaders],
+        responseHeaders: [...record.responseHeaders],
+        headersTruncated: record.requestHeaders.length >= 200 || record.responseHeaders.length >= 200,
+        requestBody: BrowserCapture.bodyOf(record.postData, maxChars, action.includeBody ?? false),
+        responseBody: await BrowserCapture.responseBodyOf(
+          handle.contents.cdp,
+          record,
+          action.includeBody ?? false,
+          maxChars,
+        ),
+      }
     }
     default:
       throw new DesktopUnsupportedError(action.type)

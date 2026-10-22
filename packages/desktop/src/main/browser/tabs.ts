@@ -1,6 +1,6 @@
 import { WebContentsView, type BrowserWindow, type Rectangle, type WebContents } from "electron"
 import { attachCdp, type CdpSession } from "./cdp"
-import type { PageContents, TabHandle, TabInventory } from "./executor"
+import { ensureCapture, type PageContents, type TabHandle, type TabInventory } from "./executor"
 
 /**
  * Owns the desktop's browser tabs: one sandboxed WebContentsView per tab,
@@ -202,6 +202,8 @@ export class BrowserTabManager implements TabInventory {
     group.tabs.set(handle.id, handle)
     this.owned.add(view)
     if (focus || !group.focusedID) group.focusedID = handle.id
+    // Capture console/network/dialog from the tab's first navigation on.
+    void ensureCapture(handle).catch(() => {})
 
     contents.setWindowOpenHandler(({ url: popupUrl }) => {
       // Popups become regular tabs in the same scope instead of windows.

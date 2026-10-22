@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test"
 import type { CdpSession } from "./cdp"
 import {
   DesktopUnsupportedError,
+  ensureCapture,
   executeDesktopAction,
   formatSnapshot,
   keyEventFor,
@@ -15,6 +16,7 @@ import {
 class FakeCdp implements CdpSession {
   calls: Array<{ method: string; params?: Record<string, unknown> }> = []
   evaluateResult: unknown = null
+  private listeners = new Map<string, Set<(params: Record<string, unknown>) => void>>()
 
   constructor(private nodes: AXNodeLike[]) {}
 
@@ -38,9 +40,25 @@ class FakeCdp implements CdpSession {
         return { data: "aGVsbG8=" }
       case "Page.getLayoutMetrics":
         return { cssContentSize: { width: 800, height: 2000 } }
+      case "Network.getResponseBody":
+        return { body: `{"ok":true}`, base64Encoded: false }
       default:
         return {}
     }
+  }
+
+  on(method: string, listener: (params: Record<string, unknown>) => void) {
+    const set = this.listeners.get(method) ?? new Set()
+    set.add(listener)
+    this.listeners.set(method, set)
+  }
+
+  off(method: string, listener: (params: Record<string, unknown>) => void) {
+    this.listeners.get(method)?.delete(listener)
+  }
+
+  emit(method: string, params: Record<string, unknown>) {
+    for (const listener of [...(this.listeners.get(method) ?? [])]) listener(params)
   }
 
   isAttached() {
@@ -299,6 +317,77 @@ describe("executeDesktopAction", () => {
     // screenshot action above may use CDP Page.captureScreenshot.
     expect((handle.contents as FakeContents).stillCaptures).toBe(1)
     expect(cdp.calls.filter((call) => call.method === "Page.captureScreenshot")).toHaveLength(1)
+  })
+
+  test("console reads CDP console events with driver-shaped entries and level filtering", async () => {
+    const { cdp, inventory } = setup()
+    const handle = await inventory.open("/work", "https://example.com", true)
+    await ensureCapture(handle)
+    cdp.emit("Runtime.consoleAPICalled", {
+      type: "log",
+      args: [{ type: "string", value: "hello world" }],
+      stackTrace: { callFrames: [{ url: "https://example.com/app.js", lineNumber: 3, columnNumber: 5 }] },
+    })
+    cdp.emit("Runtime.consoleAPICalled", { type: "error", args: [{ type: "string", value: "it broke" }] })
+    cdp.emit("Runtime.exceptionThrown", {
+      exceptionDetails: { text: "Uncaught", exception: { description: "ReferenceError: nope is not defined" } },
+    })
+    const all = (await executeDesktopAction(inventory, "/work", {
+      type: "console",
+      tabID: handle.id as never,
+    })) as { messages: Array<{ level: string; text: string; source?: { url: string; line: number } }>; dropped: number }
+    expect(all.messages.map((message) => message.text)).toEqual([
+      "hello world",
+      "it broke",
+      "ReferenceError: nope is not defined",
+    ])
+    expect(all.messages[0]?.level).toBe("info")
+    expect(all.messages[0]?.source).toEqual({ url: "https://example.com/app.js", line: 3, column: 5 })
+    expect(all.dropped).toBe(0)
+    const errors = (await executeDesktopAction(inventory, "/work", {
+      type: "console",
+      tabID: handle.id as never,
+      level: "error",
+    })) as { messages: Array<{ text: string }> }
+    expect(errors.messages.map((message) => message.text)).toEqual(["it broke", "ReferenceError: nope is not defined"])
+  })
+
+  test("network lists finished requests and network.get returns headers and bodies", async () => {
+    const { cdp, inventory } = setup()
+    const handle = await inventory.open("/work", "https://example.com", true)
+    await ensureCapture(handle)
+    cdp.emit("Network.requestWillBeSent", {
+      requestId: "r1",
+      type: "Fetch",
+      request: { url: "https://example.com/api", method: "POST", headers: { "X-A": "1" }, postData: "payload" },
+    })
+    cdp.emit("Network.responseReceived", {
+      requestId: "r1",
+      response: { status: 201, headers: { "Content-Type": "application/json" } },
+    })
+    cdp.emit("Network.loadingFinished", { requestId: "r1" })
+    const list = (await executeDesktopAction(inventory, "/work", {
+      type: "network.list",
+      tabID: handle.id as never,
+    })) as { requests: Array<{ id: string; state: string; statusCode?: number; resourceType: string }> }
+    expect(list.requests).toHaveLength(1)
+    expect(list.requests[0]).toMatchObject({ id: "r1", state: "completed", statusCode: 201, resourceType: "fetch" })
+    const got = (await executeDesktopAction(inventory, "/work", {
+      type: "network.get",
+      tabID: handle.id as never,
+      id: "r1",
+      includeBody: true,
+    })) as {
+      requestHeaders: Array<{ name: string; value: string }>
+      requestBody: { state: string; text?: string }
+      responseBody: { state: string; text?: string }
+    }
+    expect(got.requestHeaders).toEqual([{ name: "X-A", value: "1" }])
+    expect(got.requestBody).toEqual({ state: "text", text: "payload", truncated: false })
+    expect(got.responseBody).toEqual({ state: "text", text: `{"ok":true}`, truncated: false })
+    await expect(
+      executeDesktopAction(inventory, "/work", { type: "network.get", tabID: handle.id as never, id: "nope" }),
+    ).rejects.toThrow(/Unknown request nope/)
   })
 
   test("unsupported actions raise DesktopUnsupportedError", async () => {

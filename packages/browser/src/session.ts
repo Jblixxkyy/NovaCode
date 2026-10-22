@@ -1090,11 +1090,17 @@ export class Driver {
     return { tab: this.toTab(tab), files: saved }
   }
 
-  console(
+  async console(
     tabID: string,
     options?: { level?: "debug" | "info" | "warning" | "error"; limit?: number },
-  ): { tab: Browser.Tab; messages: Browser.ConsoleEntry[]; truncated: boolean; dropped: number } {
-    this.guardDesktop("browser.console")
+  ): Promise<{ tab: Browser.Tab; messages: Browser.ConsoleEntry[]; truncated: boolean; dropped: number }> {
+    if (this.desktopAttached)
+      return this.forwardDesktop({
+        type: "console",
+        tabID: tabID as Browser.TabID,
+        ...(options?.level ? { level: options.level } : {}),
+        ...(options?.limit !== undefined ? { limit: options.limit } : {}),
+      })
     const tab = this.requireTab(tabID)
     const minRank = severityRankOf(options?.level ?? "debug")
     const messages = tab.console.filter((entry) => severityRankOf(entry.level) >= minRank)
@@ -1103,11 +1109,18 @@ export class Driver {
     return { tab: this.toTab(tab), messages: messages.slice(-limit), truncated, dropped: tab.consoleDropped }
   }
 
-  networkList(
+  async networkList(
     tabID: string,
     options?: { urlContains?: string; resourceType?: Browser.ResourceType; limit?: number },
-  ): { tab: Browser.Tab; requests: Browser.NetworkRequest[]; truncated: boolean; dropped: number } {
-    this.guardDesktop("browser.network.list")
+  ): Promise<{ tab: Browser.Tab; requests: Browser.NetworkRequest[]; truncated: boolean; dropped: number }> {
+    if (this.desktopAttached)
+      return this.forwardDesktop({
+        type: "network.list",
+        tabID: tabID as Browser.TabID,
+        ...(options?.urlContains ? { urlContains: options.urlContains } : {}),
+        ...(options?.resourceType ? { resourceType: options.resourceType } : {}),
+        ...(options?.limit !== undefined ? { limit: options.limit } : {}),
+      })
     const tab = this.requireTab(tabID)
     let requests = tab.network.map((record) => record.request)
     if (options?.urlContains) requests = requests.filter((request) => request.url.includes(options.urlContains!))
@@ -1129,7 +1142,14 @@ export class Driver {
     requestBody: Browser.Body
     responseBody: Browser.Body
   }> {
-    this.guardDesktop("browser.network.get")
+    if (this.desktopAttached)
+      return this.forwardDesktop({
+        type: "network.get",
+        tabID: tabID as Browser.TabID,
+        id: options.id,
+        ...(options.includeBody !== undefined ? { includeBody: options.includeBody } : {}),
+        ...(options.maxBodyChars !== undefined ? { maxBodyChars: options.maxBodyChars } : {}),
+      })
     const tab = this.requireTab(tabID)
     const record = tab.network.find((item) => item.request.id === options.id)
     if (!record) throw new BrowserError({ message: `Unknown request ${options.id}. List requests with browser.network.list first.` })
@@ -1843,7 +1863,9 @@ function toResourceType(type: unknown): Browser.ResourceType {
     "document", "stylesheet", "image", "media", "font", "script",
     "xhr", "fetch", "eventsource", "websocket", "manifest", "other",
   ]
-  return (known.includes(String(type)) ? String(type) : "other") as Browser.ResourceType
+  // CDP reports PascalCase resource types ("Document", "XHR"); compare case-insensitively.
+  const value = String(type).toLowerCase()
+  return (known.includes(value) ? value : "other") as Browser.ResourceType
 }
 
 function toHeaders(headers: unknown): Array<{ name: string; value: string }> {

@@ -4,6 +4,7 @@ import { tmpdir } from "node:os"
 import path from "node:path"
 import { chromium, type Browser as PwBrowser, type BrowserContext, type CDPSession, type Page } from "playwright"
 import { Browser } from "../src/rpc"
+import { BrowserCapture } from "../src/capture"
 import { BrowserDesktop } from "../src/desktop"
 import { BrowserSession } from "../src/session"
 
@@ -25,6 +26,16 @@ interface FakeTab {
   title: string
   generation: number
   boxes: Map<string, { x: number; y: number; width: number; height: number }>
+  capture: BrowserCapture.TabCapture
+  captureSession: BrowserCapture.CaptureSession
+}
+
+/** Adapt a Playwright CDPSession to the shared capture session shape. */
+function captureSessionOf(session: CDPSession): BrowserCapture.CaptureSession {
+  return {
+    send: (method, params) => session.send(method as never, params as never) as Promise<unknown>,
+    on: (method, listener) => session.on(method as never, listener as never),
+  }
 }
 
 interface AXNode {
@@ -195,14 +206,20 @@ class FakeDesktop {
         return this.state()
       case "tabs.open": {
         const page = await this.context.newPage()
+        const session = await this.context.newCDPSession(page)
         const tab: FakeTab = {
           id: Browser.TabID.make(`tab_${crypto.randomUUID()}`),
           page,
-          session: await this.context.newCDPSession(page),
+          session,
           title: "",
           generation: 0,
           boxes: new Map(),
+          capture: BrowserCapture.createCapture(),
+          captureSession: captureSessionOf(session),
         }
+        // Wire console/network/dialog capture before the first navigation,
+        // the same order the real desktop executor uses.
+        await BrowserCapture.wireCapture(tab.captureSession, tab.capture)
         this.tabs.set(tab.id, tab)
         if (action.focus ?? true) this.focused = tab.id
         const navigated = await this.navigate(tab, action.url ?? "about:blank")
@@ -290,6 +307,53 @@ class FakeDesktop {
         const data = await tab.page.screenshot({ type: "png" })
         return { mime: "image/png", data: Buffer.from(data).toString("base64") }
       }
+      case "console": {
+        const tab = this.require(action.tabID)
+        const minRank = BrowserCapture.severityRankOf(action.level ?? "debug")
+        const messages = tab.capture.console.filter(
+          (entry) => BrowserCapture.severityRankOf(entry.level) >= minRank,
+        )
+        const limit = action.limit ?? 100
+        return {
+          tab: this.tab(tab),
+          messages: messages.slice(-limit),
+          truncated: messages.length > limit,
+          dropped: tab.capture.consoleDropped,
+        }
+      }
+      case "network.list": {
+        const tab = this.require(action.tabID)
+        let requests = tab.capture.network.map((record) => record.request)
+        if (action.urlContains) requests = requests.filter((request) => request.url.includes(action.urlContains!))
+        if (action.resourceType) requests = requests.filter((request) => request.resourceType === action.resourceType)
+        const limit = action.limit ?? 100
+        return {
+          tab: this.tab(tab),
+          requests: requests.slice(-limit),
+          truncated: requests.length > limit,
+          dropped: tab.capture.networkDropped,
+        }
+      }
+      case "network.get": {
+        const tab = this.require(action.tabID)
+        const record = tab.capture.network.find((item) => item.request.id === action.id)
+        if (!record) throw new Error(`Unknown request ${action.id}. List requests with browser.network.list first.`)
+        const maxChars = action.maxBodyChars ?? 20_000
+        return {
+          tab: this.tab(tab),
+          request: record.request,
+          requestHeaders: [...record.requestHeaders],
+          responseHeaders: [...record.responseHeaders],
+          headersTruncated: record.requestHeaders.length >= 200 || record.responseHeaders.length >= 200,
+          requestBody: BrowserCapture.bodyOf(record.postData, maxChars, action.includeBody ?? false),
+          responseBody: await BrowserCapture.responseBodyOf(
+            tab.captureSession,
+            record,
+            action.includeBody ?? false,
+            maxChars,
+          ),
+        }
+      }
       default:
         throw new Error(`Fake desktop does not implement ${action.type}`)
     }
@@ -320,7 +384,7 @@ describe("desktop tunnel protocol with a routed Driver", () => {
             headers: { "content-type": "text/html" },
           })
         return new Response(
-          `<title>Fake One</title><input id="q" aria-label="Search"><a href="/two">Go two</a>`,
+          `<title>Fake One</title><input id="q" aria-label="Search"><a href="/two">Go two</a><script>console.log("fake page ready"); fetch("/two").catch(() => {})</script>`,
           { headers: { "content-type": "text/html" } },
         )
       },
@@ -381,6 +445,26 @@ describe("desktop tunnel protocol with a routed Driver", () => {
     const evaluated = await driver.evaluate(tab.id, { script: "document.getElementById('q').value" })
     expect(evaluated.value).toBe("hello")
 
+    // Console and network route to the desktop's CDP capture buffers.
+    const logs = await driver.console(tab.id, {})
+    expect(logs.messages.some((message) => message.text.includes("fake page ready"))).toBe(true)
+
+    // The page fetches /two on load; wait for the finished request to land.
+    let listed = await driver.networkList(tab.id, {})
+    for (let attempt = 0; attempt < 50 && !listed.requests.some((request) => request.url.endsWith("/two")); attempt++) {
+      await Bun.sleep(100)
+      listed = await driver.networkList(tab.id, {})
+    }
+    const fetchRequest = listed.requests.find((request) => request.url.endsWith("/two"))
+    expect(fetchRequest).toBeTruthy()
+    expect(fetchRequest?.state).toBe("completed")
+    expect(fetchRequest?.resourceType).toBe("fetch")
+    const documentRequest = listed.requests.find((request) => request.resourceType === "document")
+    expect(documentRequest).toBeTruthy()
+    const fetched = await driver.networkGet(tab.id, { id: fetchRequest!.id, includeBody: true })
+    expect(fetched.responseBody.state).toBe("text")
+    if (fetched.responseBody.state === "text") expect(fetched.responseBody.text).toContain("second page")
+
     const after = await driver.click(tab.id, { ref: linkRef! })
     expect(after.url).toBe(`${base}/two`)
     expect(after.title).toBe("Fake Two")
@@ -398,7 +482,6 @@ describe("desktop tunnel protocol with a routed Driver", () => {
     const got = await driver.filesGet(tab.id, shot.files[0]!.id)
     expect(got.files[0]?.id).toBe(shot.files[0]?.id)
 
-    expect(() => driver.console(tab.id)).toThrow(/not available on desktop/)
     expect(driver.launched).toBe(false)
   })
 
