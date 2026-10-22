@@ -977,7 +977,13 @@ export class Driver {
     tabID: string,
     options: { action: "get" | "accept" | "dismiss"; promptText?: string },
   ): Promise<{ tab: Browser.Tab; dialog: { type: string; message: string; defaultValue: string } | null }> {
-    this.guardDesktop("browser.dialog")
+    if (this.desktopAttached)
+      return this.forwardDesktop({
+        type: "dialog",
+        tabID: tabID as Browser.TabID,
+        action: options.action,
+        ...(options.promptText !== undefined ? { promptText: options.promptText } : {}),
+      })
     const tab = this.requireTab(tabID)
     if (options.action === "get") return { tab: this.toTab(tab), dialog: tab.dialog ?? null }
     const pending = tab.pendingDialog

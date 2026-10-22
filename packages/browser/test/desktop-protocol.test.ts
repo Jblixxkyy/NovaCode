@@ -38,6 +38,15 @@ function captureSessionOf(session: CDPSession): BrowserCapture.CaptureSession {
   }
 }
 
+/**
+ * Read the document title directly: Playwright's page.title() goes stale
+ * (returns "") once a JS dialog has been handled through a second CDP
+ * session, while document.title stays correct.
+ */
+async function documentTitle(page: Page): Promise<string> {
+  return page.evaluate(() => document.title).catch(() => "")
+}
+
 interface AXNode {
   nodeId: string
   role?: { value: string }
@@ -81,16 +90,25 @@ class FakeDesktop {
         const polled = await this.host.poll(this.attachment, 2_000)
         if (polled.status === "detached") return
         if (polled.status === "timeout") continue
-        try {
-          const result = await this.execute(polled.command.action)
-          this.host.complete(this.attachment, polled.command.requestID, { type: "success", result })
-        } catch (error) {
-          this.host.complete(this.attachment, polled.command.requestID, {
-            type: "failure",
-            code: "error",
-            message: error instanceof Error ? error.message : String(error),
-          })
-        }
+        // Mirror the real desktop host: commands execute concurrently, so
+        // a page-blocking action (a JS dialog awaiting handling, a long
+        // evaluate) never stalls the rest of the tunnel.
+        void this.execute(polled.command.action).then(
+          (result) => {
+            try {
+              this.host.complete(this.attachment, polled.command.requestID, { type: "success", result })
+            } catch {}
+          },
+          (error) => {
+            try {
+              this.host.complete(this.attachment, polled.command.requestID, {
+                type: "failure",
+                code: "error",
+                message: error instanceof Error ? error.message : String(error),
+              })
+            } catch {}
+          },
+        )
       }
     })()
   }
@@ -133,7 +151,7 @@ class FakeDesktop {
     if (action.type !== "navigate") throw new Error("URL normalization failed")
     await tab.page.goto(action.url, { waitUntil: "load" })
     tab.generation += 1
-    tab.title = await tab.page.title()
+    tab.title = await documentTitle(tab.page)
     this.publish()
     return this.tab(tab)
   }
@@ -206,6 +224,10 @@ class FakeDesktop {
         return this.state()
       case "tabs.open": {
         const page = await this.context.newPage()
+        // A registered (no-op) dialog listener stops Playwright from
+        // auto-dismissing dialogs, so the CDP pending-dialog flow under
+        // test is what actually resolves them.
+        page.on("dialog", () => {})
         const session = await this.context.newCDPSession(page)
         const tab: FakeTab = {
           id: Browser.TabID.make(`tab_${crypto.randomUUID()}`),
@@ -247,7 +269,7 @@ class FakeDesktop {
         const tab = this.require(action.tabID)
         await tab.page.goBack({ waitUntil: "load" })
         tab.generation += 1
-        tab.title = await tab.page.title()
+        tab.title = await documentTitle(tab.page)
         return this.tab(tab)
       }
       case "forward": {
@@ -270,7 +292,15 @@ class FakeDesktop {
         const tab = this.require(action.tabID)
         const element = await this.resolve(tab, action.ref)
         await element.click()
-        tab.title = await tab.page.title()
+        // A click may navigate; poll until the new document's title lands.
+        for (let attempt = 0; attempt < 60; attempt++) {
+          const title = await documentTitle(tab.page)
+          if (title) {
+            tab.title = title
+            break
+          }
+          await Bun.sleep(50)
+        }
         this.publish()
         return this.tab(tab)
       }
@@ -288,7 +318,7 @@ class FakeDesktop {
       case "clickAtPoint": {
         const tab = this.require(action.tabID)
         await tab.page.mouse.click(action.x, action.y)
-        tab.title = await tab.page.title()
+        tab.title = await documentTitle(tab.page)
         this.publish()
         return this.tab(tab)
       }
@@ -306,6 +336,18 @@ class FakeDesktop {
         }
         const data = await tab.page.screenshot({ type: "png" })
         return { mime: "image/png", data: Buffer.from(data).toString("base64") }
+      }
+      case "dialog": {
+        const tab = this.require(action.tabID)
+        if (action.action === "get") return { tab: this.tab(tab), dialog: tab.capture.dialog ?? null }
+        if (!tab.capture.dialogPending) throw new Error("No dialog is open in this tab.")
+        await tab.session.send("Page.handleJavaScriptDialog", {
+          accept: action.action === "accept",
+          ...(action.promptText !== undefined ? { promptText: action.promptText } : {}),
+        })
+        tab.capture.dialogPending = false
+        tab.capture.dialog = undefined
+        return { tab: this.tab(tab), dialog: null }
       }
       case "console": {
         const tab = this.require(action.tabID)
@@ -464,6 +506,18 @@ describe("desktop tunnel protocol with a routed Driver", () => {
     const fetched = await driver.networkGet(tab.id, { id: fetchRequest!.id, includeBody: true })
     expect(fetched.responseBody.state).toBe("text")
     if (fetched.responseBody.state === "text") expect(fetched.responseBody.text).toContain("second page")
+
+    // A page prompt surfaces through the same pending-dialog model.
+    const answering = driver.evaluate(tab.id, { script: "prompt('Name?', 'anon')" })
+    void answering.catch(() => undefined)
+    let dialogState = await driver.dialog(tab.id, { action: "get" })
+    for (let attempt = 0; attempt < 50 && !dialogState.dialog; attempt++) {
+      await Bun.sleep(100)
+      dialogState = await driver.dialog(tab.id, { action: "get" })
+    }
+    expect(dialogState.dialog).toEqual({ type: "prompt", message: "Name?", defaultValue: "anon" })
+    await driver.dialog(tab.id, { action: "accept", promptText: "josh" })
+    expect((await answering).value).toBe("josh")
 
     const after = await driver.click(tab.id, { ref: linkRef! })
     expect(after.url).toBe(`${base}/two`)

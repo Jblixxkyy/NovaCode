@@ -390,14 +390,53 @@ describe("executeDesktopAction", () => {
     ).rejects.toThrow(/Unknown request nope/)
   })
 
+  test("dialog routes through the CDP pending-dialog model", async () => {
+    const { cdp, inventory } = setup()
+    const handle = await inventory.open("/work", "https://example.com", true)
+    await ensureCapture(handle)
+    const none = (await executeDesktopAction(inventory, "/work", {
+      type: "dialog",
+      tabID: handle.id as never,
+      action: "get",
+    })) as { dialog: unknown }
+    expect(none.dialog).toBeNull()
+    await expect(
+      executeDesktopAction(inventory, "/work", { type: "dialog", tabID: handle.id as never, action: "accept" }),
+    ).rejects.toThrow(/No dialog is open in this tab/)
+    cdp.emit("Page.javascriptDialogOpening", { type: "prompt", message: "Name?", defaultPrompt: "anon" })
+    const open = (await executeDesktopAction(inventory, "/work", {
+      type: "dialog",
+      tabID: handle.id as never,
+      action: "get",
+    })) as { dialog: { type: string; message: string; defaultValue: string } | null }
+    expect(open.dialog).toEqual({ type: "prompt", message: "Name?", defaultValue: "anon" })
+    await executeDesktopAction(inventory, "/work", {
+      type: "dialog",
+      tabID: handle.id as never,
+      action: "accept",
+      promptText: "josh",
+    })
+    expect(cdp.calls).toContainEqual({
+      method: "Page.handleJavaScriptDialog",
+      params: { accept: true, promptText: "josh" },
+    })
+    const closed = (await executeDesktopAction(inventory, "/work", {
+      type: "dialog",
+      tabID: handle.id as never,
+      action: "get",
+    })) as { dialog: unknown }
+    expect(closed.dialog).toBeNull()
+  })
+
   test("unsupported actions raise DesktopUnsupportedError", async () => {
     const { inventory } = setup()
     const handle = await inventory.open("/work", "https://example.com", true)
+    // Heap analysis runs server-side in the Driver and is never forwarded.
     await expect(
       executeDesktopAction(inventory, "/work", {
-        type: "dialog",
+        type: "heap.summary",
         tabID: handle.id as never,
-        action: "get",
+        fileID: "file_unknown",
       } as never),
     ).rejects.toBeInstanceOf(DesktopUnsupportedError)
   })

@@ -631,6 +631,19 @@ export async function executeDesktopAction(
         dropped: capture.networkDropped,
       }
     }
+    case "dialog": {
+      const handle = requireTab(inventory, scope, action.tabID)
+      const capture = await ensureCapture(handle)
+      if (action.action === "get") return { tab: tabOf(handle), dialog: capture.dialog ?? null }
+      if (!capture.dialogPending) throw new Error("No dialog is open in this tab.")
+      await handle.contents.cdp.send("Page.handleJavaScriptDialog", {
+        accept: action.action === "accept",
+        ...(action.promptText !== undefined ? { promptText: action.promptText } : {}),
+      })
+      capture.dialogPending = false
+      capture.dialog = undefined
+      return { tab: tabOf(handle), dialog: null }
+    }
     case "network.get": {
       const handle = requireTab(inventory, scope, action.tabID)
       const capture = await ensureCapture(handle)

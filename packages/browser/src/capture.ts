@@ -189,7 +189,7 @@ export async function wireCapture(session: CaptureSession, capture: TabCapture):
     capture.dialog = {
       type: String(params.type ?? "alert"),
       message: String(params.message ?? "").slice(0, Browser.MAX_TEXT),
-      defaultValue: String(params.defaultPromptValue ?? ""),
+      defaultValue: String(params.defaultPrompt ?? ""),
     }
     capture.dialogPending = true
   })
