@@ -348,6 +348,19 @@ describe("executeDesktopAction", () => {
     expect(cdp.calls.filter((call) => call.method === "Page.captureScreenshot")).toHaveLength(1)
   })
 
+  test("screenshot honors maxWidth by scaling the capture region", async () => {
+    const { cdp, inventory } = setup()
+    const handle = await inventory.open("/work", "https://example.com", true)
+    await executeDesktopAction(inventory, "/work", {
+      type: "screenshot",
+      tabID: handle.id as never,
+      maxWidth: 320,
+    })
+    const call = cdp.calls.find((entry) => entry.method === "Page.captureScreenshot")
+    // FakeContents viewport is 1280 wide; 320/1280 = 0.25.
+    expect(call?.params?.clip).toMatchObject({ x: 0, y: 0, width: 1280, scale: 0.25 })
+  })
+
   test("console reads CDP console events with driver-shaped entries and level filtering", async () => {
     const { cdp, inventory } = setup()
     const handle = await inventory.open("/work", "https://example.com", true)

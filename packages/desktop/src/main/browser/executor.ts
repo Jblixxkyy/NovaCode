@@ -730,6 +730,21 @@ export async function executeDesktopAction(
         const size = metrics.cssContentSize ?? metrics.contentSize
         if (size) clip = { x: 0, y: 0, width: size.width, height: size.height, scale: 1 }
       }
+      if (action.maxWidth) {
+        // The Playwright driver captures at a viewport resized to maxWidth;
+        // the desktop equivalent scales the captured region instead, so the
+        // user's live view is never resized. Either way the image comes
+        // back at most maxWidth pixels wide.
+        const baseWidth = clip ? clip.width : handle.contents.getViewportSize().width
+        if (baseWidth > action.maxWidth) {
+          const factor = action.maxWidth / baseWidth
+          if (clip) clip = { ...clip, scale: clip.scale * factor }
+          else {
+            const size = handle.contents.getViewportSize()
+            clip = { x: 0, y: 0, width: size.width, height: size.height, scale: factor }
+          }
+        }
+      }
       const shot = (await handle.contents.cdp.send("Page.captureScreenshot", {
         format,
         ...(format !== "png" && action.quality !== undefined ? { quality: action.quality } : {}),
