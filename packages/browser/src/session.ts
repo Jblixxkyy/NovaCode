@@ -523,6 +523,17 @@ export class Driver {
     return this.toTab(tab)
   }
 
+  /** Click a raw viewport point (used by the panel for normal, non-inspect clicks). */
+  async clickAtPoint(tabID: string, options: { x: number; y: number }): Promise<Browser.Tab> {
+    const tab = this.requireTab(tabID)
+    try {
+      await tab.page.mouse.click(options.x, options.y)
+    } catch (error) {
+      throw BrowserError.from(error, `Click failed at point ${options.x},${options.y}`)
+    }
+    return this.toTab(tab)
+  }
+
   async hover(tabID: string, options: { ref: string }): Promise<Browser.Tab> {
     const tab = this.requireTab(tabID)
     const frame = await this.frameFor(tab)
@@ -1309,8 +1320,18 @@ export class Driver {
   }
 
   async refAtPoint(tabID: string, x: number, y: number): Promise<string | undefined> {
+    return (await this.pickAtPoint(tabID, x, y)).ref
+  }
+
+  /** Smallest element at a viewport point, with its CSS-pixel bounding box. */
+  async pickAtPoint(
+    tabID: string,
+    x: number,
+    y: number,
+  ): Promise<{ ref?: string; box?: { x: number; y: number; width: number; height: number } }> {
     const tab = this.requireTab(tabID)
     let best: string | undefined
+    let bestBox: { x: number; y: number; width: number; height: number } | undefined
     let bestArea = Number.POSITIVE_INFINITY
     for (const [ref, box] of tab.boxes) {
       if (x < box.x || y < box.y || x > box.x + box.width || y > box.y + box.height) continue
@@ -1318,9 +1339,10 @@ export class Driver {
       if (area < bestArea) {
         bestArea = area
         best = ref
+        bestBox = box
       }
     }
-    return best
+    return { ref: best, box: bestBox }
   }
 
   /** Drop the panel's recent-pages history. */

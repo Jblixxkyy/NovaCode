@@ -145,7 +145,17 @@ export const BrowserApi = HttpApi.make("browser")
             y: Schema.Number,
           }),
           success: described(
-            Schema.Struct({ ref: Schema.optional(Schema.String) }),
+            Schema.Struct({
+              ref: Schema.optional(Schema.String),
+              box: Schema.optional(
+                Schema.Struct({
+                  x: Schema.Number,
+                  y: Schema.Number,
+                  width: Schema.Number,
+                  height: Schema.Number,
+                }),
+              ),
+            }),
             "Picked element ref",
           ),
         }).annotateMerge(
@@ -153,6 +163,22 @@ export const BrowserApi = HttpApi.make("browser")
             identifier: "browser.pick",
             summary: "Pick element",
             description: "Map a CSS-pixel point on the page to the smallest containing element ref.",
+          }),
+        ),
+        HttpApiEndpoint.post("click", "/browser/click", {
+          query: WorkspaceRoutingQuery,
+          payload: Schema.Struct({
+            ...WorkspaceRoutingQueryFields,
+            tabID: Browser.TabID,
+            x: Schema.Number,
+            y: Schema.Number,
+          }),
+          success: described(BrowserPanelState, "Browser panel state"),
+        }).annotateMerge(
+          OpenApi.annotations({
+            identifier: "browser.click",
+            summary: "Click page point",
+            description: "Click a CSS-pixel point on a browser tab's page (panel forwarding of normal clicks).",
           }),
         ),
         HttpApiEndpoint.post("clearHistory", "/browser/clear-history", {

@@ -1,4 +1,4 @@
-import { createSignal, onMount } from "solid-js"
+import { createEffect, createSignal, onMount } from "solid-js"
 import { Button } from "@novacode-ai/ui/button"
 import { useLanguage } from "@/context/language"
 
@@ -13,12 +13,14 @@ export function BrowserCommentEditor(props: {
   containerHeight: number
   onSubmit: (draft: string) => void
   onCancel: () => void
+  onDraftChange?: (empty: boolean) => void
 }) {
   const language = useLanguage()
   const [draft, setDraft] = createSignal("")
 
   let textarea: HTMLTextAreaElement | undefined
   onMount(() => textarea?.focus())
+  createEffect(() => props.onDraftChange?.(draft().trim().length === 0))
 
   const left = () => Math.min(Math.max(GAP, props.x - WIDTH / 2), Math.max(GAP, props.containerWidth - WIDTH - GAP))
   const top = () => {
