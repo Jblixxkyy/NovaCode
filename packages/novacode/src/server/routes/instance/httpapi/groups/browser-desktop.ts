@@ -41,6 +41,13 @@ export const BrowserDesktopApi = HttpApi.make("browser-desktop")
             Schema.Struct({
               attachment: Schema.String,
               replaced: Schema.Boolean,
+              // The server's effective domain ACL (browser-acl.json): the
+              // desktop enforces it on webview navigation so both browser
+              // backends apply the same allow/deny rules.
+              acl: Schema.Struct({
+                allow: Schema.Array(Schema.String),
+                deny: Schema.Array(Schema.String),
+              }),
             }),
             "Desktop browser attachment",
           ),
@@ -93,6 +100,21 @@ export const BrowserDesktopApi = HttpApi.make("browser-desktop")
             summary: "Publish desktop browser state",
             description:
               "Publish the desktop's authoritative tab inventory for one location scope; also serves as a heartbeat.",
+          }),
+        ),
+        HttpApiEndpoint.post("inspect", "/browser/desktop/inspect", {
+          payload: Schema.Struct({
+            attachment: Schema.String,
+            scope: Schema.String,
+            event: BrowserDesktop.InspectEvent,
+          }),
+          success: described(Schema.Boolean, "Whether the inspect event was accepted"),
+        }).annotateMerge(
+          OpenApi.annotations({
+            identifier: "browser.desktop.inspect",
+            summary: "Report a live-inspect event",
+            description:
+              "Queue a live-inspect event (element pick, inspect cancellation, or an in-page inspect shortcut) for the browser panel to drain with its next state poll.",
           }),
         ),
         HttpApiEndpoint.post("detach", "/browser/desktop/detach", {

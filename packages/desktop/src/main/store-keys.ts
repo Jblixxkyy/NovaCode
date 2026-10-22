@@ -1,4 +1,6 @@
 export const SETTINGS_STORE = "novacode.settings"
+export const BROWSER_TABS_STORE = "novacode.browser-tabs"
+export const BROWSER_TABS_KEY = "tabs"
 export const DEFAULT_SERVER_URL_KEY = "defaultServerUrl"
 export const FIRST_LAUNCH_ONBOARDING_COMPLETE_KEY = "firstLaunchOnboardingComplete"
 export const OLD_LAYOUT_ELIGIBLE_KEY = "oldLayoutEligible"

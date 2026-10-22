@@ -1,4 +1,9 @@
+import { createHash } from "node:crypto"
+import { mkdtemp, rm, writeFile } from "node:fs/promises"
+import { tmpdir } from "node:os"
+import path from "node:path"
 import { Browser } from "@novacode-ai/browser/rpc"
+import { BrowserCapture } from "@novacode-ai/browser/capture"
 import type { BrowserDesktop } from "@novacode-ai/browser/desktop"
 import type { CdpSession } from "./cdp"
 
@@ -49,7 +54,84 @@ export interface TabHandle {
   readonly contents: PageContents
   generation: number
   loadError?: string
+  /** Latest favicon URL reported by the page (desktop tabs only). */
+  favicon?: string
+  /** Restored tab whose first load is deferred until activation. */
+  pendingURL?: string
+  /** Console/network/dialog capture buffers, wired lazily by ensureCapture. */
+  capture?: BrowserCapture.TabCapture
+  captureReady?: Promise<void>
+  /** In-flight trace recording (Tracing.dataCollected chunks accumulate here). */
+  trace?: {
+    chunks: unknown[]
+    startedAt: number
+    onData: (params: Record<string, unknown>) => void
+    timer: ReturnType<typeof setTimeout>
+  }
+  /** A trace that hit its duration bound and waits for trace.stop to collect it. */
+  traceResult?: { chunks: unknown[]; durationMs: number; incomplete: boolean }
+  cpu?: { startedAt: number; timer: ReturnType<typeof setTimeout> }
+  cpuResult?: { profile: unknown; durationMs: number }
+  /** CDP Overlay inspect mode is engaged on this tab. */
+  inspecting?: boolean
+  inspectWired?: boolean
   boxes: Map<string, { x: number; y: number; width: number; height: number }>
+}
+
+/** End a running trace and stash its chunks for trace.stop (also the auto-stop path). */
+async function finishTrace(handle: TabHandle): Promise<void> {
+  const trace = handle.trace
+  if (!trace) return
+  handle.trace = undefined
+  clearTimeout(trace.timer)
+  const cdp = handle.contents.cdp
+  let incomplete = false
+  const done = new Promise<void>((resolve) => {
+    const onComplete = () => {
+      cdp.off("Tracing.tracingComplete", onComplete)
+      resolve()
+    }
+    cdp.on("Tracing.tracingComplete", onComplete)
+    setTimeout(resolve, 10_000).unref?.()
+  })
+  await cdp.send("Tracing.end").catch(() => {
+    incomplete = true
+  })
+  await done
+  cdp.off("Tracing.dataCollected", trace.onData)
+  handle.traceResult = { chunks: trace.chunks, durationMs: Date.now() - trace.startedAt, incomplete }
+}
+
+/** Stop CPU sampling and stash the profile for cpu.stop (also the auto-stop path). */
+async function finishCpu(handle: TabHandle): Promise<void> {
+  const cpu = handle.cpu
+  if (!cpu) return
+  handle.cpu = undefined
+  clearTimeout(cpu.timer)
+  const result = (await handle.contents.cdp.send("Profiler.stop")) as { profile: unknown }
+  handle.cpuResult = { profile: result.profile, durationMs: Date.now() - cpu.startedAt }
+}
+
+/**
+ * One persistent Electron session partition per Location scope, so cookies
+ * and site storage stay isolated per project. The pre-phase-2 shared
+ * partition's data does not migrate: scopes start with fresh jars.
+ */
+export function partitionFor(scope: string): string {
+  if (!scope) return "persist:novacode-browser"
+  return `persist:novacode-browser-${createHash("sha256").update(scope).digest("hex").slice(0, 16)}`
+}
+
+/**
+ * Wire CDP console/network/dialog capture for a tab (idempotent). Called
+ * when a tab is created and again defensively before capture-backed
+ * actions, so popup tabs created outside the executor are covered too.
+ */
+export async function ensureCapture(handle: TabHandle): Promise<BrowserCapture.TabCapture> {
+  if (!handle.capture) handle.capture = BrowserCapture.createCapture()
+  if (!handle.captureReady) handle.captureReady = BrowserCapture.wireCapture(handle.contents.cdp, handle.capture)
+  await handle.captureReady
+  return handle.capture
 }
 
 export interface TabInventory {
@@ -59,14 +141,23 @@ export interface TabInventory {
   open(scope: string, url: string | undefined, focus: boolean): Promise<TabHandle>
   focus(scope: string, tabID: string): TabHandle | undefined
   close(scope: string, tabID: string): Promise<void>
+  /**
+   * Optional domain-ACL gate (browser-acl.json, delivered with the tunnel
+   * attachment): throws when a navigation target is denied. The real tab
+   * manager implements it; test inventories may omit it.
+   */
+  checkNavigation?(url: string): void
+  /** Optional sink for live-inspect events (picks, cancellations) bound for the server. */
+  inspectEvent?(scope: string, event: BrowserDesktop.InspectEvent): void
 }
 
 export function tabOf(handle: TabHandle): Browser.Tab {
   const contents = handle.contents
   return {
     id: handle.id as Browser.TabID,
-    url: contents.getURL() || "about:blank",
-    title: contents.getTitle() || contents.getURL() || "about:blank",
+    url: contents.getURL() || handle.pendingURL || "about:blank",
+    title: contents.getTitle() || contents.getURL() || handle.pendingURL || "about:blank",
+    ...(handle.favicon ? { favicon: handle.favicon } : {}),
     loading: contents.isLoading(),
     ...(handle.loadError ? { loadError: handle.loadError } : {}),
     canGoBack: contents.canGoBack(),
@@ -253,6 +344,46 @@ async function callOnElement(handle: TabHandle, ref: string, functionDeclaration
   }
 }
 
+async function elementKind(
+  handle: TabHandle,
+  ref: string,
+): Promise<{ tag: string; type: string | null }> {
+  const value = (await callOnElement(
+    handle,
+    ref,
+    `function() { return { tag: this.tagName ?? "", type: typeof this.getAttribute === "function" ? this.getAttribute("type") : null } }`,
+  )) as { tag?: string; type?: string | null } | undefined
+  return { tag: value?.tag ?? "", type: value?.type ?? null }
+}
+
+/**
+ * Hand files to an <input type="file"> through the debugger. CDP's
+ * DOM.setFileInputFiles needs real filesystem paths, so the delivered
+ * bytes are staged in a temp dir on this machine (the desktop app and
+ * its sidecar share the machine) and removed right after the call.
+ */
+async function setFileInputFiles(
+  handle: TabHandle,
+  ref: string,
+  files: ReadonlyArray<{ name: string; data: string }>,
+): Promise<void> {
+  const objectId = await resolveObjectID(handle, ref)
+  const dir = await mkdtemp(path.join(tmpdir(), "novacode-upload-"))
+  try {
+    const staged: string[] = []
+    for (const [index, file] of files.entries()) {
+      const name = path.basename(file.name).replace(/[^\w.\- ]/g, "_") || `file-${index}`
+      const target = path.join(dir, `${index}-${name}`)
+      await writeFile(target, Buffer.from(file.data, "base64"))
+      staged.push(target)
+    }
+    await handle.contents.cdp.send("DOM.setFileInputFiles", { objectId, files: staged })
+  } finally {
+    await handle.contents.cdp.send("Runtime.releaseObject", { objectId }).catch(() => {})
+    await rm(dir, { recursive: true, force: true }).catch(() => {})
+  }
+}
+
 async function elementCenter(handle: TabHandle, ref: string): Promise<{ x: number; y: number }> {
   const objectId = await resolveObjectID(handle, ref)
   try {
@@ -311,9 +442,11 @@ async function evaluateScript(
   return result.result?.value ?? null
 }
 
-async function navigate(handle: TabHandle, rawUrl: string): Promise<Browser.Tab> {
+async function navigate(inventory: TabInventory, handle: TabHandle, rawUrl: string): Promise<Browser.Tab> {
   const action = Browser.normalizeAction({ type: "navigate", tabID: handle.id as Browser.TabID, url: rawUrl })
   if (action.type !== "navigate") throw new Error("URL normalization failed")
+  // Same gate, same messages as the Playwright driver's navigate().
+  inventory.checkNavigation?.(action.url)
   handle.loadError = undefined
   try {
     await handle.contents.loadURL(action.url)
@@ -324,6 +457,100 @@ async function navigate(handle: TabHandle, rawUrl: string): Promise<Browser.Tab>
   }
   handle.generation += 1
   return tabOf(handle)
+}
+
+/** Take an accessibility snapshot, (re)registering refs and optionally measuring boxes. */
+async function takeSnapshot(
+  handle: TabHandle,
+  options: { depth?: number; boxes?: boolean },
+): Promise<{
+  content: string
+  truncated: boolean
+  boxes: Record<string, { x: number; y: number; width: number; height: number }>
+  refsByBackend: Map<number, string>
+}> {
+  const cdp = handle.contents.cdp
+  const maxDepth = options.depth ?? 20
+  const tree = (await cdp.send("Accessibility.getFullAXTree", { depth: options.depth })) as { nodes?: AXNodeLike[] }
+  const nodes = tree.nodes ?? []
+  const { lines, refs } = formatSnapshot(nodes, maxDepth)
+  handle.boxes.clear()
+  const boxes: Record<string, { x: number; y: number; width: number; height: number }> = {}
+  for (const [ref, backendNodeId] of refs) {
+    try {
+      const resolved = (await cdp.send("DOM.resolveNode", { backendNodeId })) as { object: { objectId: string } }
+      await cdp.send("Runtime.callFunctionOn", {
+        objectId: resolved.object.objectId,
+        functionDeclaration: `function(ref) { (globalThis.__novacodeRefs = globalThis.__novacodeRefs || new Map()).set(ref, this) }`,
+        arguments: [{ value: ref }],
+      })
+      if (options.boxes) {
+        const box = (await cdp
+          .send("DOM.getBoxModel", { backendNodeId })
+          .catch(() => undefined)) as { model: { content: number[] } } | undefined
+        const content = box?.model.content
+        if (content && content.length >= 8) {
+          const xs = [content[0]!, content[2]!, content[4]!, content[6]!]
+          const ys = [content[1]!, content[3]!, content[5]!, content[7]!]
+          const x = Math.min(...xs)
+          const y = Math.min(...ys)
+          const entry = { x, y, width: Math.max(...xs) - x, height: Math.max(...ys) - y }
+          handle.boxes.set(ref, entry)
+          boxes[ref] = entry
+        }
+      }
+      await cdp.send("Runtime.releaseObject", { objectId: resolved.object.objectId })
+    } catch {
+      // Node vanished mid-snapshot; skip it.
+    }
+  }
+  handle.generation += 1
+  const content = lines.join("\n")
+  const truncated = content.length > Browser.MAX_TEXT
+  return {
+    content: truncated ? content.slice(0, Browser.MAX_TEXT) : content,
+    truncated,
+    boxes,
+    refsByBackend: new Map([...refs].map(([ref, backendNodeId]) => [backendNodeId, ref])),
+  }
+}
+
+/** Overlay highlight shown while live inspect is engaged (accent-tinted box model). */
+const INSPECT_HIGHLIGHT = {
+  showInfo: true,
+  showStyles: false,
+  contentColor: { r: 76, g: 140, b: 246, a: 0.35 },
+  paddingColor: { r: 76, g: 246, b: 140, a: 0.35 },
+  borderColor: { r: 246, g: 200, b: 76, a: 0.6 },
+  marginColor: { r: 246, g: 140, b: 76, a: 0.35 },
+}
+
+/**
+ * Subscribe to Overlay inspect events for a tab (once). A pick resolves the
+ * backend node to the same ref + box the snapshot machinery produces, so the
+ * panel's comment flow cannot tell live picks from still-frame picks.
+ * searchForNode exits inspect mode after one pick; the flag follows.
+ */
+function wireInspect(handle: TabHandle, emit: (event: BrowserDesktop.InspectEvent) => void): void {
+  if (handle.inspectWired) return
+  handle.inspectWired = true
+  const cdp = handle.contents.cdp
+  cdp.on("Overlay.inspectNodeRequested", (params) => {
+    handle.inspecting = false
+    const backendNodeId = params.backendNodeId
+    if (typeof backendNodeId !== "number") return
+    void (async () => {
+      const snap = await takeSnapshot(handle, { boxes: true })
+      const ref = snap.refsByBackend.get(backendNodeId)
+      const box = ref ? snap.boxes[ref] : undefined
+      if (ref && box) emit({ type: "picked", tabID: handle.id as Browser.TabID, ref, box })
+    })().catch(() => {})
+  })
+  cdp.on("Overlay.inspectModeCanceled", () => {
+    if (!handle.inspecting) return
+    handle.inspecting = false
+    emit({ type: "canceled", tabID: handle.id as Browser.TabID })
+  })
 }
 
 // ---------------------------------------------------------------------------
@@ -342,6 +569,7 @@ export async function executeDesktopAction(
       const normalized = Browser.normalizeAction(action)
       const url = normalized.type === "tabs.open" ? normalized.url : undefined
       const handle = await inventory.open(scope, url, action.focus ?? true)
+      await ensureCapture(handle).catch(() => {})
       return tabOf(handle)
     }
     case "tabs.focus": {
@@ -354,7 +582,7 @@ export async function executeDesktopAction(
       return stateOf(inventory, scope)
     }
     case "navigate":
-      return navigate(requireTab(inventory, scope, action.tabID), action.url)
+      return navigate(inventory, requireTab(inventory, scope, action.tabID), action.url)
     case "back": {
       const handle = requireTab(inventory, scope, action.tabID)
       handle.contents.goBack()
@@ -388,51 +616,38 @@ export async function executeDesktopAction(
     }
     case "snapshot": {
       const handle = requireTab(inventory, scope, action.tabID)
-      const cdp = handle.contents.cdp
-      const maxDepth = action.depth ?? 20
-      const tree = (await cdp.send("Accessibility.getFullAXTree", { depth: action.depth })) as { nodes?: AXNodeLike[] }
-      const nodes = tree.nodes ?? []
-      const { lines, refs } = formatSnapshot(nodes, maxDepth)
-      handle.boxes.clear()
-      const boxes: Record<string, { x: number; y: number; width: number; height: number }> = {}
-      for (const [ref, backendNodeId] of refs) {
-        try {
-          const resolved = (await cdp.send("DOM.resolveNode", { backendNodeId })) as { object: { objectId: string } }
-          await cdp.send("Runtime.callFunctionOn", {
-            objectId: resolved.object.objectId,
-            functionDeclaration: `function(ref) { (globalThis.__novacodeRefs = globalThis.__novacodeRefs || new Map()).set(ref, this) }`,
-            arguments: [{ value: ref }],
-          })
-          if (action.boxes) {
-            const box = (await cdp
-              .send("DOM.getBoxModel", { backendNodeId })
-              .catch(() => undefined)) as { model: { content: number[] } } | undefined
-            const content = box?.model.content
-            if (content && content.length >= 8) {
-              const xs = [content[0]!, content[2]!, content[4]!, content[6]!]
-              const ys = [content[1]!, content[3]!, content[5]!, content[7]!]
-              const x = Math.min(...xs)
-              const y = Math.min(...ys)
-              const entry = { x, y, width: Math.max(...xs) - x, height: Math.max(...ys) - y }
-              handle.boxes.set(ref, entry)
-              boxes[ref] = entry
-            }
-          }
-          await cdp.send("Runtime.releaseObject", { objectId: resolved.object.objectId })
-        } catch {
-          // Node vanished mid-snapshot; skip it.
-        }
-      }
-      handle.generation += 1
-      const content = lines.join("\n")
-      const truncated = content.length > Browser.MAX_TEXT
+      const snap = await takeSnapshot(handle, { depth: action.depth, boxes: action.boxes })
       const result: BrowserDesktop.DesktopSnapshotResult = {
         tab: tabOf(handle),
-        content: truncated ? content.slice(0, Browser.MAX_TEXT) : content,
-        truncated,
-        ...(action.boxes ? { boxes } : {}),
+        content: snap.content,
+        truncated: snap.truncated,
+        ...(action.boxes ? { boxes: snap.boxes } : {}),
       }
       return result
+    }
+    case "inspect.start": {
+      const handle = requireTab(inventory, scope, action.tabID)
+      const cdp = handle.contents.cdp
+      await cdp.send("DOM.enable").catch(() => {})
+      await cdp.send("Overlay.enable").catch(() => {})
+      wireInspect(handle, (event) => inventory.inspectEvent?.(scope, event))
+      await cdp.send("Overlay.setInspectMode", {
+        mode: "searchForNode",
+        highlightConfig: INSPECT_HIGHLIGHT,
+      })
+      handle.inspecting = true
+      return tabOf(handle)
+    }
+    case "inspect.stop": {
+      const handle = requireTab(inventory, scope, action.tabID)
+      if (handle.inspecting) {
+        handle.inspecting = false
+        // CDP requires a highlight config even when disabling inspect mode.
+        await handle.contents.cdp
+          .send("Overlay.setInspectMode", { mode: "none", highlightConfig: INSPECT_HIGHLIGHT })
+          .catch(() => {})
+      }
+      return tabOf(handle)
     }
     case "evaluate": {
       const handle = requireTab(inventory, scope, action.tabID)
@@ -460,6 +675,43 @@ export async function executeDesktopAction(
       const handle = requireTab(inventory, scope, action.tabID)
       const center = await elementCenter(handle, action.ref)
       await handle.contents.cdp.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: center.x, y: center.y })
+      return tabOf(handle)
+    }
+    case "drag": {
+      const handle = requireTab(inventory, scope, action.tabID)
+      const from = await elementCenter(handle, action.from)
+      const to = await elementCenter(handle, action.to)
+      const cdp = handle.contents.cdp
+      // Mirror the Playwright driver's mouse path: move, press, 12
+      // interpolated moves, release — enough steps for HTML5 drag sources
+      // and range/slider inputs to track the gesture.
+      await cdp.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: from.x, y: from.y })
+      await cdp.send("Input.dispatchMouseEvent", {
+        type: "mousePressed",
+        x: from.x,
+        y: from.y,
+        button: "left",
+        buttons: 1,
+        clickCount: 1,
+      })
+      const steps = 12
+      for (let step = 1; step <= steps; step++) {
+        await cdp.send("Input.dispatchMouseEvent", {
+          type: "mouseMoved",
+          x: from.x + ((to.x - from.x) * step) / steps,
+          y: from.y + ((to.y - from.y) * step) / steps,
+          button: "left",
+          buttons: 1,
+        })
+      }
+      await cdp.send("Input.dispatchMouseEvent", {
+        type: "mouseReleased",
+        x: to.x,
+        y: to.y,
+        button: "left",
+        buttons: 0,
+        clickCount: 1,
+      })
       return tabOf(handle)
     }
     case "fill": {
@@ -564,6 +816,21 @@ export async function executeDesktopAction(
         const size = metrics.cssContentSize ?? metrics.contentSize
         if (size) clip = { x: 0, y: 0, width: size.width, height: size.height, scale: 1 }
       }
+      if (action.maxWidth) {
+        // The Playwright driver captures at a viewport resized to maxWidth;
+        // the desktop equivalent scales the captured region instead, so the
+        // user's live view is never resized. Either way the image comes
+        // back at most maxWidth pixels wide.
+        const baseWidth = clip ? clip.width : handle.contents.getViewportSize().width
+        if (baseWidth > action.maxWidth) {
+          const factor = action.maxWidth / baseWidth
+          if (clip) clip = { ...clip, scale: clip.scale * factor }
+          else {
+            const size = handle.contents.getViewportSize()
+            clip = { x: 0, y: 0, width: size.width, height: size.height, scale: factor }
+          }
+        }
+      }
       const shot = (await handle.contents.cdp.send("Page.captureScreenshot", {
         format,
         ...(format !== "png" && action.quality !== undefined ? { quality: action.quality } : {}),
@@ -581,6 +848,261 @@ export async function executeDesktopAction(
       const handle = requireTab(inventory, scope, action.tabID)
       const result: BrowserDesktop.DesktopStillResult = { mime: "image/png", data: await captureStill(handle.contents) }
       return result
+    }
+    case "console": {
+      const handle = requireTab(inventory, scope, action.tabID)
+      const capture = await ensureCapture(handle)
+      const minRank = BrowserCapture.severityRankOf(action.level ?? "debug")
+      const messages = capture.console.filter((entry) => BrowserCapture.severityRankOf(entry.level) >= minRank)
+      const limit = action.limit ?? 100
+      return {
+        tab: tabOf(handle),
+        messages: messages.slice(-limit),
+        truncated: messages.length > limit,
+        dropped: capture.consoleDropped,
+      }
+    }
+    case "network.list": {
+      const handle = requireTab(inventory, scope, action.tabID)
+      const capture = await ensureCapture(handle)
+      let requests = capture.network.map((record) => record.request)
+      if (action.urlContains) requests = requests.filter((request) => request.url.includes(action.urlContains!))
+      if (action.resourceType) requests = requests.filter((request) => request.resourceType === action.resourceType)
+      const limit = action.limit ?? 100
+      return {
+        tab: tabOf(handle),
+        requests: requests.slice(-limit),
+        truncated: requests.length > limit,
+        dropped: capture.networkDropped,
+      }
+    }
+    case "dialog": {
+      const handle = requireTab(inventory, scope, action.tabID)
+      const capture = await ensureCapture(handle)
+      if (action.action === "get") return { tab: tabOf(handle), dialog: capture.dialog ?? null }
+      if (!capture.dialogPending) throw new Error("No dialog is open in this tab.")
+      await handle.contents.cdp.send("Page.handleJavaScriptDialog", {
+        accept: action.action === "accept",
+        ...(action.promptText !== undefined ? { promptText: action.promptText } : {}),
+      })
+      capture.dialogPending = false
+      capture.dialog = undefined
+      return { tab: tabOf(handle), dialog: null }
+    }
+    case "files.deliver": {
+      const handle = requireTab(inventory, scope, action.tabID)
+      const kind = await elementKind(handle, action.ref)
+      const isFileInput = kind.tag === "INPUT" && kind.type === "file"
+      if (action.mode === "upload") {
+        if (!isFileInput)
+          throw new Error(`browser.files.upload needs an <input type="file"> element; ${action.ref} is not one.`)
+        await setFileInputFiles(handle, action.ref, action.files)
+        return tabOf(handle)
+      }
+      // Drop: file inputs take the files directly (what a real OS drop on
+      // them does); any other element gets the same synthetic DragEvent
+      // sequence the Playwright driver dispatches in-page. CDP cannot
+      // synthesize an OS-level file drag, so drop targets that only listen
+      // for native drag data will not see these files.
+      if (isFileInput) {
+        await setFileInputFiles(handle, action.ref, action.files)
+        return tabOf(handle)
+      }
+      await callOnElement(
+        handle,
+        action.ref,
+        `function(files) {
+          const dt = new DataTransfer()
+          for (const f of files) {
+            const bytes = Uint8Array.from(atob(f.data), (c) => c.charCodeAt(0))
+            dt.items.add(new File([bytes], f.name, { type: f.mime }))
+          }
+          for (const type of ["dragenter", "dragover", "drop"])
+            this.dispatchEvent(new DragEvent(type, { dataTransfer: dt, bubbles: true, cancelable: true }))
+        }`,
+        [action.files],
+      )
+      return tabOf(handle)
+    }
+    case "trace.start": {
+      const handle = requireTab(inventory, scope, action.tabID)
+      if (handle.trace || handle.traceResult)
+        throw new Error("A trace recording is already running for this tab.")
+      const chunks: unknown[] = []
+      const onData = (params: Record<string, unknown>) => {
+        if (Array.isArray(params.value)) chunks.push(...params.value)
+      }
+      const cdp = handle.contents.cdp
+      cdp.on("Tracing.dataCollected", onData)
+      const bound = Math.min(action.durationMs ?? 30_000, 30_000)
+      try {
+        await cdp.send("Tracing.start", {
+          categories: "devtools.timeline,v8.execute,blink.console,loading",
+          options: "sampling-frequency=10000",
+        })
+      } catch (error) {
+        cdp.off("Tracing.dataCollected", onData)
+        throw new Error(`Cannot start trace: ${error instanceof Error ? error.message : String(error)}`)
+      }
+      const timer = setTimeout(() => void finishTrace(handle).catch(() => {}), bound)
+      timer.unref?.()
+      handle.trace = { chunks, startedAt: Date.now(), onData, timer }
+      return { tab: tabOf(handle), recording: true }
+    }
+    case "trace.stop": {
+      const handle = requireTab(inventory, scope, action.tabID)
+      if (handle.trace) await finishTrace(handle)
+      const result = handle.traceResult
+      if (!result) throw new Error("No trace recording is running for this tab.")
+      handle.traceResult = undefined
+      const data = Buffer.from(JSON.stringify({ traceEvents: result.chunks }), "utf8")
+      if (data.byteLength > Browser.MAX_FILE_BYTES)
+        throw new Error("Trace exceeds the 5 MiB transfer limit. Record for a shorter duration.")
+      return {
+        tab: tabOf(handle),
+        file: { name: `trace-${Date.now()}.json`, mime: "application/json", data: data.toString("base64") },
+        durationMs: result.durationMs,
+        incomplete: result.incomplete,
+      }
+    }
+    case "cpu.start": {
+      const handle = requireTab(inventory, scope, action.tabID)
+      if (handle.cpu || handle.cpuResult) throw new Error("CPU sampling is already running for this tab.")
+      const cdp = handle.contents.cdp
+      await cdp.send("Profiler.enable").catch((error) => {
+        throw new Error(`Cannot enable profiler: ${error instanceof Error ? error.message : String(error)}`)
+      })
+      await cdp.send("Profiler.setSamplingInterval", { interval: 100 }).catch(() => {})
+      await cdp.send("Profiler.start").catch((error) => {
+        throw new Error(`Cannot start CPU sampling: ${error instanceof Error ? error.message : String(error)}`)
+      })
+      const timer = setTimeout(() => void finishCpu(handle).catch(() => {}), 30_000)
+      timer.unref?.()
+      handle.cpu = { startedAt: Date.now(), timer }
+      return { tab: tabOf(handle), recording: true }
+    }
+    case "cpu.stop": {
+      const handle = requireTab(inventory, scope, action.tabID)
+      if (handle.cpu) await finishCpu(handle).catch((error) => {
+        throw new Error(`Cannot stop CPU sampling: ${error instanceof Error ? error.message : String(error)}`)
+      })
+      const result = handle.cpuResult
+      if (!result) throw new Error("CPU sampling is not running for this tab.")
+      handle.cpuResult = undefined
+      return {
+        tab: tabOf(handle),
+        file: {
+          name: `cpu-${Date.now()}.cpuprofile`,
+          mime: "application/json",
+          data: Buffer.from(JSON.stringify(result.profile), "utf8").toString("base64"),
+        },
+        durationMs: result.durationMs,
+      }
+    }
+    case "heap.snapshot": {
+      const handle = requireTab(inventory, scope, action.tabID)
+      const cdp = handle.contents.cdp
+      await cdp.send("HeapProfiler.enable").catch((error) => {
+        throw new Error(`Cannot enable heap profiler: ${error instanceof Error ? error.message : String(error)}`)
+      })
+      const chunks: string[] = []
+      const onChunk = (params: Record<string, unknown>) => chunks.push(String(params.chunk ?? ""))
+      cdp.on("HeapProfiler.addHeapSnapshotChunk", onChunk)
+      try {
+        await cdp.send("HeapProfiler.takeHeapSnapshot", { reportProgress: false })
+      } catch (error) {
+        throw new Error(`Heap snapshot failed: ${error instanceof Error ? error.message : String(error)}`)
+      } finally {
+        cdp.off("HeapProfiler.addHeapSnapshotChunk", onChunk)
+      }
+      const data = Buffer.from(chunks.join(""), "utf8")
+      if (data.byteLength > Browser.MAX_FILE_BYTES)
+        throw new Error("Heap snapshot exceeds the 5 MiB transfer limit.")
+      return {
+        tab: tabOf(handle),
+        file: { name: `heap-${Date.now()}.heapsnapshot`, mime: "application/json", data: data.toString("base64") },
+      }
+    }
+    case "lighthouse": {
+      const handle = requireTab(inventory, scope, action.tabID)
+      const url = handle.contents.getURL()
+      if (!/^https?:/.test(url)) throw new Error(`Lighthouse needs an http(s) page, got ${url}`)
+      // Lighthouse needs a Chrome it can launch and drive over a debugging
+      // port; an Electron WebContentsView exposes no such port, so the audit
+      // runs against a standalone Chrome the user points the desktop at.
+      const chromePath = process.env.NOVACODE_DESKTOP_LIGHTHOUSE_CHROME
+      if (!chromePath)
+        throw new Error(
+          "Lighthouse is not available on desktop tabs in this build: an Electron webview exposes no remote-debugging port for Lighthouse to attach to. Set NOVACODE_DESKTOP_LIGHTHOUSE_CHROME to a Chrome/Chromium executable to run audits from the desktop, or run browser.lighthouse when no desktop is attached.",
+        )
+      const previousChromePath = process.env.CHROME_PATH
+      process.env.CHROME_PATH = chromePath
+      try {
+        const { default: lighthouse } = await import("lighthouse")
+        const result = (await lighthouse(url, {
+          onlyCategories: ["accessibility", "best-practices", "seo"],
+          output: ["json", "html"],
+        })) as unknown as {
+          lhr: {
+            categories: Record<string, { id: string; title: string; score: number | null }>
+            audits: Record<
+              string,
+              { id: string; title: string; description: string; score: number | null; scoreDisplayMode: string }
+            >
+          }
+          report: [string, string]
+        }
+        return {
+          tab: tabOf(handle),
+          scores: Object.values(result.lhr.categories).map((category) => ({
+            id: category.id,
+            title: category.title,
+            score: category.score,
+          })),
+          failures: Object.values(result.lhr.audits)
+            .filter((audit) => audit.score !== null && audit.score < 0.9 && audit.scoreDisplayMode !== "notApplicable")
+            .slice(0, 50)
+            .map((audit) => ({ id: audit.id, title: audit.title, description: audit.description.slice(0, 2000) })),
+          files: [
+            {
+              name: `lighthouse-${Date.now()}.json`,
+              mime: "application/json",
+              data: Buffer.from(result.report[0] ?? "{}", "utf8").toString("base64"),
+            },
+            {
+              name: `lighthouse-${Date.now()}.html`,
+              mime: "text/html",
+              data: Buffer.from(result.report[1] ?? "", "utf8").toString("base64"),
+            },
+          ],
+        }
+      } catch (error) {
+        throw new Error(`Lighthouse audit failed: ${error instanceof Error ? error.message : String(error)}`)
+      } finally {
+        if (previousChromePath === undefined) delete process.env.CHROME_PATH
+        else process.env.CHROME_PATH = previousChromePath
+      }
+    }
+    case "network.get": {
+      const handle = requireTab(inventory, scope, action.tabID)
+      const capture = await ensureCapture(handle)
+      const record = capture.network.find((item) => item.request.id === action.id)
+      if (!record) throw new Error(`Unknown request ${action.id}. List requests with browser.network.list first.`)
+      const maxChars = action.maxBodyChars ?? 20_000
+      return {
+        tab: tabOf(handle),
+        request: record.request,
+        requestHeaders: [...record.requestHeaders],
+        responseHeaders: [...record.responseHeaders],
+        headersTruncated: record.requestHeaders.length >= 200 || record.responseHeaders.length >= 200,
+        requestBody: BrowserCapture.bodyOf(record.postData, maxChars, action.includeBody ?? false),
+        responseBody: await BrowserCapture.responseBodyOf(
+          handle.contents.cdp,
+          record,
+          action.includeBody ?? false,
+          maxChars,
+        ),
+      }
     }
     default:
       throw new DesktopUnsupportedError(action.type)

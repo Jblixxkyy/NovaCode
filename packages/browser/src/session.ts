@@ -112,13 +112,6 @@ export class Driver {
     return this.forwardDesktop<Browser.State>({ type: "tabs.list" }, PANEL_STATE_TIMEOUT_MS)
   }
 
-  private guardDesktop(name: string): void {
-    if (!this.desktopAttached) return
-    throw new BrowserError({
-      message: `${name} is not available on desktop browser tabs yet (phase 1). It remains available when no desktop is attached.`,
-    })
-  }
-
   private noteRecent(url: string): void {
     if (!/^https?:/.test(url)) return
     this.recent = [url, ...this.recent.filter((item) => item !== url)].slice(0, 5)
@@ -683,7 +676,13 @@ export class Driver {
   }
 
   async drag(tabID: string, options: { from: string; to: string }): Promise<Browser.Tab> {
-    this.guardDesktop("browser.drag")
+    if (this.desktopAttached)
+      return this.forwardDesktop({
+        type: "drag",
+        tabID: tabID as Browser.TabID,
+        from: options.from as Browser.Ref,
+        to: options.to as Browser.Ref,
+      })
     const tab = this.requireTab(tabID)
     const frame = await this.frameFor(tab)
     const from = await this.resolveElement(frame, options.from)
@@ -977,7 +976,13 @@ export class Driver {
     tabID: string,
     options: { action: "get" | "accept" | "dismiss"; promptText?: string },
   ): Promise<{ tab: Browser.Tab; dialog: { type: string; message: string; defaultValue: string } | null }> {
-    this.guardDesktop("browser.dialog")
+    if (this.desktopAttached)
+      return this.forwardDesktop({
+        type: "dialog",
+        tabID: tabID as Browser.TabID,
+        action: options.action,
+        ...(options.promptText !== undefined ? { promptText: options.promptText } : {}),
+      })
     const tab = this.requireTab(tabID)
     if (options.action === "get") return { tab: this.toTab(tab), dialog: tab.dialog ?? null }
     const pending = tab.pendingDialog
@@ -995,7 +1000,18 @@ export class Driver {
   }
 
   async filesUpload(tabID: string, options: { ref: string; files: ReadonlyArray<Browser.File> }): Promise<Browser.Tab> {
-    this.guardDesktop("browser.files.upload")
+    if (this.desktopAttached)
+      return this.forwardDesktop({
+        type: "files.deliver",
+        tabID: tabID as Browser.TabID,
+        ref: options.ref as Browser.Ref,
+        mode: "upload",
+        files: options.files.map((file) => ({
+          name: file.name,
+          mime: file.mime,
+          data: Buffer.from(file.data).toString("base64"),
+        })),
+      })
     const tab = this.requireTab(tabID)
     const frame = await this.frameFor(tab)
     const element = await this.resolveElement(frame, options.ref)
@@ -1012,7 +1028,18 @@ export class Driver {
   }
 
   async filesDrop(tabID: string, options: { ref: string; files: ReadonlyArray<Browser.File> }): Promise<Browser.Tab> {
-    this.guardDesktop("browser.files.drop")
+    if (this.desktopAttached)
+      return this.forwardDesktop({
+        type: "files.deliver",
+        tabID: tabID as Browser.TabID,
+        ref: options.ref as Browser.Ref,
+        mode: "drop",
+        files: options.files.map((file) => ({
+          name: file.name,
+          mime: file.mime,
+          data: Buffer.from(file.data).toString("base64"),
+        })),
+      })
     const tab = this.requireTab(tabID)
     const frame = await this.frameFor(tab)
     try {
@@ -1090,11 +1117,17 @@ export class Driver {
     return { tab: this.toTab(tab), files: saved }
   }
 
-  console(
+  async console(
     tabID: string,
     options?: { level?: "debug" | "info" | "warning" | "error"; limit?: number },
-  ): { tab: Browser.Tab; messages: Browser.ConsoleEntry[]; truncated: boolean; dropped: number } {
-    this.guardDesktop("browser.console")
+  ): Promise<{ tab: Browser.Tab; messages: Browser.ConsoleEntry[]; truncated: boolean; dropped: number }> {
+    if (this.desktopAttached)
+      return this.forwardDesktop({
+        type: "console",
+        tabID: tabID as Browser.TabID,
+        ...(options?.level ? { level: options.level } : {}),
+        ...(options?.limit !== undefined ? { limit: options.limit } : {}),
+      })
     const tab = this.requireTab(tabID)
     const minRank = severityRankOf(options?.level ?? "debug")
     const messages = tab.console.filter((entry) => severityRankOf(entry.level) >= minRank)
@@ -1103,11 +1136,18 @@ export class Driver {
     return { tab: this.toTab(tab), messages: messages.slice(-limit), truncated, dropped: tab.consoleDropped }
   }
 
-  networkList(
+  async networkList(
     tabID: string,
     options?: { urlContains?: string; resourceType?: Browser.ResourceType; limit?: number },
-  ): { tab: Browser.Tab; requests: Browser.NetworkRequest[]; truncated: boolean; dropped: number } {
-    this.guardDesktop("browser.network.list")
+  ): Promise<{ tab: Browser.Tab; requests: Browser.NetworkRequest[]; truncated: boolean; dropped: number }> {
+    if (this.desktopAttached)
+      return this.forwardDesktop({
+        type: "network.list",
+        tabID: tabID as Browser.TabID,
+        ...(options?.urlContains ? { urlContains: options.urlContains } : {}),
+        ...(options?.resourceType ? { resourceType: options.resourceType } : {}),
+        ...(options?.limit !== undefined ? { limit: options.limit } : {}),
+      })
     const tab = this.requireTab(tabID)
     let requests = tab.network.map((record) => record.request)
     if (options?.urlContains) requests = requests.filter((request) => request.url.includes(options.urlContains!))
@@ -1129,7 +1169,14 @@ export class Driver {
     requestBody: Browser.Body
     responseBody: Browser.Body
   }> {
-    this.guardDesktop("browser.network.get")
+    if (this.desktopAttached)
+      return this.forwardDesktop({
+        type: "network.get",
+        tabID: tabID as Browser.TabID,
+        id: options.id,
+        ...(options.includeBody !== undefined ? { includeBody: options.includeBody } : {}),
+        ...(options.maxBodyChars !== undefined ? { maxBodyChars: options.maxBodyChars } : {}),
+      })
     const tab = this.requireTab(tabID)
     const record = tab.network.find((item) => item.request.id === options.id)
     if (!record) throw new BrowserError({ message: `Unknown request ${options.id}. List requests with browser.network.list first.` })
@@ -1160,8 +1207,51 @@ export class Driver {
     }
   }
 
+  /** Materialize a desktop-produced capture file server-side, exactly like a desktop screenshot. */
+  private async saveRemoteCapture(
+    tabID: string,
+    result: BrowserDesktop.DesktopCaptureResult,
+  ): Promise<Browser.FileInfo[]> {
+    const saved = await BrowserFiles.save(
+      [
+        {
+          id: Browser.FileID.make(`file_${crypto.randomUUID()}`),
+          name: result.file.name,
+          mime: result.file.mime,
+          data: new Uint8Array(Buffer.from(result.file.data, "base64")),
+        },
+      ],
+      this.options.captureDir,
+    )
+    for (const info of saved) this.remoteFiles.set(info.id, { tabID: tabID as Browser.TabID, info })
+    return saved
+  }
+
+  /** The tab view for capture analysis: the desktop's published tab when attached, else the local record. */
+  private captureTab(tabID: string): Browser.Tab {
+    return this.desktopAttached ? this.remoteTab(tabID) : this.toTab(this.requireTab(tabID))
+  }
+
+  /** Read a retained capture's text from whichever registry owns the tab (local captures or materialized desktop files). */
+  private async captureText(tabID: string, fileID: string): Promise<string> {
+    if (this.desktopAttached) {
+      const entry = this.remoteFiles.get(fileID as Browser.FileID)
+      if (!entry || entry.tabID !== tabID) throw new BrowserError({ message: `Unknown file ${fileID}.` })
+      return readFile(entry.info.path, "utf8")
+    }
+    const tab = this.requireTab(tabID)
+    const found = tab.captures.find((info) => info.id === fileID)
+    if (!found) throw new BrowserError({ message: `Unknown file ${fileID}.` })
+    return readFile(found.path, "utf8")
+  }
+
   async traceStart(tabID: string, durationMs?: number): Promise<{ tab: Browser.Tab; recording: boolean }> {
-    this.guardDesktop("browser.trace.start")
+    if (this.desktopAttached)
+      return this.forwardDesktop({
+        type: "trace.start",
+        tabID: tabID as Browser.TabID,
+        ...(durationMs !== undefined ? { durationMs } : {}),
+      })
     const tab = this.requireTab(tabID)
     if (tab.trace) throw new BrowserError({ message: "A trace recording is already running for this tab." })
     const session = await this.cdp(tab)
@@ -1182,7 +1272,13 @@ export class Driver {
   }
 
   async traceStop(tabID: string): Promise<{ tab: Browser.Tab; files: Browser.FileInfo[]; durationMs: number; incomplete: boolean }> {
-    this.guardDesktop("browser.trace.stop")
+    if (this.desktopAttached) {
+      const result = await this.forwardDesktop<
+        BrowserDesktop.DesktopCaptureResult & { durationMs: number; incomplete: boolean }
+      >({ type: "trace.stop", tabID: tabID as Browser.TabID })
+      const saved = await this.saveRemoteCapture(tabID, result)
+      return { tab: result.tab, files: saved, durationMs: result.durationMs, incomplete: result.incomplete }
+    }
     const tab = this.requireTab(tabID)
     const trace = tab.trace
     if (!trace) throw new BrowserError({ message: "No trace recording is running for this tab." })
@@ -1224,9 +1320,8 @@ export class Driver {
     events: Array<{ name: string; count: number; totalMs: number; maxMs: number }>
     insights: string[]
   }> {
-    this.guardDesktop("browser.trace.analyze")
-    const tab = this.requireTab(tabID)
-    const events = await this.readTraceEvents(tab, options.fileID)
+    const tab = this.captureTab(tabID)
+    const events = await this.readTraceEvents(tabID, options.fileID)
     const byName = new Map<string, { count: number; totalMs: number; maxMs: number }>()
     for (const event of events) {
       if (typeof event.dur !== "number") continue
@@ -1246,7 +1341,7 @@ export class Driver {
     if (top) insights.push(`Heaviest event: ${top[0]} (${top[1].totalMs.toFixed(1)}ms total, ${top[1].count} occurrences).`)
     if (insights.length === 0) insights.push("No significant bottlenecks observed in this trace.")
     return {
-      tab: this.toTab(tab),
+      tab,
       metrics: [
         { name: "events", value: events.length, unit: "count" },
         { name: "longTasks", value: longTasks, unit: "count" },
@@ -1256,15 +1351,16 @@ export class Driver {
     }
   }
 
-  private async readTraceEvents(tab: TabRecord, fileID: string): Promise<Array<{ name: string; dur?: number }>> {
-    const found = tab.captures.find((info) => info.id === fileID)
-    if (!found) throw new BrowserError({ message: `Unknown file ${fileID}.` })
-    const parsed = JSON.parse(await readFile(found.path, "utf8")) as { traceEvents?: Array<{ name: string; dur?: number }> }
+  private async readTraceEvents(tabID: string, fileID: string): Promise<Array<{ name: string; dur?: number }>> {
+    const parsed = JSON.parse(await this.captureText(tabID, fileID)) as {
+      traceEvents?: Array<{ name: string; dur?: number }>
+    }
     return parsed.traceEvents ?? []
   }
 
   async cpuStart(tabID: string): Promise<{ tab: Browser.Tab; recording: boolean }> {
-    this.guardDesktop("browser.cpu.start")
+    if (this.desktopAttached)
+      return this.forwardDesktop({ type: "cpu.start", tabID: tabID as Browser.TabID })
     const tab = this.requireTab(tabID)
     if (tab.cpu) throw new BrowserError({ message: "CPU sampling is already running for this tab." })
     const session = await this.cdp(tab)
@@ -1281,7 +1377,14 @@ export class Driver {
   }
 
   async cpuStop(tabID: string): Promise<{ tab: Browser.Tab; files: Browser.FileInfo[]; durationMs: number }> {
-    this.guardDesktop("browser.cpu.stop")
+    if (this.desktopAttached) {
+      const result = await this.forwardDesktop<BrowserDesktop.DesktopCaptureResult & { durationMs: number }>({
+        type: "cpu.stop",
+        tabID: tabID as Browser.TabID,
+      })
+      const saved = await this.saveRemoteCapture(tabID, result)
+      return { tab: result.tab, files: saved, durationMs: result.durationMs }
+    }
     const tab = this.requireTab(tabID)
     const cpu = tab.cpu
     if (!cpu) throw new BrowserError({ message: "CPU sampling is not running for this tab." })
@@ -1308,11 +1411,8 @@ export class Driver {
     durationMs: number
     functions: Array<{ name: string; url: string; line: number; selfMs: number }>
   }> {
-    this.guardDesktop("browser.cpu.analyze")
-    const tab = this.requireTab(tabID)
-    const found = tab.captures.find((info) => info.id === options.fileID)
-    if (!found) throw new BrowserError({ message: `Unknown file ${options.fileID}.` })
-    const profile = JSON.parse(await readFile(found.path, "utf8")) as {
+    const tab = this.captureTab(tabID)
+    const profile = JSON.parse(await this.captureText(tabID, options.fileID)) as {
       nodes: Array<{ id: number; hitCount?: number; callFrame: { functionName: string; url: string; lineNumber: number } }>
       samples?: number[]
       timeDeltas?: number[]
@@ -1346,11 +1446,18 @@ export class Driver {
       .sort((a, b) => b.selfMs - a.selfMs)
       .slice(0, options.limit ?? 100)
     const durationMs = profile.startTime && profile.endTime ? (profile.endTime - profile.startTime) / 1000 : 0
-    return { tab: this.toTab(tab), durationMs, functions }
+    return { tab, durationMs, functions }
   }
 
   async heapSnapshot(tabID: string): Promise<{ tab: Browser.Tab; files: Browser.FileInfo[] }> {
-    this.guardDesktop("browser.heap.snapshot")
+    if (this.desktopAttached) {
+      const result = await this.forwardDesktop<BrowserDesktop.DesktopCaptureResult>({
+        type: "heap.snapshot",
+        tabID: tabID as Browser.TabID,
+      })
+      const saved = await this.saveRemoteCapture(tabID, result)
+      return { tab: result.tab, files: saved }
+    }
     const tab = this.requireTab(tabID)
     const session = await this.cdp(tab)
     await session.send("HeapProfiler.enable").catch((error) => {
@@ -1377,19 +1484,16 @@ export class Driver {
     return { tab: this.toTab(tab), files: saved }
   }
 
-  private async readHeap(tab: TabRecord, fileID: string): Promise<ParsedHeap> {
-    const found = tab.captures.find((info) => info.id === fileID)
-    if (!found) throw new BrowserError({ message: `Unknown file ${fileID}.` })
-    return parseHeapSnapshot(await readFile(found.path, "utf8"))
+  private async readHeap(tabID: string, fileID: string): Promise<ParsedHeap> {
+    return parseHeapSnapshot(await this.captureText(tabID, fileID))
   }
 
   async heapSummary(
     tabID: string,
     options: { fileID: string; limit?: number },
   ): Promise<{ tab: Browser.Tab; nodes: number; edges: number; selfBytes: number; classes: Array<{ name: string; count: number; bytes: number }> }> {
-    this.guardDesktop("browser.heap.summary")
-    const tab = this.requireTab(tabID)
-    const heap = await this.readHeap(tab, options.fileID)
+    const tab = this.captureTab(tabID)
+    const heap = await this.readHeap(tabID, options.fileID)
     const byClass = new Map<string, { count: number; bytes: number }>()
     let selfBytes = 0
     for (const node of heap.nodes) {
@@ -1403,23 +1507,22 @@ export class Driver {
       .map(([name, entry]) => ({ name, ...entry }))
       .sort((a, b) => b.bytes - a.bytes)
       .slice(0, options.limit ?? 100)
-    return { tab: this.toTab(tab), nodes: heap.nodes.length, edges: heap.edges.length, selfBytes, classes }
+    return { tab, nodes: heap.nodes.length, edges: heap.edges.length, selfBytes, classes }
   }
 
   async heapQuery(
     tabID: string,
     options: { fileID: string; name?: string; limit?: number },
   ): Promise<{ tab: Browser.Tab; nodes: Array<{ id: number; name: string; type: string; selfBytes: number; edgeCount: number }>; truncated: boolean }> {
-    this.guardDesktop("browser.heap.query")
-    const tab = this.requireTab(tabID)
-    const heap = await this.readHeap(tab, options.fileID)
+    const tab = this.captureTab(tabID)
+    const heap = await this.readHeap(tabID, options.fileID)
     const needle = (options.name ?? "").toLowerCase()
     const matching = heap.nodes
       .filter((node) => node.className.toLowerCase().includes(needle))
       .sort((a, b) => b.selfSize - a.selfSize)
     const limit = options.limit ?? 100
     return {
-      tab: this.toTab(tab),
+      tab,
       nodes: matching.slice(0, limit).map((node) => ({
         id: node.id,
         name: node.className,
@@ -1441,9 +1544,8 @@ export class Driver {
     retainers: Array<{ name: string; node: { id: number; name: string; type: string; selfBytes: number; edgeCount: number } }>
     truncated: boolean
   }> {
-    this.guardDesktop("browser.heap.object")
-    const tab = this.requireTab(tabID)
-    const heap = await this.readHeap(tab, options.fileID)
+    const tab = this.captureTab(tabID)
+    const heap = await this.readHeap(tabID, options.fileID)
     const index = heap.nodes.findIndex((node) => node.id === options.id)
     if (index < 0) throw new BrowserError({ message: `Unknown object id ${options.id} in this snapshot.` })
     const node = heap.nodes[index]!
@@ -1457,7 +1559,7 @@ export class Driver {
       .slice(0, limit)
       .map((edge) => ({ name: edge.name, node: heapNodeView(heap.nodes[edge.from]!) }))
     return {
-      tab: this.toTab(tab),
+      tab,
       node: heapNodeView(node),
       references,
       retainers,
@@ -1469,10 +1571,9 @@ export class Driver {
     tabID: string,
     options: { before: string; after: string; limit?: number },
   ): Promise<{ tab: Browser.Tab; classes: Array<{ name: string; countDelta: number; bytesDelta: number }> }> {
-    this.guardDesktop("browser.heap.compare")
-    const tab = this.requireTab(tabID)
-    const before = await this.readHeap(tab, options.before)
-    const after = await this.readHeap(tab, options.after)
+    const tab = this.captureTab(tabID)
+    const before = await this.readHeap(tabID, options.before)
+    const after = await this.readHeap(tabID, options.after)
     const aggregate = (heap: ParsedHeap) => {
       const map = new Map<string, { count: number; bytes: number }>()
       for (const node of heap.nodes) {
@@ -1495,7 +1596,7 @@ export class Driver {
       .filter((entry) => entry.countDelta !== 0 || entry.bytesDelta !== 0)
       .sort((a, b) => Math.abs(b.bytesDelta) - Math.abs(a.bytesDelta))
       .slice(0, options.limit ?? 100)
-    return { tab: this.toTab(tab), classes }
+    return { tab, classes }
   }
 
   async lighthouse(tabID: string): Promise<{
@@ -1504,7 +1605,16 @@ export class Driver {
     scores: Array<{ id: string; title: string; score: number | null }>
     failures: Array<{ id: string; title: string; description: string }>
   }> {
-    this.guardDesktop("browser.lighthouse")
+    if (this.desktopAttached) {
+      const result = await this.forwardDesktop<BrowserDesktop.DesktopLighthouseResult>({
+        type: "lighthouse",
+        tabID: tabID as Browser.TabID,
+      })
+      const saved: Browser.FileInfo[] = []
+      for (const file of result.files)
+        saved.push(...(await this.saveRemoteCapture(tabID, { tab: result.tab, file })))
+      return { tab: result.tab, files: saved, scores: result.scores, failures: result.failures }
+    }
     const tab = this.requireTab(tabID)
     const url = tab.page.url()
     if (!/^https?:/.test(url)) throw new BrowserError({ message: `Lighthouse needs an http(s) page, got ${url}` })
@@ -1599,6 +1709,20 @@ export class Driver {
   }
 
   /** Fresh state for the web app's browser panel, including a live screenshot. */
+  /** Engage CDP Overlay live inspect on a desktop tab (no-op without a desktop). */
+  async inspectStart(tabID: string): Promise<Browser.Tab> {
+    if (this.desktopAttached)
+      return this.forwardDesktop({ type: "inspect.start", tabID: tabID as Browser.TabID })
+    return this.captureTab(tabID)
+  }
+
+  /** Disengage live inspect on a desktop tab (no-op without a desktop). */
+  async inspectStop(tabID: string): Promise<Browser.Tab> {
+    if (this.desktopAttached)
+      return this.forwardDesktop({ type: "inspect.stop", tabID: tabID as Browser.TabID })
+    return this.captureTab(tabID)
+  }
+
   async panelSnapshot(): Promise<{
     tabs: ReadonlyArray<Browser.Tab>
     focusedTabID: Browser.TabID | null
@@ -1606,13 +1730,31 @@ export class Driver {
     screenshot?: { mime: string; data: string }
     desktop?: boolean
     viewport?: { width: number; height: number }
+    inspectPick?: { tabID: Browser.TabID; ref: string; box: { x: number; y: number; width: number; height: number } }
+    inspectKeyTabID?: Browser.TabID
+    inspectCanceledTabID?: Browser.TabID
   }> {
     if (this.desktopAttached) {
       const published = BrowserDesktop.host.stateFor(this.options.scope)
       const state = published?.state ?? (await this.panelState())
       this.foldRecent(state)
+      // Drain live-inspect events queued since the previous poll.
+      let inspectPick: { tabID: Browser.TabID; ref: string; box: { x: number; y: number; width: number; height: number } } | undefined
+      let inspectKeyTabID: Browser.TabID | undefined
+      let inspectCanceledTabID: Browser.TabID | undefined
+      for (const event of BrowserDesktop.host.takeInspectEvents(this.options.scope)) {
+        if (event.type === "picked") inspectPick = { tabID: event.tabID, ref: event.ref, box: event.box }
+        else if (event.type === "inspectKey") inspectKeyTabID = event.tabID
+        else inspectCanceledTabID = event.tabID
+      }
+      const drained = {
+        ...(inspectPick ? { inspectPick } : {}),
+        ...(inspectKeyTabID ? { inspectKeyTabID } : {}),
+        ...(inspectCanceledTabID ? { inspectCanceledTabID } : {}),
+      }
       const focused = state.focusedTabID
-      if (!focused) return { ...state, recent: this.recent, screenshot: undefined, desktop: true, viewport: published?.viewport }
+      if (!focused)
+        return { ...state, recent: this.recent, screenshot: undefined, desktop: true, viewport: published?.viewport, ...drained }
       const still = await this.forwardDesktop<BrowserDesktop.DesktopStillResult>(
         {
           type: "panelStill",
@@ -1620,7 +1762,7 @@ export class Driver {
         },
         PANEL_STILL_TIMEOUT_MS,
       ).catch(() => undefined)
-      return { ...state, recent: this.recent, screenshot: still, desktop: true, viewport: published?.viewport }
+      return { ...state, recent: this.recent, screenshot: still, desktop: true, viewport: published?.viewport, ...drained }
     }
     const state = this.state()
     const focused = this.focusedTabID ? this.tabs.get(this.focusedTabID) : undefined
@@ -1843,7 +1985,9 @@ function toResourceType(type: unknown): Browser.ResourceType {
     "document", "stylesheet", "image", "media", "font", "script",
     "xhr", "fetch", "eventsource", "websocket", "manifest", "other",
   ]
-  return (known.includes(String(type)) ? String(type) : "other") as Browser.ResourceType
+  // CDP reports PascalCase resource types ("Document", "XHR"); compare case-insensitively.
+  const value = String(type).toLowerCase()
+  return (known.includes(value) ? value : "other") as Browser.ResourceType
 }
 
 function toHeaders(headers: unknown): Array<{ name: string; value: string }> {

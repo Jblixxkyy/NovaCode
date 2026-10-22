@@ -94,6 +94,22 @@ export const browserHandlers = HttpApiBuilder.group(InstanceHttpApi, "browser", 
       return yield* Effect.promise(() => service.pickAtPoint(ctx.payload.tabID, ctx.payload.x, ctx.payload.y))
     })
 
+    const inspectStart = Effect.fn("BrowserHttpApi.inspectStart")(function* (ctx: {
+      payload: { tabID: string }
+    }) {
+      const service = yield* driver()
+      yield* Effect.promise(() => service.inspectStart(ctx.payload.tabID))
+      return yield* Effect.promise(() => service.panelSnapshot())
+    })
+
+    const inspectStop = Effect.fn("BrowserHttpApi.inspectStop")(function* (ctx: {
+      payload: { tabID: string }
+    }) {
+      const service = yield* driver()
+      yield* Effect.promise(() => service.inspectStop(ctx.payload.tabID))
+      return yield* Effect.promise(() => service.panelSnapshot())
+    })
+
     const click = Effect.fn("BrowserHttpApi.click")(function* (ctx: {
       payload: { tabID: string; x: number; y: number }
     }) {
@@ -119,6 +135,8 @@ export const browserHandlers = HttpApiBuilder.group(InstanceHttpApi, "browser", 
       .handle("focus", focus)
       .handle("close", close)
       .handle("pick", pick)
+      .handle("inspectStart", inspectStart)
+      .handle("inspectStop", inspectStop)
       .handle("click", click)
       .handle("clearHistory", clearHistory)
   }),

@@ -54,6 +54,7 @@ import { getStore } from "./store"
 import { parseAutoAccept, startPermissionAutoResponder } from "./permission-auto-responder"
 import { startBrowserHost, type BrowserHostClient } from "./browser/host"
 import { browserTabs } from "./browser/tabs"
+import { BROWSER_TABS_KEY, BROWSER_TABS_STORE } from "./store-keys"
 import { clearBrowserEmbed, setBrowserEmbed } from "./browser/embed"
 
 const APP_NAMES: Record<string, string> = {
@@ -104,6 +105,17 @@ function startBrowserHostClient(url: string, username: string, password: string)
     log: (message, meta) => writeLog("browser", message, meta),
   })
 }
+
+// Tab restore across restarts: persist each scope's tab URLs + focused tab
+// (debounced inside the manager) and recreate them deferred on startup —
+// views stay unattached and unloaded until the panel embeds them.
+browserTabs.setPersister(() => {
+  getStore(BROWSER_TABS_STORE).set(BROWSER_TABS_KEY, browserTabs.snapshotRestoreState())
+})
+const savedBrowserTabs = getStore(BROWSER_TABS_STORE).get(BROWSER_TABS_KEY) as
+  | Parameters<typeof browserTabs.restoreScopes>[0]
+  | undefined
+if (savedBrowserTabs) browserTabs.restoreScopes(savedBrowserTabs)
 
 const pendingDeepLinks: string[] = []
 

@@ -54,6 +54,16 @@ export function BrowserTabs(props: {
               <Show when={tab.loading}>
                 <span class="size-3 shrink-0 animate-spin rounded-full border border-v2-border-border-strong border-t-transparent" />
               </Show>
+              <Show when={!tab.loading && tab.favicon}>
+                <img
+                  src={tab.favicon}
+                  alt=""
+                  class="size-3.5 shrink-0 rounded-[3px]"
+                  onError={(event) => {
+                    event.currentTarget.style.display = "none"
+                  }}
+                />
+              </Show>
               <span class="min-w-0 flex-1 truncate">{titleOf(tab)}</span>
               <button
                 type="button"

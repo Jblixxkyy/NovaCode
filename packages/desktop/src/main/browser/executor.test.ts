@@ -2,9 +2,11 @@ import { describe, expect, test } from "bun:test"
 import type { CdpSession } from "./cdp"
 import {
   DesktopUnsupportedError,
+  ensureCapture,
   executeDesktopAction,
   formatSnapshot,
   keyEventFor,
+  partitionFor,
   stateOf,
   type AXNodeLike,
   type PageContents,
@@ -15,6 +17,8 @@ import {
 class FakeCdp implements CdpSession {
   calls: Array<{ method: string; params?: Record<string, unknown> }> = []
   evaluateResult: unknown = null
+  elementKind: { tag: string; type: string | null } = { tag: "INPUT", type: "file" }
+  private listeners = new Map<string, Set<(params: Record<string, unknown>) => void>>()
 
   constructor(private nodes: AXNodeLike[]) {}
 
@@ -38,9 +42,45 @@ class FakeCdp implements CdpSession {
         return { data: "aGVsbG8=" }
       case "Page.getLayoutMetrics":
         return { cssContentSize: { width: 800, height: 2000 } }
+      case "Network.getResponseBody":
+        return { body: `{"ok":true}`, base64Encoded: false }
+      case "Tracing.end":
+        this.emit("Tracing.tracingComplete", {})
+        return {}
+      case "Profiler.stop":
+        return {
+          profile: {
+            nodes: [{ id: 1, hitCount: 3, callFrame: { functionName: "work", url: "https://example.com/a.js", lineNumber: 7 } }],
+            startTime: 0,
+            endTime: 100_000,
+          },
+        }
+      case "HeapProfiler.takeHeapSnapshot":
+        this.emit("HeapProfiler.addHeapSnapshotChunk", { chunk: `{"snapshot":{"node_count":1},` })
+        this.emit("HeapProfiler.addHeapSnapshotChunk", { chunk: `"nodes":[]}` })
+        return {}
+      case "Runtime.callFunctionOn": {
+        const declaration = String(params?.functionDeclaration ?? "")
+        if (declaration.includes("tagName")) return { result: { value: this.elementKind } }
+        return { result: {} }
+      }
       default:
         return {}
     }
+  }
+
+  on(method: string, listener: (params: Record<string, unknown>) => void) {
+    const set = this.listeners.get(method) ?? new Set()
+    set.add(listener)
+    this.listeners.set(method, set)
+  }
+
+  off(method: string, listener: (params: Record<string, unknown>) => void) {
+    this.listeners.get(method)?.delete(listener)
+  }
+
+  emit(method: string, params: Record<string, unknown>) {
+    for (const listener of [...(this.listeners.get(method) ?? [])]) listener(params)
   }
 
   isAttached() {
@@ -99,7 +139,19 @@ class FakeInventory implements TabInventory {
   tabs = new Map<string, TabHandle>()
   focused: string | null = null
   opened: Array<{ url: string | undefined; focus: boolean }> = []
+  deniedHosts: string[] = []
+  inspectEvents: Array<{ scope: string; event: unknown }> = []
   private counter = 0
+
+  inspectEvent(scope: string, event: unknown) {
+    this.inspectEvents.push({ scope, event })
+  }
+
+  checkNavigation(url: string) {
+    const host = new URL(url).hostname
+    if (this.deniedHosts.includes(host))
+      throw new Error(`Navigation to ${host} is denied by browser-acl.json.`)
+  }
 
   constructor(private cdp: FakeCdp) {}
 
@@ -301,14 +353,348 @@ describe("executeDesktopAction", () => {
     expect(cdp.calls.filter((call) => call.method === "Page.captureScreenshot")).toHaveLength(1)
   })
 
+  test("screenshot honors maxWidth by scaling the capture region", async () => {
+    const { cdp, inventory } = setup()
+    const handle = await inventory.open("/work", "https://example.com", true)
+    await executeDesktopAction(inventory, "/work", {
+      type: "screenshot",
+      tabID: handle.id as never,
+      maxWidth: 320,
+    })
+    const call = cdp.calls.find((entry) => entry.method === "Page.captureScreenshot")
+    // FakeContents viewport is 1280 wide; 320/1280 = 0.25.
+    expect(call?.params?.clip).toMatchObject({ x: 0, y: 0, width: 1280, scale: 0.25 })
+  })
+
+  test("console reads CDP console events with driver-shaped entries and level filtering", async () => {
+    const { cdp, inventory } = setup()
+    const handle = await inventory.open("/work", "https://example.com", true)
+    await ensureCapture(handle)
+    cdp.emit("Runtime.consoleAPICalled", {
+      type: "log",
+      args: [{ type: "string", value: "hello world" }],
+      stackTrace: { callFrames: [{ url: "https://example.com/app.js", lineNumber: 3, columnNumber: 5 }] },
+    })
+    cdp.emit("Runtime.consoleAPICalled", { type: "error", args: [{ type: "string", value: "it broke" }] })
+    cdp.emit("Runtime.exceptionThrown", {
+      exceptionDetails: { text: "Uncaught", exception: { description: "ReferenceError: nope is not defined" } },
+    })
+    const all = (await executeDesktopAction(inventory, "/work", {
+      type: "console",
+      tabID: handle.id as never,
+    })) as { messages: Array<{ level: string; text: string; source?: { url: string; line: number } }>; dropped: number }
+    expect(all.messages.map((message) => message.text)).toEqual([
+      "hello world",
+      "it broke",
+      "ReferenceError: nope is not defined",
+    ])
+    expect(all.messages[0]?.level).toBe("info")
+    expect(all.messages[0]?.source).toEqual({ url: "https://example.com/app.js", line: 3, column: 5 })
+    expect(all.dropped).toBe(0)
+    const errors = (await executeDesktopAction(inventory, "/work", {
+      type: "console",
+      tabID: handle.id as never,
+      level: "error",
+    })) as { messages: Array<{ text: string }> }
+    expect(errors.messages.map((message) => message.text)).toEqual(["it broke", "ReferenceError: nope is not defined"])
+  })
+
+  test("network lists finished requests and network.get returns headers and bodies", async () => {
+    const { cdp, inventory } = setup()
+    const handle = await inventory.open("/work", "https://example.com", true)
+    await ensureCapture(handle)
+    cdp.emit("Network.requestWillBeSent", {
+      requestId: "r1",
+      type: "Fetch",
+      request: { url: "https://example.com/api", method: "POST", headers: { "X-A": "1" }, postData: "payload" },
+    })
+    cdp.emit("Network.responseReceived", {
+      requestId: "r1",
+      response: { status: 201, headers: { "Content-Type": "application/json" } },
+    })
+    cdp.emit("Network.loadingFinished", { requestId: "r1" })
+    const list = (await executeDesktopAction(inventory, "/work", {
+      type: "network.list",
+      tabID: handle.id as never,
+    })) as { requests: Array<{ id: string; state: string; statusCode?: number; resourceType: string }> }
+    expect(list.requests).toHaveLength(1)
+    expect(list.requests[0]).toMatchObject({ id: "r1", state: "completed", statusCode: 201, resourceType: "fetch" })
+    const got = (await executeDesktopAction(inventory, "/work", {
+      type: "network.get",
+      tabID: handle.id as never,
+      id: "r1",
+      includeBody: true,
+    })) as {
+      requestHeaders: Array<{ name: string; value: string }>
+      requestBody: { state: string; text?: string }
+      responseBody: { state: string; text?: string }
+    }
+    expect(got.requestHeaders).toEqual([{ name: "X-A", value: "1" }])
+    expect(got.requestBody).toEqual({ state: "text", text: "payload", truncated: false })
+    expect(got.responseBody).toEqual({ state: "text", text: `{"ok":true}`, truncated: false })
+    await expect(
+      executeDesktopAction(inventory, "/work", { type: "network.get", tabID: handle.id as never, id: "nope" }),
+    ).rejects.toThrow(/Unknown request nope/)
+  })
+
+  test("drag dispatches a pressed mouse path between element centers", async () => {
+    const { cdp, inventory } = setup()
+    const handle = await inventory.open("/work", "https://example.com", true)
+    await executeDesktopAction(inventory, "/work", { type: "snapshot", tabID: handle.id as never })
+    await executeDesktopAction(inventory, "/work", {
+      type: "drag",
+      tabID: handle.id as never,
+      from: "e1" as never,
+      to: "e2" as never,
+    })
+    const mouse = cdp.calls.filter((call) => call.method === "Input.dispatchMouseEvent")
+    // move + press + 12 interpolated moves + release
+    expect(mouse).toHaveLength(15)
+    expect(mouse[0]?.params).toMatchObject({ type: "mouseMoved" })
+    expect(mouse[1]?.params).toMatchObject({ type: "mousePressed", button: "left", buttons: 1 })
+    expect(mouse[13]?.params).toMatchObject({ type: "mouseMoved", buttons: 1 })
+    expect(mouse[14]?.params).toMatchObject({ type: "mouseReleased", button: "left", buttons: 0 })
+  })
+
+  test("files.deliver uploads to file inputs via staged temp files and rejects other elements", async () => {
+    const { cdp, inventory } = setup()
+    const handle = await inventory.open("/work", "https://example.com", true)
+    await executeDesktopAction(inventory, "/work", { type: "snapshot", tabID: handle.id as never })
+    const files = [{ name: "note.txt", mime: "text/plain", data: Buffer.from("hello").toString("base64") }]
+    await executeDesktopAction(inventory, "/work", {
+      type: "files.deliver",
+      tabID: handle.id as never,
+      ref: "e1" as never,
+      mode: "upload",
+      files,
+    })
+    const staged = cdp.calls.find((call) => call.method === "DOM.setFileInputFiles")
+    expect(staged).toBeTruthy()
+    const stagedFiles = (staged?.params?.files as string[] | undefined) ?? []
+    expect(stagedFiles).toHaveLength(1)
+    expect(stagedFiles[0]).toContain("novacode-upload-")
+    expect(stagedFiles[0]).toEndWith("note.txt")
+
+    cdp.elementKind = { tag: "BUTTON", type: null }
+    await expect(
+      executeDesktopAction(inventory, "/work", {
+        type: "files.deliver",
+        tabID: handle.id as never,
+        ref: "e1" as never,
+        mode: "upload",
+        files,
+      }),
+    ).rejects.toThrow(/not one/)
+    // Drop onto a non-input dispatches the synthetic DragEvent sequence in-page.
+    await executeDesktopAction(inventory, "/work", {
+      type: "files.deliver",
+      tabID: handle.id as never,
+      ref: "e1" as never,
+      mode: "drop",
+      files,
+    })
+    const dropCall = cdp.calls.find(
+      (call) => call.method === "Runtime.callFunctionOn" && String(call.params?.functionDeclaration ?? "").includes("DataTransfer"),
+    )
+    expect(dropCall).toBeTruthy()
+  })
+
+  test("dialog routes through the CDP pending-dialog model", async () => {
+    const { cdp, inventory } = setup()
+    const handle = await inventory.open("/work", "https://example.com", true)
+    await ensureCapture(handle)
+    const none = (await executeDesktopAction(inventory, "/work", {
+      type: "dialog",
+      tabID: handle.id as never,
+      action: "get",
+    })) as { dialog: unknown }
+    expect(none.dialog).toBeNull()
+    await expect(
+      executeDesktopAction(inventory, "/work", { type: "dialog", tabID: handle.id as never, action: "accept" }),
+    ).rejects.toThrow(/No dialog is open in this tab/)
+    cdp.emit("Page.javascriptDialogOpening", { type: "prompt", message: "Name?", defaultPrompt: "anon" })
+    const open = (await executeDesktopAction(inventory, "/work", {
+      type: "dialog",
+      tabID: handle.id as never,
+      action: "get",
+    })) as { dialog: { type: string; message: string; defaultValue: string } | null }
+    expect(open.dialog).toEqual({ type: "prompt", message: "Name?", defaultValue: "anon" })
+    await executeDesktopAction(inventory, "/work", {
+      type: "dialog",
+      tabID: handle.id as never,
+      action: "accept",
+      promptText: "josh",
+    })
+    expect(cdp.calls).toContainEqual({
+      method: "Page.handleJavaScriptDialog",
+      params: { accept: true, promptText: "josh" },
+    })
+    const closed = (await executeDesktopAction(inventory, "/work", {
+      type: "dialog",
+      tabID: handle.id as never,
+      action: "get",
+    })) as { dialog: unknown }
+    expect(closed.dialog).toBeNull()
+  })
+
+  test("trace start/stop round-trips CDP chunks into a trace file payload", async () => {
+    const { cdp, inventory } = setup()
+    const handle = await inventory.open("/work", "https://example.com", true)
+    await expect(
+      executeDesktopAction(inventory, "/work", { type: "trace.stop", tabID: handle.id as never }),
+    ).rejects.toThrow(/No trace recording is running/)
+    const started = (await executeDesktopAction(inventory, "/work", {
+      type: "trace.start",
+      tabID: handle.id as never,
+    })) as { recording: boolean }
+    expect(started.recording).toBe(true)
+    expect(cdp.calls.some((call) => call.method === "Tracing.start")).toBe(true)
+    cdp.emit("Tracing.dataCollected", { value: [{ name: "FunctionCall", dur: 1200 }] })
+    cdp.emit("Tracing.dataCollected", { value: [{ name: "Paint", dur: 300 }] })
+    const stopped = (await executeDesktopAction(inventory, "/work", {
+      type: "trace.stop",
+      tabID: handle.id as never,
+    })) as { file: { name: string; mime: string; data: string }; incomplete: boolean }
+    expect(stopped.incomplete).toBe(false)
+    expect(stopped.file.name).toMatch(/^trace-\d+\.json$/)
+    const parsed = JSON.parse(Buffer.from(stopped.file.data, "base64").toString("utf8")) as {
+      traceEvents: Array<{ name: string }>
+    }
+    expect(parsed.traceEvents.map((event) => event.name)).toEqual(["FunctionCall", "Paint"])
+  })
+
+  test("cpu start/stop returns the profiler output as a .cpuprofile payload", async () => {
+    const { inventory } = setup()
+    const handle = await inventory.open("/work", "https://example.com", true)
+    await executeDesktopAction(inventory, "/work", { type: "cpu.start", tabID: handle.id as never })
+    const stopped = (await executeDesktopAction(inventory, "/work", {
+      type: "cpu.stop",
+      tabID: handle.id as never,
+    })) as { file: { name: string; data: string }; durationMs: number }
+    expect(stopped.file.name).toMatch(/^cpu-\d+\.cpuprofile$/)
+    const profile = JSON.parse(Buffer.from(stopped.file.data, "base64").toString("utf8")) as {
+      nodes: Array<{ callFrame: { functionName: string } }>
+    }
+    expect(profile.nodes[0]?.callFrame.functionName).toBe("work")
+    await expect(
+      executeDesktopAction(inventory, "/work", { type: "cpu.stop", tabID: handle.id as never }),
+    ).rejects.toThrow(/CPU sampling is not running/)
+  })
+
+  test("heap.snapshot joins CDP chunks into a .heapsnapshot payload", async () => {
+    const { inventory } = setup()
+    const handle = await inventory.open("/work", "https://example.com", true)
+    const result = (await executeDesktopAction(inventory, "/work", {
+      type: "heap.snapshot",
+      tabID: handle.id as never,
+    })) as { file: { name: string; data: string } }
+    expect(result.file.name).toMatch(/^heap-\d+\.heapsnapshot$/)
+    expect(Buffer.from(result.file.data, "base64").toString("utf8")).toBe(`{"snapshot":{"node_count":1},"nodes":[]}`)
+  })
+
+  test("lighthouse without a standalone Chrome reports its prerequisite honestly", async () => {
+    const { inventory } = setup()
+    const handle = await inventory.open("/work", "https://example.com", true)
+    const previous = process.env.NOVACODE_DESKTOP_LIGHTHOUSE_CHROME
+    delete process.env.NOVACODE_DESKTOP_LIGHTHOUSE_CHROME
+    try {
+      await expect(
+        executeDesktopAction(inventory, "/work", { type: "lighthouse", tabID: handle.id as never }),
+      ).rejects.toThrow(/NOVACODE_DESKTOP_LIGHTHOUSE_CHROME/)
+    } finally {
+      if (previous !== undefined) process.env.NOVACODE_DESKTOP_LIGHTHOUSE_CHROME = previous
+    }
+  })
+
+  test("navigate is gated by the inventory's ACL check with the driver's message", async () => {
+    const { inventory } = setup()
+    const handle = await inventory.open("/work", "https://example.com", true)
+    inventory.deniedHosts = ["evil.com"]
+    await expect(
+      executeDesktopAction(inventory, "/work", {
+        type: "navigate",
+        tabID: handle.id as never,
+        url: "https://evil.com/phish",
+      }),
+    ).rejects.toThrow("Navigation to evil.com is denied by browser-acl.json.")
+    const ok = (await executeDesktopAction(inventory, "/work", {
+      type: "navigate",
+      tabID: handle.id as never,
+      url: "https://example.com/ok",
+    })) as { url: string }
+    expect(ok.url).toBe("https://example.com/ok")
+  })
+
+  test("partitions are stable per scope and isolated across scopes", () => {
+    expect(partitionFor("/work")).toBe(partitionFor("/work"))
+    expect(partitionFor("/work")).not.toBe(partitionFor("/other"))
+    expect(partitionFor("/work")).toMatch(/^persist:novacode-browser-[0-9a-f]{16}$/)
+    expect(partitionFor("")).toBe("persist:novacode-browser")
+  })
+
+  test("restored (deferred) tabs report their pending URL in state", async () => {
+    const { cdp, inventory } = setup()
+    const contents = new FakeContents(cdp)
+    contents.url = "" // A never-loaded webContents reports an empty URL.
+    const handle: TabHandle = {
+      id: "tab_restored",
+      contents,
+      generation: 0,
+      boxes: new Map(),
+      pendingURL: "https://example.com/later",
+    }
+    inventory.tabs.set(handle.id, handle)
+    inventory.focused = handle.id
+    const state = stateOf(inventory, "/work")
+    expect(state.focusedTabID).toBe(handle.id)
+    expect(state.tabs[0]?.url).toBe("https://example.com/later")
+    expect(state.tabs[0]?.title).toBe("https://example.com/later")
+    expect(state.tabs[0]?.loading).toBe(false)
+  })
+
+  test("live inspect engages the Overlay and resolves picks to snapshot refs", async () => {
+    const { cdp, inventory } = setup()
+    const handle = await inventory.open("/work", "https://example.com", true)
+    await executeDesktopAction(inventory, "/work", { type: "inspect.start", tabID: handle.id as never })
+    expect(cdp.calls).toContainEqual({
+      method: "Overlay.setInspectMode",
+      params: expect.objectContaining({ mode: "searchForNode" }),
+    })
+    await executeDesktopAction(inventory, "/work", { type: "inspect.stop", tabID: handle.id as never })
+    expect(cdp.calls).toContainEqual({
+      method: "Overlay.setInspectMode",
+      params: expect.objectContaining({ mode: "none" }),
+    })
+    // A pick in the page resolves the backend node through a fresh snapshot.
+    await executeDesktopAction(inventory, "/work", { type: "inspect.start", tabID: handle.id as never })
+    cdp.emit("Overlay.inspectNodeRequested", { backendNodeId: 3 })
+    for (let attempt = 0; attempt < 50 && inventory.inspectEvents.length === 0; attempt++)
+      await Bun.sleep(20)
+    expect(inventory.inspectEvents).toEqual([
+      {
+        scope: "/work",
+        event: { type: "picked", tabID: handle.id, ref: "e3", box: { x: 0, y: 0, width: 10, height: 10 } },
+      },
+    ])
+  })
+
+  test("inspect cancellation from the page is forwarded once per engagement", async () => {
+    const { cdp, inventory } = setup()
+    const handle = await inventory.open("/work", "https://example.com", true)
+    await executeDesktopAction(inventory, "/work", { type: "inspect.start", tabID: handle.id as never })
+    cdp.emit("Overlay.inspectModeCanceled", {})
+    expect(inventory.inspectEvents).toEqual([{ scope: "/work", event: { type: "canceled", tabID: handle.id } }])
+  })
+
   test("unsupported actions raise DesktopUnsupportedError", async () => {
     const { inventory } = setup()
     const handle = await inventory.open("/work", "https://example.com", true)
+    // Heap analysis runs server-side in the Driver and is never forwarded.
     await expect(
       executeDesktopAction(inventory, "/work", {
-        type: "dialog",
+        type: "heap.summary",
         tabID: handle.id as never,
-        action: "get",
+        fileID: "file_unknown",
       } as never),
     ).rejects.toBeInstanceOf(DesktopUnsupportedError)
   })

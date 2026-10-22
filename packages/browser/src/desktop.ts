@@ -1,4 +1,5 @@
 import { Schema } from "effect"
+import type { BrowserPermissions } from "./permissions"
 import { Browser } from "./rpc"
 
 /**
@@ -26,10 +27,73 @@ export const PanelStillAction = Schema.Struct({
   tabID: Browser.TabID,
 }).annotate({ identifier: "Browser.DesktopPanelStill" })
 
+/**
+ * Wire-only file delivery for files.upload / files.drop. The shared
+ * Browser.Action for those operations carries server-local paths, which
+ * are meaningless on the desktop side of the tunnel, so the Driver reads
+ * the files through the server file registry and forwards their bytes
+ * (base64, bounded by the same 5 MiB tool limit) for the executor to
+ * hand to the page.
+ */
+export const FilesDeliverAction = Schema.Struct({
+  type: Schema.Literal("files.deliver"),
+  tabID: Browser.TabID,
+  ref: Browser.Ref,
+  mode: Schema.Literals(["upload", "drop"]),
+  files: Schema.Array(Schema.Struct({ name: Schema.String, mime: Schema.String, data: Schema.String })).check(
+    Schema.isMinLength(1),
+    Schema.isMaxLength(8),
+  ),
+}).annotate({ identifier: "Browser.DesktopFilesDeliver" })
+
+/** Engage the CDP Overlay live inspect mode on a desktop tab. */
+export const InspectStartAction = Schema.Struct({
+  type: Schema.Literal("inspect.start"),
+  tabID: Browser.TabID,
+}).annotate({ identifier: "Browser.DesktopInspectStart" })
+
+/** Disengage the CDP Overlay inspect mode on a desktop tab. */
+export const InspectStopAction = Schema.Struct({
+  type: Schema.Literal("inspect.stop"),
+  tabID: Browser.TabID,
+}).annotate({ identifier: "Browser.DesktopInspectStop" })
+
 /** Everything that may travel from the server to an attached desktop. */
-export const DesktopAction = Schema.Union([Browser.Action, ClickAtPointAction, PanelStillAction]).annotate({
+export const DesktopAction = Schema.Union([
+  Browser.Action,
+  ClickAtPointAction,
+  PanelStillAction,
+  FilesDeliverAction,
+  InspectStartAction,
+  InspectStopAction,
+]).annotate({
   identifier: "Browser.DesktopAction",
 })
+
+const inspectBox = Schema.Struct({
+  x: Schema.Number,
+  y: Schema.Number,
+  width: Schema.Number,
+  height: Schema.Number,
+})
+
+/**
+ * Events that travel from the desktop back to the server outside the
+ * command/response flow: live-inspect picks and cancellations, and the
+ * in-page Ctrl+Shift+C request. The server queues them per scope and the
+ * Driver drains them into the panel state.
+ */
+export const InspectEvent = Schema.Union([
+  Schema.Struct({
+    type: Schema.Literal("picked"),
+    tabID: Browser.TabID,
+    ref: Schema.String,
+    box: inspectBox,
+  }),
+  Schema.Struct({ type: Schema.Literal("canceled"), tabID: Browser.TabID }),
+  Schema.Struct({ type: Schema.Literal("inspectKey"), tabID: Browser.TabID }),
+]).annotate({ identifier: "Browser.DesktopInspectEvent" })
+export type InspectEvent = typeof InspectEvent.Type
 export type DesktopAction = typeof DesktopAction.Type
 
 export const DesktopOutcome = Schema.Union([
@@ -78,6 +142,25 @@ export interface DesktopStillResult {
   readonly data: string
 }
 
+/** A diagnostics capture produced on the desktop; the server materializes it like a screenshot. */
+export interface DesktopFileData {
+  readonly name: string
+  readonly mime: string
+  readonly data: string
+}
+
+export interface DesktopCaptureResult {
+  readonly tab: Browser.Tab
+  readonly file: DesktopFileData
+}
+
+export interface DesktopLighthouseResult {
+  readonly tab: Browser.Tab
+  readonly scores: Array<{ id: string; title: string; score: number | null }>
+  readonly failures: Array<{ id: string; title: string; description: string }>
+  readonly files: DesktopFileData[]
+}
+
 export class DesktopError extends Error {
   readonly code: "unsupported" | "error" | "detached" | "timeout" | "unavailable"
   constructor(code: DesktopError["code"], message: string) {
@@ -116,13 +199,24 @@ export class DesktopHost {
     []
   private pending = new Map<string, Pending>()
   private published = new Map<string, PublishedState>()
+  private inspectEvents = new Map<string, InspectEvent[]>()
+  /**
+   * The server's effective domain ACL (browser-acl.json), handed to each
+   * attaching desktop so webview navigation enforces the same allow/deny
+   * rules as the Playwright driver. Refreshed on every attach.
+   */
+  private acl: BrowserPermissions.DomainACL = { allow: [], deny: [] }
 
-  attach(client: string): { attachment: string; replaced: boolean } {
+  attach(
+    client: string,
+    acl?: BrowserPermissions.DomainACL,
+  ): { attachment: string; replaced: boolean; acl: BrowserPermissions.DomainACL } {
+    if (acl) this.acl = acl
     const replaced = this.attachment !== undefined && this.live()
     if (this.attachment) this.drop("The desktop browser attachment was replaced by a newer desktop window.")
     const attachment = `attach_${crypto.randomUUID()}`
     this.attachment = { id: attachment, client, lastSeen: Date.now() }
-    return { attachment, replaced }
+    return { attachment, replaced, acl: this.acl }
   }
 
   detach(attachment: string): boolean {
@@ -179,6 +273,24 @@ export class DesktopHost {
     if (!this.touch(attachment)) return false
     this.published.set(scope, { state, viewport })
     return true
+  }
+
+  /** Queue a live-inspect event from the desktop for the panel to drain. Bounded; picks are user-paced. */
+  publishInspect(attachment: string, scope: string, event: InspectEvent): boolean {
+    if (!this.touch(attachment)) return false
+    const queue = this.inspectEvents.get(scope) ?? []
+    queue.push(event)
+    if (queue.length > 20) queue.splice(0, queue.length - 20)
+    this.inspectEvents.set(scope, queue)
+    return true
+  }
+
+  /** Drain a scope's queued inspect events (each event is delivered exactly once). */
+  takeInspectEvents(scope: string): InspectEvent[] {
+    const queue = this.inspectEvents.get(scope)
+    if (!queue || queue.length === 0) return []
+    this.inspectEvents.delete(scope)
+    return queue
   }
 
   stateFor(scope: string): PublishedState | undefined {
@@ -242,6 +354,7 @@ export class DesktopHost {
     }
     this.pollers = []
     this.published.clear()
+    this.inspectEvents.clear()
   }
 }
 

@@ -1,6 +1,9 @@
 import { WebContentsView, type BrowserWindow, type Rectangle, type WebContents } from "electron"
+import { BrowserPermissions } from "@novacode-ai/browser/permissions"
+import type { BrowserDesktop } from "@novacode-ai/browser/desktop"
+import type { Browser } from "@novacode-ai/browser/rpc"
 import { attachCdp, type CdpSession } from "./cdp"
-import type { PageContents, TabHandle, TabInventory } from "./executor"
+import { ensureCapture, partitionFor, type PageContents, type TabHandle, type TabInventory } from "./executor"
 
 /**
  * Owns the desktop's browser tabs: one sandboxed WebContentsView per tab,
@@ -17,6 +20,9 @@ export interface BrowserEmbedRequest {
   visible: boolean
 }
 
+/** Persisted tab layout (per scope) for restore across desktop restarts. */
+export type BrowserTabsRestoreState = Record<string, { tabs: Array<{ url: string }>; focusedIndex: number }>
+
 interface EmbeddedTab extends TabHandle {
   view: WebContentsView
   contents: PageContents
@@ -27,7 +33,6 @@ interface ScopeTabs {
   focusedID: string | null
 }
 
-const PARTITION = "persist:novacode-browser"
 const BLANK = "about:blank"
 
 class ElectronPageContents implements PageContents {
@@ -130,6 +135,51 @@ export class BrowserTabManager implements TabInventory {
   private owned = new Set<WebContentsView>()
   private embeds = new Map<number, { window: BrowserWindow; request: BrowserEmbedRequest }>()
   private listeners = new Set<(scope: string) => void>()
+  /**
+   * The server's domain ACL (browser-acl.json), delivered with the tunnel
+   * attachment and refreshed on every re-attach. Enforced on tab opens and
+   * executor navigations with the same semantics as the Playwright driver.
+   */
+  private acl: BrowserPermissions.DomainACL = { allow: [], deny: [] }
+  private persister: (() => void) | undefined
+  private persistTimer: ReturnType<typeof setTimeout> | undefined
+
+  setACL(acl: BrowserPermissions.DomainACL): void {
+    this.acl = acl
+  }
+
+  /** Register the tab-layout persistence callback (main wires it to the store). */
+  setPersister(persister: () => void): void {
+    this.persister = persister
+  }
+
+  private schedulePersist(): void {
+    if (!this.persister) return
+    if (this.persistTimer) clearTimeout(this.persistTimer)
+    this.persistTimer = setTimeout(() => {
+      this.persistTimer = undefined
+      this.persister?.()
+    }, 250)
+    this.persistTimer.unref?.()
+  }
+
+  checkNavigation(url: string): void {
+    BrowserPermissions.checkDomain(url, this.acl)
+  }
+
+  private inspectListeners = new Set<(scope: string, event: BrowserDesktop.InspectEvent) => void>()
+
+  /** Subscribe to live-inspect events (picks, cancellations, in-page shortcut). */
+  onInspectEvent(listener: (scope: string, event: BrowserDesktop.InspectEvent) => void): () => void {
+    this.inspectListeners.add(listener)
+    return () => {
+      this.inspectListeners.delete(listener)
+    }
+  }
+
+  inspectEvent(scope: string, event: BrowserDesktop.InspectEvent): void {
+    for (const listener of this.inspectListeners) listener(scope, event)
+  }
 
   onChange(listener: (scope: string) => void): () => void {
     this.listeners.add(listener)
@@ -140,6 +190,7 @@ export class BrowserTabManager implements TabInventory {
 
   private changed(scope: string) {
     this.refreshEmbeds()
+    this.schedulePersist()
     for (const listener of this.listeners) listener(scope)
   }
 
@@ -179,6 +230,24 @@ export class BrowserTabManager implements TabInventory {
   }
 
   async open(scope: string, url: string | undefined, focus: boolean): Promise<TabHandle> {
+    // ACL parity with the Playwright driver: tab opens (including page
+    // popups, which funnel through here) obey browser-acl.json.
+    if (url && url !== BLANK) this.checkNavigation(url)
+    const handle = this.createTab(scope, url, focus)
+    const target = url ?? BLANK
+    if (isAllowedURL(target)) {
+      handle.loadError = undefined
+      await handle.view.webContents.loadURL(target).catch((error: unknown) => {
+        handle.loadError = (error instanceof Error ? error.message : String(error)).slice(0, 2048)
+      })
+      handle.generation += 1
+    }
+    this.changed(scope)
+    return handle
+  }
+
+  /** Create a tab's view and wire its events. Deferred tabs load nothing until activated. */
+  private createTab(scope: string, url: string | undefined, focus: boolean, deferred = false): EmbeddedTab {
     const group = this.scopeTabs(scope)
     const view = new WebContentsView({
       webPreferences: {
@@ -188,7 +257,7 @@ export class BrowserTabManager implements TabInventory {
         devTools: false,
         backgroundThrottling: false,
         focusOnNavigation: false,
-        partition: PARTITION,
+        partition: partitionFor(scope),
       },
     })
     const contents = view.webContents
@@ -199,14 +268,26 @@ export class BrowserTabManager implements TabInventory {
       generation: 0,
       boxes: new Map(),
     }
+    if (deferred) handle.pendingURL = url ?? BLANK
     group.tabs.set(handle.id, handle)
     this.owned.add(view)
     if (focus || !group.focusedID) group.focusedID = handle.id
+    // Capture console/network/dialog from the tab's first navigation on.
+    void ensureCapture(handle).catch(() => {})
 
     contents.setWindowOpenHandler(({ url: popupUrl }) => {
       // Popups become regular tabs in the same scope instead of windows.
       void this.open(scope, popupUrl, true).catch(() => {})
       return { action: "deny" }
+    })
+    contents.on("before-input-event", (event, input) => {
+      // Ctrl+Shift+C (Cmd+Shift+C on macOS) inside the page asks the panel
+      // to enter live inspect for this tab, mirroring browser devtools.
+      if (input.type !== "keyDown") return
+      if (!(input.control || input.meta) || !input.shift) return
+      if (input.code !== "KeyC" && input.key.toLowerCase() !== "c") return
+      event.preventDefault()
+      this.inspectEvent(scope, { type: "inspectKey", tabID: handle.id as Browser.TabID })
     })
     contents.on("will-navigate", (event, target) => {
       if (!isAllowedURL(target)) event.preventDefault()
@@ -214,6 +295,13 @@ export class BrowserTabManager implements TabInventory {
     contents.on("did-navigate", () => this.changed(scope))
     contents.on("did-navigate-in-page", () => this.changed(scope))
     contents.on("page-title-updated", () => this.changed(scope))
+    contents.on("page-favicon-updated", (_event, favicons) => {
+      const favicon = favicons[0]?.slice(0, 2048)
+      if (favicon && handle.favicon !== favicon) {
+        handle.favicon = favicon
+        this.changed(scope)
+      }
+    })
     contents.on("did-start-loading", () => this.changed(scope))
     contents.on("did-stop-loading", () => this.changed(scope))
     contents.on("did-fail-load", (_event, errorCode, errorDescription, _validatedURL, isMainFrame) => {
@@ -227,17 +315,58 @@ export class BrowserTabManager implements TabInventory {
       if (group.focusedID === handle.id) group.focusedID = [...group.tabs.keys()].pop() ?? null
       this.changed(scope)
     })
-
-    const target = url ?? BLANK
-    if (isAllowedURL(target)) {
-      handle.loadError = undefined
-      await contents.loadURL(target).catch((error: unknown) => {
-        handle.loadError = (error instanceof Error ? error.message : String(error)).slice(0, 2048)
-      })
-      handle.generation += 1
-    }
-    this.changed(scope)
     return handle
+  }
+
+  /** Load a restored tab's deferred URL the first time it is focused or shown. */
+  private activate(scope: string, handle: EmbeddedTab): void {
+    const pending = handle.pendingURL
+    if (!pending) return
+    handle.pendingURL = undefined
+    if (!isAllowedURL(pending)) return
+    handle.loadError = undefined
+    handle.generation += 1
+    void handle.view.webContents.loadURL(pending).catch((error: unknown) => {
+      handle.loadError = (error instanceof Error ? error.message : String(error)).slice(0, 2048)
+      this.changed(scope)
+    })
+  }
+
+  /** The restorable tab layout: per scope, tab URLs in order + the focused tab's index. */
+  snapshotRestoreState(): BrowserTabsRestoreState {
+    const state: BrowserTabsRestoreState = {}
+    for (const [scope, group] of this.scopes) {
+      if (group.tabs.size === 0) continue
+      const tabs = [...group.tabs.values()].map((handle) => ({
+        url: handle.contents.getURL() || handle.pendingURL || BLANK,
+      }))
+      const focusedIndex = Math.max(
+        0,
+        [...group.tabs.keys()].indexOf(group.focusedID ?? ""),
+      )
+      state[scope] = { tabs, focusedIndex }
+    }
+    return state
+  }
+
+  /**
+   * Recreate a persisted tab layout without loading anything: restored
+   * views stay unattached and their URLs deferred until the panel embeds
+   * or focuses them, so a restart never spawns windows or steals focus.
+   */
+  restoreScopes(state: BrowserTabsRestoreState): void {
+    for (const [scope, saved] of Object.entries(state)) {
+      if (this.scopes.get(scope)?.tabs.size) continue
+      saved.tabs.forEach((tab, index) => {
+        this.createTab(scope, tab.url, index === saved.focusedIndex, true)
+      })
+      const group = this.scopes.get(scope)
+      if (group) {
+        const ids = [...group.tabs.keys()]
+        group.focusedID = ids[Math.min(saved.focusedIndex, ids.length - 1)] ?? null
+      }
+      this.changed(scope)
+    }
   }
 
   focus(scope: string, tabID: string): TabHandle | undefined {
@@ -245,6 +374,7 @@ export class BrowserTabManager implements TabInventory {
     const handle = group?.tabs.get(tabID)
     if (!group || !handle) return undefined
     group.focusedID = tabID
+    this.activate(scope, handle)
     this.changed(scope)
     return handle
   }
@@ -298,6 +428,7 @@ export class BrowserTabManager implements TabInventory {
             continue
           }
           wantedView = handle.view
+          this.activate(request.scope, handle)
           if (!attached) window.contentView.addChildView(handle.view)
           handle.view.setBounds(rect)
           handle.view.setVisible(true)

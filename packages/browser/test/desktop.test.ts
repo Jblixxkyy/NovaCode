@@ -11,6 +11,33 @@ describe("DesktopHost", () => {
     await expect(host.execute("scope", { type: "tabs.list" })).rejects.toMatchObject({ code: "unavailable" })
   })
 
+  test("attach hands the desktop the server domain ACL and refreshes it per attach", () => {
+    const host = new BrowserDesktop.DesktopHost()
+    const first = host.attach("test-client", { allow: ["example.com"], deny: ["evil.com"] })
+    expect(first.acl).toEqual({ allow: ["example.com"], deny: ["evil.com"] })
+    const second = host.attach("test-client")
+    expect(second.acl).toEqual({ allow: ["example.com"], deny: ["evil.com"] })
+    const third = host.attach("test-client", { allow: [], deny: [] })
+    expect(third.acl).toEqual({ allow: [], deny: [] })
+  })
+
+  test("inspect events queue per scope and drain exactly once", () => {
+    const host = new BrowserDesktop.DesktopHost()
+    const { attachment } = host.attach("test-client")
+    expect(host.publishInspect(attachment, "/scope-a", { type: "canceled", tabID: "tab_1" as never })).toBe(true)
+    expect(
+      host.publishInspect(attachment, "/scope-a", {
+        type: "picked",
+        tabID: "tab_1" as never,
+        ref: "e3",
+        box: { x: 0, y: 0, width: 10, height: 10 },
+      }),
+    ).toBe(true)
+    expect(host.takeInspectEvents("/scope-b")).toEqual([])
+    expect(host.takeInspectEvents("/scope-a")).toHaveLength(2)
+    expect(host.takeInspectEvents("/scope-a")).toEqual([])
+  })
+
   test("attach, poll, and complete round-trip a command", async () => {
     const host = new DesktopHost()
     const { attachment, replaced } = host.attach("test-client")
