@@ -24,7 +24,6 @@
   },
   "main": "./out/main/index.js",
   "dependencies": {
-    "@novacode-ai/browser": "workspace:*",
     "@zip.js/zip.js": "2.7.62",
     "effect": "catalog:",
     "electron-context-menu": "4.1.2",
@@ -38,6 +37,7 @@
     "@actions/artifact": "4.0.0",
     "@lydell/node-pty": "catalog:",
     "@novacode-ai/app": "workspace:*",
+    "@novacode-ai/browser": "workspace:*",
     "@novacode-ai/ui": "workspace:*",
     "@sentry/solid": "catalog:",
     "@sentry/vite-plugin": "catalog:",
