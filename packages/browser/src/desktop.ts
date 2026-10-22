@@ -26,8 +26,27 @@ export const PanelStillAction = Schema.Struct({
   tabID: Browser.TabID,
 }).annotate({ identifier: "Browser.DesktopPanelStill" })
 
+/**
+ * Wire-only file delivery for files.upload / files.drop. The shared
+ * Browser.Action for those operations carries server-local paths, which
+ * are meaningless on the desktop side of the tunnel, so the Driver reads
+ * the files through the server file registry and forwards their bytes
+ * (base64, bounded by the same 5 MiB tool limit) for the executor to
+ * hand to the page.
+ */
+export const FilesDeliverAction = Schema.Struct({
+  type: Schema.Literal("files.deliver"),
+  tabID: Browser.TabID,
+  ref: Browser.Ref,
+  mode: Schema.Literals(["upload", "drop"]),
+  files: Schema.Array(Schema.Struct({ name: Schema.String, mime: Schema.String, data: Schema.String })).check(
+    Schema.isMinLength(1),
+    Schema.isMaxLength(8),
+  ),
+}).annotate({ identifier: "Browser.DesktopFilesDeliver" })
+
 /** Everything that may travel from the server to an attached desktop. */
-export const DesktopAction = Schema.Union([Browser.Action, ClickAtPointAction, PanelStillAction]).annotate({
+export const DesktopAction = Schema.Union([Browser.Action, ClickAtPointAction, PanelStillAction, FilesDeliverAction]).annotate({
   identifier: "Browser.DesktopAction",
 })
 export type DesktopAction = typeof DesktopAction.Type

@@ -1,3 +1,6 @@
+import { mkdtemp, rm, writeFile } from "node:fs/promises"
+import { tmpdir } from "node:os"
+import path from "node:path"
 import { Browser } from "@novacode-ai/browser/rpc"
 import { BrowserCapture } from "@novacode-ai/browser/capture"
 import type { BrowserDesktop } from "@novacode-ai/browser/desktop"
@@ -271,6 +274,46 @@ async function callOnElement(handle: TabHandle, ref: string, functionDeclaration
     return result.result?.value
   } finally {
     await handle.contents.cdp.send("Runtime.releaseObject", { objectId }).catch(() => {})
+  }
+}
+
+async function elementKind(
+  handle: TabHandle,
+  ref: string,
+): Promise<{ tag: string; type: string | null }> {
+  const value = (await callOnElement(
+    handle,
+    ref,
+    `function() { return { tag: this.tagName ?? "", type: typeof this.getAttribute === "function" ? this.getAttribute("type") : null } }`,
+  )) as { tag?: string; type?: string | null } | undefined
+  return { tag: value?.tag ?? "", type: value?.type ?? null }
+}
+
+/**
+ * Hand files to an <input type="file"> through the debugger. CDP's
+ * DOM.setFileInputFiles needs real filesystem paths, so the delivered
+ * bytes are staged in a temp dir on this machine (the desktop app and
+ * its sidecar share the machine) and removed right after the call.
+ */
+async function setFileInputFiles(
+  handle: TabHandle,
+  ref: string,
+  files: ReadonlyArray<{ name: string; data: string }>,
+): Promise<void> {
+  const objectId = await resolveObjectID(handle, ref)
+  const dir = await mkdtemp(path.join(tmpdir(), "novacode-upload-"))
+  try {
+    const staged: string[] = []
+    for (const [index, file] of files.entries()) {
+      const name = path.basename(file.name).replace(/[^\w.\- ]/g, "_") || `file-${index}`
+      const target = path.join(dir, `${index}-${name}`)
+      await writeFile(target, Buffer.from(file.data, "base64"))
+      staged.push(target)
+    }
+    await handle.contents.cdp.send("DOM.setFileInputFiles", { objectId, files: staged })
+  } finally {
+    await handle.contents.cdp.send("Runtime.releaseObject", { objectId }).catch(() => {})
+    await rm(dir, { recursive: true, force: true }).catch(() => {})
   }
 }
 
@@ -680,6 +723,41 @@ export async function executeDesktopAction(
       capture.dialogPending = false
       capture.dialog = undefined
       return { tab: tabOf(handle), dialog: null }
+    }
+    case "files.deliver": {
+      const handle = requireTab(inventory, scope, action.tabID)
+      const kind = await elementKind(handle, action.ref)
+      const isFileInput = kind.tag === "INPUT" && kind.type === "file"
+      if (action.mode === "upload") {
+        if (!isFileInput)
+          throw new Error(`browser.files.upload needs an <input type="file"> element; ${action.ref} is not one.`)
+        await setFileInputFiles(handle, action.ref, action.files)
+        return tabOf(handle)
+      }
+      // Drop: file inputs take the files directly (what a real OS drop on
+      // them does); any other element gets the same synthetic DragEvent
+      // sequence the Playwright driver dispatches in-page. CDP cannot
+      // synthesize an OS-level file drag, so drop targets that only listen
+      // for native drag data will not see these files.
+      if (isFileInput) {
+        await setFileInputFiles(handle, action.ref, action.files)
+        return tabOf(handle)
+      }
+      await callOnElement(
+        handle,
+        action.ref,
+        `function(files) {
+          const dt = new DataTransfer()
+          for (const f of files) {
+            const bytes = Uint8Array.from(atob(f.data), (c) => c.charCodeAt(0))
+            dt.items.add(new File([bytes], f.name, { type: f.mime }))
+          }
+          for (const type of ["dragenter", "dragover", "drop"])
+            this.dispatchEvent(new DragEvent(type, { dataTransfer: dt, bubbles: true, cancelable: true }))
+        }`,
+        [action.files],
+      )
+      return tabOf(handle)
     }
     case "network.get": {
       const handle = requireTab(inventory, scope, action.tabID)

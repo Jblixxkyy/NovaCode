@@ -16,6 +16,7 @@ import {
 class FakeCdp implements CdpSession {
   calls: Array<{ method: string; params?: Record<string, unknown> }> = []
   evaluateResult: unknown = null
+  elementKind: { tag: string; type: string | null } = { tag: "INPUT", type: "file" }
   private listeners = new Map<string, Set<(params: Record<string, unknown>) => void>>()
 
   constructor(private nodes: AXNodeLike[]) {}
@@ -42,6 +43,11 @@ class FakeCdp implements CdpSession {
         return { cssContentSize: { width: 800, height: 2000 } }
       case "Network.getResponseBody":
         return { body: `{"ok":true}`, base64Encoded: false }
+      case "Runtime.callFunctionOn": {
+        const declaration = String(params?.functionDeclaration ?? "")
+        if (declaration.includes("tagName")) return { result: { value: this.elementKind } }
+        return { result: {} }
+      }
       default:
         return {}
     }
@@ -407,6 +413,49 @@ describe("executeDesktopAction", () => {
     expect(mouse[1]?.params).toMatchObject({ type: "mousePressed", button: "left", buttons: 1 })
     expect(mouse[13]?.params).toMatchObject({ type: "mouseMoved", buttons: 1 })
     expect(mouse[14]?.params).toMatchObject({ type: "mouseReleased", button: "left", buttons: 0 })
+  })
+
+  test("files.deliver uploads to file inputs via staged temp files and rejects other elements", async () => {
+    const { cdp, inventory } = setup()
+    const handle = await inventory.open("/work", "https://example.com", true)
+    await executeDesktopAction(inventory, "/work", { type: "snapshot", tabID: handle.id as never })
+    const files = [{ name: "note.txt", mime: "text/plain", data: Buffer.from("hello").toString("base64") }]
+    await executeDesktopAction(inventory, "/work", {
+      type: "files.deliver",
+      tabID: handle.id as never,
+      ref: "e1" as never,
+      mode: "upload",
+      files,
+    })
+    const staged = cdp.calls.find((call) => call.method === "DOM.setFileInputFiles")
+    expect(staged).toBeTruthy()
+    const stagedFiles = (staged?.params?.files as string[] | undefined) ?? []
+    expect(stagedFiles).toHaveLength(1)
+    expect(stagedFiles[0]).toContain("novacode-upload-")
+    expect(stagedFiles[0]).toEndWith("note.txt")
+
+    cdp.elementKind = { tag: "BUTTON", type: null }
+    await expect(
+      executeDesktopAction(inventory, "/work", {
+        type: "files.deliver",
+        tabID: handle.id as never,
+        ref: "e1" as never,
+        mode: "upload",
+        files,
+      }),
+    ).rejects.toThrow(/not one/)
+    // Drop onto a non-input dispatches the synthetic DragEvent sequence in-page.
+    await executeDesktopAction(inventory, "/work", {
+      type: "files.deliver",
+      tabID: handle.id as never,
+      ref: "e1" as never,
+      mode: "drop",
+      files,
+    })
+    const dropCall = cdp.calls.find(
+      (call) => call.method === "Runtime.callFunctionOn" && String(call.params?.functionDeclaration ?? "").includes("DataTransfer"),
+    )
+    expect(dropCall).toBeTruthy()
   })
 
   test("dialog routes through the CDP pending-dialog model", async () => {

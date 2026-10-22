@@ -310,6 +310,35 @@ class FakeDesktop {
         await element.fill(action.text)
         return this.tab(tab)
       }
+      case "files.deliver": {
+        const tab = this.require(action.tabID)
+        const element = await this.resolve(tab, action.ref)
+        const kind = await element.evaluate((el) => ({ tag: el.tagName, type: el.getAttribute("type") }))
+        const isFileInput = kind.tag === "INPUT" && kind.type === "file"
+        if (action.mode === "upload" && !isFileInput)
+          throw new Error(`browser.files.upload needs an <input type="file"> element; ${action.ref} is not one.`)
+        if (isFileInput) {
+          // Playwright's buffer form of setInputFiles mirrors DOM.setFileInputFiles.
+          await element.setInputFiles(
+            action.files.map((file) => ({
+              name: file.name,
+              mimeType: file.mime,
+              buffer: Buffer.from(file.data, "base64"),
+            })),
+          )
+          return this.tab(tab)
+        }
+        await element.evaluate((el, files) => {
+          const dt = new DataTransfer()
+          for (const f of files) {
+            const bytes = Uint8Array.from(atob(f.data), (c) => c.charCodeAt(0))
+            dt.items.add(new File([bytes], f.name, { type: f.mime }))
+          }
+          for (const type of ["dragenter", "dragover", "drop"])
+            el.dispatchEvent(new DragEvent(type, { dataTransfer: dt, bubbles: true, cancelable: true }))
+        }, action.files)
+        return this.tab(tab)
+      }
       case "drag": {
         const tab = this.require(action.tabID)
         const fromElement = await this.resolve(tab, action.from)
@@ -439,7 +468,7 @@ describe("desktop tunnel protocol with a routed Driver", () => {
             headers: { "content-type": "text/html" },
           })
         return new Response(
-          `<title>Fake One</title><input id="q" aria-label="Search"><a href="/two">Go two</a><button id="d1">DragSource</button><button id="d2">DragTarget</button><script>console.log("fake page ready"); fetch("/two").catch(() => {}); window.__dragLog = { down: null, moves: 0, up: null }; document.addEventListener("mousedown", (e) => { window.__dragLog.down = [e.clientX, e.clientY] }); document.addEventListener("mousemove", (e) => { if (e.buttons === 1) window.__dragLog.moves += 1 }); document.addEventListener("mouseup", (e) => { window.__dragLog.up = [e.clientX, e.clientY] })</script>`,
+          `<title>Fake One</title><input id="q" aria-label="Search"><a href="/two">Go two</a><button id="d1">DragSource</button><button id="d2">DragTarget</button><input type="file" id="up" aria-label="Upload"><script>console.log("fake page ready"); fetch("/two").catch(() => {}); window.__dragLog = { down: null, moves: 0, up: null }; document.addEventListener("mousedown", (e) => { window.__dragLog.down = [e.clientX, e.clientY] }); document.addEventListener("mousemove", (e) => { if (e.buttons === 1) window.__dragLog.moves += 1 }); document.addEventListener("mouseup", (e) => { window.__dragLog.up = [e.clientX, e.clientY] }); document.getElementById("d2").addEventListener("drop", (e) => { window.__dropped = [...e.dataTransfer.files].map((f) => f.name + ":" + f.size) })</script>`,
           { headers: { "content-type": "text/html" } },
         )
       },
@@ -549,6 +578,26 @@ describe("desktop tunnel protocol with a routed Driver", () => {
     expect(Math.abs(dragLog.down[0] - (sourceBox.x + sourceBox.width / 2))).toBeLessThan(2)
     expect(dragLog.moves).toBeGreaterThanOrEqual(5)
     expect(Math.abs(dragLog.up[0] - (targetBox.x + targetBox.width / 2))).toBeLessThan(2)
+
+    // File upload delivers bytes through the tunnel to the file input.
+    const uploadRef = dragSnap.content.match(/button "Upload"[^\n]*\[ref=(e\d+)\]/)?.[1]
+    expect(uploadRef).toBeTruthy()
+    const uploadFile = {
+      id: Browser.FileID.make(`file_${crypto.randomUUID()}`),
+      name: "note.txt",
+      mime: "text/plain",
+      data: new TextEncoder().encode("hello upload"),
+    }
+    await driver.filesUpload(tab.id, { ref: uploadRef!, files: [uploadFile] })
+    const chosen = (await driver.evaluate(tab.id, {
+      script: "document.getElementById('up').files[0].name + ':' + document.getElementById('up').files[0].size",
+    })).value
+    expect(chosen).toBe("note.txt:12")
+
+    // Drop onto a plain element dispatches the synthetic DragEvent sequence.
+    await driver.filesDrop(tab.id, { ref: targetRef!, files: [uploadFile] })
+    const dropped = (await driver.evaluate(tab.id, { script: "window.__dropped" })).value
+    expect(dropped).toEqual(["note.txt:12"])
 
     const after = await driver.click(tab.id, { ref: linkRef! })
     expect(after.url).toBe(`${base}/two`)

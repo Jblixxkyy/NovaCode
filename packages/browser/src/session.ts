@@ -1007,7 +1007,18 @@ export class Driver {
   }
 
   async filesUpload(tabID: string, options: { ref: string; files: ReadonlyArray<Browser.File> }): Promise<Browser.Tab> {
-    this.guardDesktop("browser.files.upload")
+    if (this.desktopAttached)
+      return this.forwardDesktop({
+        type: "files.deliver",
+        tabID: tabID as Browser.TabID,
+        ref: options.ref as Browser.Ref,
+        mode: "upload",
+        files: options.files.map((file) => ({
+          name: file.name,
+          mime: file.mime,
+          data: Buffer.from(file.data).toString("base64"),
+        })),
+      })
     const tab = this.requireTab(tabID)
     const frame = await this.frameFor(tab)
     const element = await this.resolveElement(frame, options.ref)
@@ -1024,7 +1035,18 @@ export class Driver {
   }
 
   async filesDrop(tabID: string, options: { ref: string; files: ReadonlyArray<Browser.File> }): Promise<Browser.Tab> {
-    this.guardDesktop("browser.files.drop")
+    if (this.desktopAttached)
+      return this.forwardDesktop({
+        type: "files.deliver",
+        tabID: tabID as Browser.TabID,
+        ref: options.ref as Browser.Ref,
+        mode: "drop",
+        files: options.files.map((file) => ({
+          name: file.name,
+          mime: file.mime,
+          data: Buffer.from(file.data).toString("base64"),
+        })),
+      })
     const tab = this.requireTab(tabID)
     const frame = await this.frameFor(tab)
     try {
