@@ -54,6 +54,11 @@ const ToolListItem = Schema.Struct({
   parameters: Schema.Unknown,
 }).annotate({ identifier: "ToolListItem" })
 const ToolList = Schema.Array(ToolListItem).annotate({ identifier: "ToolList" })
+const CustomTool = Schema.Struct({
+  id: Schema.String,
+  description: Schema.String,
+}).annotate({ identifier: "CustomTool" })
+const CustomToolList = Schema.Array(CustomTool).annotate({ identifier: "CustomToolList" })
 export const ToolListQuery = Schema.Struct({
   ...WorkspaceRoutingQueryFields,
   provider: ProviderV2.ID,
@@ -94,6 +99,7 @@ export const ExperimentalPaths = {
   consoleSwitch: "/experimental/console/switch",
   tool: "/experimental/tool",
   toolIDs: "/experimental/tool/ids",
+  customTools: "/experimental/tool/custom",
   worktree: "/experimental/worktree",
   worktreeReset: "/experimental/worktree/reset",
   session: "/experimental/session",
@@ -171,6 +177,18 @@ export const ExperimentalApi = HttpApi.make("experimental")
             summary: "List tool IDs",
             description:
               "Get a list of all available tool IDs, including both built-in tools and dynamically registered tools.",
+          }),
+        ),
+        HttpApiEndpoint.get("customTools", ExperimentalPaths.customTools, {
+          query: WorkspaceRoutingQuery,
+          success: described(CustomToolList, "Custom tools"),
+          error: HttpApiError.BadRequest,
+        }).annotateMerge(
+          OpenApi.annotations({
+            identifier: "tool.custom",
+            summary: "List custom tools",
+            description:
+              "Get the custom tools registered from tool files and plugins, excluding the built-in tools.",
           }),
         ),
         HttpApiEndpoint.get("worktree", ExperimentalPaths.worktree, {

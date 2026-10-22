@@ -192,6 +192,10 @@ export function createChildStoreManager(input: {
           const mcpQuery = useQuery(() => ({ ...input.queryOptions.mcp(key), enabled: mcpEnabled() }))
           const mcpResourceQuery = useQuery(() => ({ ...input.queryOptions.mcpResources(key), enabled: mcpEnabled() }))
           const lspQuery = useQuery(() => ({ ...input.queryOptions.lsp(key), enabled: instanceQueriesEnabled() }))
+          const customToolsQuery = useQuery(() => ({
+            ...input.queryOptions.customTools(key),
+            enabled: instanceQueriesEnabled(),
+          }))
           const providerQuery = useQuery(() => ({
             ...input.queryOptions.providers(key),
             enabled: instanceQueriesEnabled(),
@@ -251,6 +255,12 @@ export function createChildStoreManager(input: {
             },
             get lsp() {
               return lspQuery.isLoading ? [] : (lspQuery.data ?? [])
+            },
+            get custom_tools_ready() {
+              return instanceQueriesEnabled() && !customToolsQuery.isLoading
+            },
+            get custom_tools() {
+              return customToolsQuery.isLoading ? [] : (customToolsQuery.data ?? [])
             },
             vcs: vcsStore.value,
             limit: 5,

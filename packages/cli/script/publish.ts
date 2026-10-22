@@ -18,17 +18,13 @@ async function publish(dir: string, name: string, version: string) {
   await $`npm publish *.tgz --access public --tag ${Script.channel}`.cwd(dir)
 }
 
-const version = pkg.version
-const source = fileURLToPath(new URL("../../novacode/dist", import.meta.url))
 const binaries: Record<string, string> = {}
-for (const filepath of new Bun.Glob("novacode-*/package.json").scanSync({ cwd: source })) {
-  const file = `${source}/${filepath}`
-  const item = await Bun.file(file).json()
-  const name = item.name.replace(/^novacode-/, "@novacode-cli/cli-")
-  await Bun.write(file, JSON.stringify({ ...item, name, version }, null, 2))
-  binaries[name] = version
+for (const filepath of new Bun.Glob("*/package.json").scanSync({ cwd: "./dist" })) {
+  const item = await Bun.file(`./dist/${filepath}`).json()
+  binaries[item.name] = item.version
 }
 console.log("binaries", binaries)
+const version = pkg.version
 
 await $`mkdir -p ./dist/${pkg.name}/bin`
 await $`cp ./bin/novacode.cjs ./dist/${pkg.name}/bin/novacode`
@@ -50,8 +46,8 @@ await Bun.file(`./dist/${pkg.name}/package.json`).write(
 )
 
 await Promise.all(
-  Object.entries(binaries).map(([name]) =>
-    publish(`${source}/novacode-${name.replace("@novacode-cli/cli-", "")}`, name, version),
+  Object.entries(binaries).map(([name, version]) =>
+    publish(`./dist/${name.replace("@novacode-cli/", "")}`, name, version),
   ),
 )
 await publish(`./dist/${pkg.name}`, pkg.name, version)

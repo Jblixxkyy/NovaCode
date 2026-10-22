@@ -5,7 +5,7 @@ import { Switch } from "@novacode-ai/ui/switch"
 import { Tabs } from "@novacode-ai/ui/tabs"
 import { showToast } from "@/utils/toast"
 import { useNavigate } from "@solidjs/router"
-import { type Accessor, createEffect, createMemo, For, type JSXElement, onCleanup, Show } from "solid-js"
+import { type Accessor, createEffect, createMemo, createSignal, For, type JSXElement, onCleanup, Show } from "solid-js"
 import { createStore } from "solid-js/store"
 import { ServerHealthIndicator, ServerRow } from "@/components/server/server-row"
 import { useLanguage } from "@/context/language"
@@ -17,6 +17,7 @@ import { useGlobal } from "@/context/global"
 import { useSettings } from "@/context/settings"
 import { useMcpToggle } from "@/context/mcp"
 import { useServerProtocol } from "@/context/server-sdk"
+import type { CustomTool } from "@novacode-ai/sdk/v2/client"
 
 const pluginEmptyMessage = (value: string, file: string): JSXElement => {
   const parts = value.split(file)
@@ -291,6 +292,32 @@ export function StatusPopoverBody(props: { shown: Accessor<boolean> }) {
   const mcpConnected = createMemo(() => mcpNames().filter((name) => mcpStatus(name) === "connected").length)
   const lspItems = createMemo(() => sync().data.lsp ?? [])
   const lspCount = createMemo(() => lspItems().length)
+  const customTools = createMemo(() => sync().data.custom_tools ?? [])
+  const toolGroups = createMemo(() => {
+    const byPrefix = new Map<string, CustomTool[]>()
+    for (const tool of customTools()) {
+      const sep = tool.id.indexOf("_")
+      const key = sep > 0 ? tool.id.slice(0, sep) : tool.id
+      const list = byPrefix.get(key)
+      if (list) list.push(tool)
+      else byPrefix.set(key, [tool])
+    }
+    const groups: { name: string; tools: CustomTool[] }[] = []
+    const singles: CustomTool[] = []
+    for (const [name, tools] of byPrefix) {
+      if (tools.length > 1) groups.push({ name, tools })
+      else singles.push(tools[0])
+    }
+    return { groups, singles }
+  })
+  const [collapsedGroups, setCollapsedGroups] = createSignal<Set<string>>(new Set())
+  const toggleGroup = (name: string) =>
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev)
+      if (next.has(name)) next.delete(name)
+      else next.add(name)
+      return next
+    })
   const plugins = createMemo(() =>
     (sync().data.config.plugin ?? []).map((item) => (typeof item === "string" ? item : item[0])),
   )
@@ -328,6 +355,9 @@ export function StatusPopoverBody(props: { shown: Accessor<boolean> }) {
               {language.t("status.popover.tab.plugins")}
             </Tabs.Trigger>
           </Show>
+          <Tabs.Trigger value="tools" data-slot="tab" class="text-12-regular">
+            {language.t("status.popover.tab.tools")}
+          </Tabs.Trigger>
         </Tabs.List>
 
         {!settings.general.newLayoutDesigns() && (
@@ -508,6 +538,68 @@ export function StatusPopoverBody(props: { shown: Accessor<boolean> }) {
             </div>
           </Tabs.Content>
         </Show>
+
+        <Tabs.Content value="tools">
+          <div class="flex flex-col px-2 pb-2">
+            <div class="flex flex-col p-3 bg-background-base rounded-sm min-h-14">
+              <Show
+                when={customTools().length > 0}
+                fallback={
+                  <div class="text-14-regular text-text-base text-center my-auto">{language.t("dialog.tools.empty")}</div>
+                }
+              >
+                <For each={toolGroups().groups}>
+                  {(group) => (
+                    <div class="flex flex-col w-full">
+                      <button
+                        type="button"
+                        onClick={() => toggleGroup(group.name)}
+                        class="flex items-center gap-2 w-full px-2 py-1 rounded-md hover:bg-surface-raised-base-hover text-left"
+                      >
+                        <Icon
+                          name="chevron-down"
+                          size="small"
+                          class={
+                            "text-icon-weak shrink-0 transition-transform " +
+                            (collapsedGroups().has(group.name) ? "-rotate-90" : "")
+                          }
+                        />
+                        <span class="text-14-regular text-text-base truncate">{group.name}</span>
+                        <span class="text-12-regular text-text-weak">{group.tools.length}</span>
+                      </button>
+                      <Show when={!collapsedGroups().has(group.name)}>
+                        <div class="flex flex-col pl-5">
+                          <For each={group.tools}>
+                            {(item) => (
+                              <div class="flex flex-col w-full px-2 py-1">
+                                <div class="flex items-center gap-2">
+                                  <div class="size-1.5 rounded-full shrink-0 bg-icon-success-base" />
+                                  <span class="text-14-regular text-text-base truncate">{item.id}</span>
+                                </div>
+                                <span class="text-12-regular text-text-weak truncate pl-3.5">{item.description}</span>
+                              </div>
+                            )}
+                          </For>
+                        </div>
+                      </Show>
+                    </div>
+                  )}
+                </For>
+                <For each={toolGroups().singles}>
+                  {(item) => (
+                    <div class="flex flex-col w-full px-2 py-1">
+                      <div class="flex items-center gap-2">
+                        <div class="size-1.5 rounded-full shrink-0 bg-icon-success-base" />
+                        <span class="text-14-regular text-text-base truncate">{item.id}</span>
+                      </div>
+                      <span class="text-12-regular text-text-weak truncate pl-3.5">{item.description}</span>
+                    </div>
+                  )}
+                </For>
+              </Show>
+            </div>
+          </div>
+        </Tabs.Content>
       </Tabs>
     </div>
   )

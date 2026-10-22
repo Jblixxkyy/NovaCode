@@ -150,6 +150,12 @@ export const loadLspQuery = (scope: ServerScope, directory: string, sdk: Opencod
     queryFn: () => sdk.lsp.status().then((r) => r.data ?? []),
   })
 
+export const loadCustomToolsQuery = (scope: ServerScope, directory: string, sdk: OpencodeClient) =>
+  queryOptions({
+    queryKey: [scope, directory, "customTools"] as const,
+    queryFn: () => sdk.tool.custom().then((r) => r.data ?? []),
+  })
+
 export const loadActiveSessionsQuery = (
   scope: ServerScope,
   api: SessionActiveApi,
@@ -197,6 +203,7 @@ function makeQueryOptionsApi(
     mcpResources: (directory: PathKey) =>
       loadMcpResourcesQuery(scope, directory, serverAPI.mcp, sdkFor(directory), protocol),
     lsp: (directory: PathKey) => loadLspQuery(scope, directory, sdkFor(directory)),
+    customTools: (directory: PathKey) => loadCustomToolsQuery(scope, directory, sdkFor(directory)),
     sessions: (directory: PathKey) => ({ queryKey: [scope, directory, "loadSessions"] as const }),
   }
 }

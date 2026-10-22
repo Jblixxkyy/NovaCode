@@ -1,6 +1,7 @@
 import type {
   Agent,
   Config,
+  CustomTool,
   LspStatus,
   Message,
   Part,
@@ -69,6 +70,8 @@ export type State = {
   }
   lsp_ready: boolean
   lsp: LspStatus[]
+  custom_tools_ready: boolean
+  custom_tools: CustomTool[]
   vcs: VcsInfo | undefined
   limit: number
   message: {

@@ -239,6 +239,8 @@ import type {
   SyncStealErrors,
   SyncStealResponses,
   TextPartInput,
+  ToolCustomErrors,
+  ToolCustomResponses,
   ToolIdsErrors,
   ToolIdsResponses,
   ToolListErrors,
@@ -1596,6 +1598,36 @@ export class Tool extends HeyApiClient {
     )
     return (options?.client ?? this.client).get<ToolIdsResponses, ToolIdsErrors, ThrowOnError>({
       url: "/experimental/tool/ids",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
+   * List custom tools
+   *
+   * Get the custom tools registered from tool files and plugins, excluding the built-in tools.
+   */
+  public custom<ThrowOnError extends boolean = false>(
+    parameters?: {
+      directory?: string
+      workspace?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).get<ToolCustomResponses, ToolCustomErrors, ThrowOnError>({
+      url: "/experimental/tool/custom",
       ...options,
       ...params,
     })

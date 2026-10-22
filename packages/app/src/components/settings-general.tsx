@@ -94,31 +94,6 @@ export const SettingsGeneral: Component = () => {
   const updater = useUpdaterAction()
 
   const linux = createMemo(() => platform.platform === "desktop" && platform.os === "linux")
-  const dir = createMemo(() => decode64(params.dir))
-  const accepting = createMemo(() => {
-    const value = dir()
-    if (!value) return false
-    if (!params.id) return permission.isAutoAcceptingDirectory(value)
-    return permission.isAutoAccepting(params.id, value)
-  })
-
-  const toggleAccept = (checked: boolean) => {
-    const value = dir()
-    if (!value) return
-
-    if (!params.id) {
-      if (permission.isAutoAcceptingDirectory(value) === checked) return
-      permission.toggleAutoAcceptDirectory(value)
-      return
-    }
-
-    if (checked) {
-      permission.enableAutoAccept(params.id, value)
-      return
-    }
-
-    permission.disableAutoAccept(params.id, value)
-  }
   const desktop = createMemo(() => platform.platform === "desktop")
 
   const themeOptions = createMemo<ThemeOption[]>(() => theme.ids().map((id) => ({ id, name: theme.name(id) })))
@@ -321,7 +296,10 @@ export const SettingsGeneral: Component = () => {
           description={language.t("toast.permissions.autoaccept.on.description")}
         >
           <div data-action="settings-auto-accept-permissions">
-            <Switch checked={accepting()} disabled={!dir()} onChange={toggleAccept} />
+            <Switch
+              checked={settings.permissions.autoApprove()}
+              onChange={(checked) => settings.permissions.setAutoApprove(checked)}
+            />
           </div>
         </SettingsRow>
 

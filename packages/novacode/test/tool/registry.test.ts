@@ -1,4 +1,4 @@
-﻿import { afterEach, describe, expect } from "bun:test"
+import { afterEach, describe, expect } from "bun:test"
 import path from "path"
 import fs from "fs/promises"
 import { fileURLToPath, pathToFileURL } from "url"
@@ -569,6 +569,14 @@ describe("tool.registry", () => {
       const registry = yield* ToolRegistry.Service
       const ids = yield* registry.ids()
       expect(ids).toContain("cowsay")
+    }),
+  )
+
+  it.instance("exposes custom tools separately from built-ins", () =>
+    Effect.gen(function* () {
+      const registry = yield* ToolRegistry.Service
+      const custom = yield* registry.custom()
+      expect(custom.map((tool) => tool.id)).not.toContain("read")
     }),
   )
 })

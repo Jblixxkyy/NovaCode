@@ -1,7 +1,5 @@
 import { run } from "@novacode-ai/tui"
 import { TuiConfig } from "@novacode-ai/tui/config"
-import type { TuiPluginHost } from "@novacode-ai/tui/plugin/runtime"
-import type { HostSlots } from "@novacode-ai/tui/plugin/slots"
 import { Effect } from "effect"
 import { AppNodeBuilder } from "@novacode-ai/core/effect/app-node-builder"
 import { Global } from "@novacode-ai/core/global"
@@ -13,23 +11,11 @@ export function runTui(transport: { url: string; headers: RequestInit["headers"]
     args: {},
     config,
     fetch: gracefulFetch,
-    pluginHost: createPluginHost(),
+    pluginHost: {
+      async start() {},
+      async dispose() {},
+    },
   }).pipe(Effect.provide(AppNodeBuilder.build(Global.node)))
-}
-
-// Slots render their fallback children only once the host binds a registry, so a
-// no-op host leaves the whole app (logo, prompt, footer) blank on first launch.
-function createPluginHost(): TuiPluginHost {
-  let slots: HostSlots | undefined
-  return {
-    async start(input) {
-      slots = input.runtime.setupSlots(input.api)
-    },
-    async dispose() {
-      slots?.dispose()
-      slots = undefined
-    },
-  }
 }
 
 const legacyDefaults: Record<string, unknown> = {

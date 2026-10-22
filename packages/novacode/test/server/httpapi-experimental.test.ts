@@ -143,12 +143,13 @@ describe("experimental HttpApi", () => {
       Effect.gen(function* () {
         const tmp = yield* TestInstance
         const directory = tmp.directory
-        const [consoleState, consoleOrgs, toolList, toolIDs, worktrees, resources] = yield* Effect.all(
+        const [consoleState, consoleOrgs, toolList, toolIDs, customTools, worktrees, resources] = yield* Effect.all(
           [
             request(ExperimentalPaths.console, directory),
             request(ExperimentalPaths.consoleOrgs, directory),
             request(`${ExperimentalPaths.tool}?provider=opencode&model=gpt-5`, directory),
             request(ExperimentalPaths.toolIDs, directory),
+            request(ExperimentalPaths.customTools, directory),
             request(ExperimentalPaths.worktree, directory),
             request(ExperimentalPaths.resource, directory),
           ],
@@ -175,6 +176,9 @@ describe("experimental HttpApi", () => {
 
         expect(toolIDs.status).toBe(200)
         expect(yield* json(toolIDs)).toContain("bash")
+
+        expect(customTools.status).toBe(200)
+        expect(yield* json(customTools)).toEqual([])
 
         expect(worktrees.status).toBe(200)
         expect(yield* json(worktrees)).toEqual([])

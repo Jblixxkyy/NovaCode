@@ -66,6 +66,8 @@ function directoryState() {
     mcp_resource: {},
     lsp_ready: true,
     lsp: [],
+    custom_tools_ready: true,
+    custom_tools: [],
     vcs: undefined,
     limit: 5,
     message: {},

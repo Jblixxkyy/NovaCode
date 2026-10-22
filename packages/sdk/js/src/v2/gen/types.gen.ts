@@ -2151,6 +2151,13 @@ export type ToolList = Array<ToolListItem>
 
 export type ToolIds = Array<string>
 
+export type CustomTool = {
+  id: string
+  description: string
+}
+
+export type CustomToolList = Array<CustomTool>
+
 export type WorktreeError = {
   name:
     | "WorktreeNotGitError"
@@ -7727,6 +7734,34 @@ export type ToolIdsResponses = {
 }
 
 export type ToolIdsResponse = ToolIdsResponses[keyof ToolIdsResponses]
+
+export type ToolCustomData = {
+  body?: never
+  path?: never
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/experimental/tool/custom"
+}
+
+export type ToolCustomErrors = {
+  /**
+   * BadRequest | InvalidRequestError
+   */
+  400: EffectHttpApiErrorBadRequest | InvalidRequestError
+}
+
+export type ToolCustomError = ToolCustomErrors[keyof ToolCustomErrors]
+
+export type ToolCustomResponses = {
+  /**
+   * Custom tools
+   */
+  200: CustomToolList
+}
+
+export type ToolCustomResponse = ToolCustomResponses[keyof ToolCustomResponses]
 
 export type WorktreeRemoveData = {
   body?: WorktreeRemoveInput

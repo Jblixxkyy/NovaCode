@@ -36,6 +36,7 @@ const queryOptionsApi = {
   mcp: (directory: string) => ({ queryKey: [directory, "mcp"], queryFn: async () => ({}) }),
   mcpResources: (directory: string) => ({ queryKey: [directory, "mcpResources"], queryFn: async () => ({}) }),
   lsp: (directory: string) => ({ queryKey: [directory, "lsp"], queryFn: async () => [] }),
+  customTools: (directory: string) => ({ queryKey: [directory, "customTools"], queryFn: async () => [] }),
   references: (directory: string) => ({ queryKey: [directory, "references"], queryFn: async () => [] }),
   sessions: (directory: string) => ({ queryKey: [directory, "loadSessions"] as const }),
 } as unknown as QueryOptionsApi
@@ -62,6 +63,7 @@ beforeAll(async () => {
           if (options().queryKey?.[1] === "path") throw new Error("pending path data read")
           if (options().queryKey?.[1] === "mcp") return options().enabled ? { demo: { status: "disabled" } } : undefined
           if (options().queryKey?.[1] === "lsp") return []
+          if (options().queryKey?.[1] === "customTools") return []
           if (options().queryKey?.[1] === "providers") return provider
           return undefined
         },
@@ -199,7 +201,7 @@ describe("createChildStoreManager", () => {
     try {
       if (!manager) throw new Error("manager required")
       const [store, setStore] = manager.child("/project", { bootstrap: false })
-      expect(querySingles.length - offset).toBe(6)
+      expect(querySingles.length - offset).toBe(7)
       const query = querySingles[offset + 1]
       const resourceQuery = querySingles[offset + 2]
       if (!query) throw new Error("query required")
@@ -250,14 +252,16 @@ describe("createChildStoreManager", () => {
       const [store] = manager.child("/project", { bootstrap: false })
       const queries = querySingles.slice(offset)
 
-      expect(queries).toHaveLength(6)
+      expect(queries).toHaveLength(7)
       expect(queries[0]?.().enabled).toBe(false)
       expect(queries[3]?.().enabled).toBe(false)
       expect(queries[4]?.().enabled).toBe(false)
       expect(queries[5]?.().enabled).toBe(false)
+      expect(queries[6]?.().enabled).toBe(false)
       expect(store.path.directory).toBe("/project")
       expect(store.provider_ready).toBe(false)
       expect(store.lsp_ready).toBe(false)
+      expect(store.custom_tools_ready).toBe(false)
       expect(bootstraps).toEqual([])
 
       manager.child("/project")
@@ -265,6 +269,7 @@ describe("createChildStoreManager", () => {
       expect(queries[3]?.().enabled).toBe(true)
       expect(queries[4]?.().enabled).toBe(true)
       expect(queries[5]?.().enabled).toBe(true)
+      expect(queries[6]?.().enabled).toBe(true)
       expect(bootstraps).toEqual(["/project"])
 
       manager.child("/project", { bootstrap: false })

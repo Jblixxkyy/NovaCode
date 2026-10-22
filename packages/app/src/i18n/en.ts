@@ -325,6 +325,7 @@ export const dict = {
   "dialog.mcp.title": "MCPs",
   "dialog.mcp.description": "{{enabled}} of {{total}} enabled",
   "dialog.mcp.empty": "No MCPs configured",
+  "dialog.tools.empty": "No custom tools found",
 
   "dialog.lsp.empty": "LSPs auto-detected from file types",
   "dialog.plugins.empty": "Plugins configured in novacode.json",
@@ -785,6 +786,7 @@ export const dict = {
   "status.popover.tab.servers": "Servers",
   "status.popover.tab.mcp": "MCP",
   "status.popover.tab.lsp": "LSP",
+  "status.popover.tab.tools": "Tools",
   "status.popover.tab.plugins": "Plugins",
   "status.popover.action.manageServers": "Manage servers",
 

@@ -77,6 +77,8 @@ const baseState = (input: Partial<State> = {}) =>
     question: {},
     mcp: {},
     lsp: [],
+    custom_tools_ready: true,
+    custom_tools: [],
     vcs: undefined,
     limit: 10,
     message: {},

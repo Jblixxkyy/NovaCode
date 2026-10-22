@@ -109,10 +109,6 @@ jobs:
         run: |
           $ver = $env:VERSION
           if (-not $ver) { $ver = (Get-Content package.json | ConvertFrom-Json).version }
-          $tag = "v$ver"
-          $base = "https://github.com/Jblixxkyy/NovaCode/releases/download/$tag"
-          $yml = Get-Content dist/latest.yml -Raw
-          $yml = $yml -replace 'url: novacode-desktop-win-x64\.exe\.blockmap', "url: $base/novacode-desktop-win-x64.exe.blockmap"
-          $yml = $yml -replace 'url: novacode-desktop-win-x64\.exe', "url: $base/novacode-desktop-win-x64.exe"
-          [System.IO.File]::WriteAllText("$PWD/latest.yml", $yml)
-          gh release upload $tag latest.yml --clobber --repo Jblixxkyy/NovaCode
+          # electron-updater builds download URLs itself from the release tag, so
+          # latest.yml must keep the bare filenames electron-builder emits.
+          gh release upload "v$ver" dist/latest.yml --clobber --repo Jblixxkyy/NovaCode

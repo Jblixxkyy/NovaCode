@@ -77,6 +77,7 @@ type State = {
 export interface Interface {
   readonly ids: () => Effect.Effect<string[]>
   readonly all: () => Effect.Effect<Tool.Def[]>
+  readonly custom: () => Effect.Effect<Tool.Def[]>
   readonly named: () => Effect.Effect<{ task: TaskDef; read: ReadDef }>
   readonly tools: (model: {
     providerID: ProviderV2.ID
@@ -345,11 +346,16 @@ const layer = Layer.effect(
       return { task: s.task, read: s.read }
     })
 
+    const custom: Interface["custom"] = Effect.fn("ToolRegistry.custom")(function* () {
+      const s = yield* InstanceState.get(state)
+      return s.custom
+    })
+
     const invalidate = Effect.fn("ToolRegistry.invalidate")(function* () {
       yield* InstanceState.invalidate(state)
     })
 
-    return Service.of({ ids, all, named, tools, invalidate })
+    return Service.of({ ids, all, custom, named, tools, invalidate })
   }),
 )
 
