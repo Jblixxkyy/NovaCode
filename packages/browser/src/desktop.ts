@@ -96,7 +96,7 @@ interface Pending {
   readonly timer: ReturnType<typeof setTimeout>
 }
 
-type PollResult =
+export type PollResult =
   | { readonly status: "command"; readonly command: DesktopCommand }
   | { readonly status: "timeout" }
   | { readonly status: "detached" }
