@@ -188,11 +188,12 @@ tools, legacy bridge, panel handlers) inherits it:
   which is server-side — works unchanged for desktop tabs.
 - Permissions are untouched: routing happens *below* `definition.run`,
   after PermissionV2/legacy `ask` has already approved the call, with the
-  same resources. Domain ACL (`browser-acl.json`) is a Playwright-driver
-  concern today; the desktop executor applies the same URL policy as
-  `normalizeAction` (http/https/about:blank, no embedded credentials) —
-  full ACL parity is phase 2 (documented gap, desktop pages are
-  user-visible by definition).
+  same resources. Domain ACL (`browser-acl.json`): phase 1 shipped with
+  the executor applying only the `normalizeAction` URL policy
+  (http/https/about:blank, no embedded credentials). Phase 2 closed the
+  gap — the server ships its effective ACL with the tunnel attachment
+  and the desktop enforces it on opens, popups, and navigations (see
+  "Phase 2 (delivered)" below).
 
 ### 4. Desktop executor (main process)
 
@@ -260,11 +261,14 @@ tools, legacy bridge, panel handlers) inherits it:
     screenshot `<img>`; a `ResizeObserver` + scroll/resize listeners +
     an effect on (tabID, bounds, frozen, visible) report its rect to
     main. Unmount or switching to a non-embed state calls `clear()`.
-  - **Frozen** whenever inspect mode is on or the comment editor is open:
-    the view hides and the panel renders tonight's screenshot flow
-    (stills keep arriving via `panelSnapshot`), so inspect picking and
-    comment anchoring run the *identical* code path as the web panel.
-    CDP `Overlay` inspect in the live view is phase 2.
+  - **Frozen** whenever the comment editor is open, or while inspecting
+    without live inspect: the view hides and the panel renders tonight's
+    screenshot flow (stills keep arriving via `panelSnapshot`), so
+    comment anchoring runs the *identical* code path as the web panel.
+    Phase 2 added CDP `Overlay` live inspect on desktop tabs: while it is
+    engaged the view stays visible and picks happen in the live page;
+    freezing remains the path for the comment editor itself, for the web
+    panel, and whenever the Overlay cannot engage.
   - Non-inspect interaction needs no forwarding on desktop: the user
     clicks/types/scrolls in the real page. The agent's actions land in
     the same page — visible live.
@@ -313,20 +317,124 @@ tools, legacy bridge, panel handlers) inherits it:
   zoom math, live interaction, freeze behavior, agent-driven surfacing
   in the real desktop app. Checklist in the final report.
 
-## Deferred to phase 2 (explicit)
+## Phase 2 (delivered)
 
-- CDP `Overlay` inspect in the live view (element-rect anchoring in-page,
-  Ctrl+Shift+C while the page has focus) replacing freeze-to-still picks.
-- Console/network capture on desktop tabs; `dialog`; `drag`;
-  `files.upload`/`files.drop` into desktop tabs; trace/cpu/heap/
-  lighthouse on desktop tabs.
-- Domain ACL parity for desktop navigation; per-scope storage
-  partitions; tab restore across app restarts; multiple attached
-  desktops (latest wins today); SSE announcement instead of long-poll;
-  screencast for web (unchanged from the comparison's recommendation —
-  independent track).
-- `maxWidth` downscaling for desktop screenshots; favicon in inventory
-  (the `Browser.Tab` schema has no favicon field on either backend).
+Everything phase 1 deferred is built, each piece covered by executor unit
+tests (fake contents) plus the tunnel protocol test (a fake desktop driving
+real headless Chromium through the real host):
+
+- **Live inspect (CDP Overlay).** `inspect.start`/`inspect.stop` wire
+  actions engage `Overlay.setInspectMode` (`searchForNode`) in the live
+  view. A pick (`Overlay.inspectNodeRequested`) is resolved through a
+  fresh boxes snapshot to the same ref + box the still-frame flow
+  produces, then travels back as an inspect event:
+  desktop → `POST /browser/desktop/inspect` → per-scope queue on
+  `DesktopHost` → drained by `Driver.panelSnapshot()` into
+  `Browser.PanelState.inspectPick` (delivered exactly once) → the panel
+  opens the comment editor anchored to the element. In-page
+  Ctrl+Shift+C (via `before-input-event`) posts an `inspectKey` event and
+  the panel enters inspect; an in-page cancel posts `canceled`. Esc
+  layering, tab-change cleanup, and menu/comment mutual exclusion are
+  unchanged panel-side. Freeze-to-still remains the fallback when the
+  Overlay cannot engage, and the only path on web. Note: CDP requires a
+  highlight config even for `mode: "none"` — inspect stop passes one.
+- **Console + network capture.** Shared wiring in
+  `packages/browser/src/capture.ts` (`BrowserCapture.wireCapture`) fills
+  the Playwright driver's exact entry/record shapes from CDP events
+  (`Runtime.consoleAPICalled`/`exceptionThrown`, `Network.*`,
+  `Page.javascriptDialogOpening`); the executor wires it per tab at
+  creation. The Playwright driver keeps its own wiring (its shapes were
+  the template). One parity fix fell out: CDP resource types are
+  PascalCase, and the driver's `toResourceType` compared them
+  case-sensitively, mapping everything to "other" — both paths now
+  compare case-insensitively.
+- **Dialog.** `Page.handleJavaScriptDialog` behind the same
+  pending-dialog model; the capture state holds type/message/default
+  (CDP's field is `defaultPrompt`).
+- **Drag.** `Input.dispatchMouseEvent` move/press/12 interpolated
+  moves/release between element centers, mirroring the Playwright
+  driver's mouse path.
+- **File upload/drop.** The shared actions carry server-local paths,
+  which are meaningless across the tunnel, so the Driver reads the files
+  through the registry and forwards a wire-only `files.deliver` action
+  (bytes as base64, same 5 MiB tool bound). Upload stages the bytes in a
+  temp dir on the desktop machine and calls `DOM.setFileInputFiles`;
+  the temp files are removed immediately after. Drop uses
+  `setFileInputFiles` when the target is a file input (what an OS drop
+  there does) and otherwise dispatches the same synthetic
+  dragenter/dragover/drop `DragEvent` sequence with a `DataTransfer`
+  payload as the Playwright driver. CDP cannot synthesize an OS-level
+  file drag, so drop targets that only read native drag data will not
+  see dropped files — documented limitation, same as any CDP client.
+- **Diagnostics.** trace (Tracing domain), cpu profile (Profiler), and
+  heap snapshot (HeapProfiler) run on the desktop tab; results return as
+  base64 file payloads and the Driver materializes them with
+  `BrowserFiles.save` exactly like desktop screenshots, so the
+  server-side analyzers (trace.analyze, cpu.analyze, heap.*) read them
+  unchanged via the remote-file registry. Recording bounds mirror the
+  driver (trace ≤30s auto-finish, cpu 30s auto-stop); a finished
+  recording waits for its stop call. **Lighthouse** is best-effort: an
+  Electron webview exposes no remote-debugging port for Lighthouse to
+  attach to, so the executor runs the real `lighthouse` package against
+  the tab's URL in a standalone Chrome named by
+  `NOVACODE_DESKTOP_LIGHTHOUSE_CHROME`; without that variable it returns
+  an honest typed error naming the prerequisite instead of a fake audit.
+- **Domain ACL parity.** The attach handler loads the effective ACL
+  (`BrowserPermissions.loadACL(Global.Path.config)`) and
+  `DesktopHost.attach` returns it in the attach response
+  (`{attachment, replaced, acl}`); the desktop host client applies it
+  via `BrowserTabManager.setACL`, refreshed on every re-attach. The
+  manager enforces `checkDomain` on tab opens (page popups funnel
+  through the same `open()`), and the executor's navigate calls the
+  inventory's `checkNavigation` after `normalizeAction` — same
+  semantics and error messages as the Playwright driver. (The Playwright
+  driver checks only `navigate`; desktop additionally covering opens is
+  deliberate — agent-driven `tabs.open` is the main navigation entry on
+  desktop.) Editing `browser-acl.json` takes effect on the desktop at
+  its next attach.
+- **Per-scope partitions.** `partitionFor(scope)` in the executor:
+  `persist:novacode-browser-<first 16 hex of sha256(scope)>`; the empty
+  scope keeps the legacy `persist:novacode-browser`. The pre-phase-2
+  shared partition's cookies/storage do **not** migrate — every scope
+  starts with a fresh jar under its own partition.
+- **Tab restore.** The manager persists each scope's tab URLs + focused
+  index (debounced 250ms on every change) through a persister wired in
+  `main/index.ts` to the electron-store file `novacode.browser-tabs`
+  (key `tabs`, see `store-keys.ts`). On startup the layout is recreated
+  deferred: views exist but stay unattached, URLs sit in
+  `TabHandle.pendingURL` (reported as the tab's URL/title until loaded),
+  and the first focus or embed activation loads them — no windows spawn
+  and no focus is stolen before the panel opens. Restored tabs publish
+  into inventory on attach like normal tabs.
+- **Favicons.** `Browser.Tab.favicon` (optional) is populated on desktop
+  tabs from `page-favicon-updated` and rendered in the panel tab strip
+  beside the loading spinner. The Playwright driver leaves it unset.
+- **Screenshot downscale.** Desktop screenshots honor `maxWidth` via the
+  capture clip's `scale` (the Playwright driver instead resizes the
+  viewport; the desktop never resizes the user's live view). Either way
+  the returned image is at most `maxWidth` pixels wide.
+
+## Still deferred (explicit, with reasons)
+
+- **Multiple simultaneously attached desktops** — latest-wins remains.
+  The tunnel's state model is one authoritative inventory per scope;
+  two desktops would need per-attachment inventories, command routing
+  by attachment, and a conflict story for two live views of one tab.
+  Nothing in phase 2 depends on it, and the single-desktop case (the
+  shipped product shape) is unaffected.
+- **SSE announcement instead of long-poll** — not done. The long-poll
+  tunnel is load-bearing and verified end-to-end (25s poll, requestID
+  outcomes, attach TTL heartbeats ride the same calls); swapping the
+  transport risks the working system for a latency nicety the panel's
+  2s state poll already masks. Revisit only if command latency becomes
+  a felt problem.
+- **Screencast for web** — unchanged from the comparison's
+  recommendation; an independent track that does not touch the desktop
+  path.
+- **Cross-frame snapshots on desktop tabs** — the executor still reports
+  the main frame only (phase 1 note); refs remain main-frame. Parity
+  here needs per-frame CDP session routing and is separable from
+  everything above.
 
 ## Risks / open assumptions
 
@@ -353,12 +461,13 @@ Built on branch `desktop-webview` exactly as designed above:
   (attach/commands/result/state/detach) with thin handlers over the host;
   `Browser.PanelState` gained optional `desktop` + `viewport`.
 - `packages/desktop/src/main/browser/` — `tabs.ts` (WebContentsView tab
-  manager, one persistent partition, popup→tab, embed placement with a
-  created-views-only sweep), `executor.ts` (CDP action surface mirroring
-  the Playwright driver's snapshot format and semantics), `cdp.ts`
-  (lazy `webContents.debugger`), `host.ts` (attach/poll/execute/publish
-  client, 2s backoff, 10s publish heartbeat), `embed.ts`. Wired into both
-  sidecar flows in `main/index.ts`, stopped in `killSidecar`, with
+  manager, popup→tab, embed placement with a created-views-only sweep;
+  phase 2 made the partition per-scope), `executor.ts` (CDP action
+  surface mirroring the Playwright driver's snapshot format and
+  semantics), `cdp.ts` (lazy `webContents.debugger`), `host.ts`
+  (attach/poll/execute/publish client, 2s backoff, 10s publish
+  heartbeat), `embed.ts`. Wired into both sidecar flows in
+  `main/index.ts`, stopped in `killSidecar`, with
   `browser-embed-set`/`browser-embed-clear` IPC + preload surface.
 - `packages/app` — `Platform.browserEmbed` contract; BrowserPanel hosts
   the native view via an embed placeholder in desktop mode, freezes to
@@ -373,3 +482,45 @@ the 4 pre-existing i18n parity failures, app test:browser 41/41, and
 typechecks clean for browser/app/desktop (novacode/core show only the
 pre-existing baseline errors). The Electron GUI itself can only be
 verified on Josh's PC.
+
+## Implementation status (phase 2, as built)
+
+Built on `desktop-webview` atop the phase-1 tip, one commit per feature:
+
+- `packages/browser/src/capture.ts` — shared CDP capture wiring
+  (console/network/dialog) exported as `@novacode-ai/browser/capture`;
+  the executor fills it per tab and the protocol-test fake fills the
+  same object, so both real paths are exercised against one shape.
+- Favicon: optional `Browser.Tab.favicon`, desktop
+  `page-favicon-updated`, panel tab strip img.
+- Console/network/dialog/drag: executor actions over the capture state,
+  `Input.dispatchMouseEvent`, `Page.handleJavaScriptDialog`; Driver
+  guards removed (the phase-1 `guardDesktop` list is gone entirely).
+- Files: wire-only `files.deliver` (base64 bytes from the server file
+  registry), executor staging temp dir + `DOM.setFileInputFiles`, drop
+  via file-input assignment or the driver's synthetic DragEvent
+  sequence.
+- Diagnostics: trace/cpu/heap on the executor with stashed auto-stop
+  results; results ride the same base64 file channel as screenshots and
+  are materialized into the file registry by the Driver, so the shared
+  analyzers run server-side for both backends. Lighthouse: real package
+  behind `NOVACODE_DESKTOP_LIGHTHOUSE_CHROME`, honest typed error
+  otherwise.
+- ACL + partitions + restore: attach response carries the server's
+  effective ACL; manager enforces `checkDomain` on open/popup, executor
+  `navigate` consults the inventory hook; `partitionFor(scope)` hashes
+  the scope (no migration from the shared partition); tab layout is
+  persisted debounced to electron-store key `novacode.browser-tabs` /
+  `tabs` and restored deferred (unloaded until first focus/embed).
+- Live inspect: `inspect.start`/`inspect.stop` overlay actions, inspect
+  events over `POST /browser/desktop/inspect` + `DesktopHost` per-scope
+  queues, drained by `Driver.panelSnapshot()` into
+  `PanelState.inspectPick/inspectKeyTabID/inspectCanceledTabID`; the
+  panel engages live inspect on desktop tabs and falls back to
+  freeze-to-still when the Overlay cannot engage.
+
+Verification numbers are in the phase-2 delivery report; the Electron
+GUI behaviors (live inspect interaction, restore across a real restart,
+per-scope cookie isolation with the real app, ACL with a real
+`browser-acl.json`, lighthouse with a real Chrome) remain Josh-only
+checks on his PC.
