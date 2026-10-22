@@ -69,7 +69,7 @@ function resolvePath(directory: string, path: string): string {
 export const definitions: ReadonlyArray<Definition> = [
   define("tabs.list", {
     resources: noResources,
-    run: (driver) => Promise.resolve(done(driver.state())),
+    run: (driver) => driver.fetchState().then(done),
   }),
   define("tabs.open", {
     resources: (input) => (input.url ? [input.url] : []),
