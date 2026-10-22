@@ -35,7 +35,9 @@ export function BrowserPanel() {
     loading: true,
     error: undefined as string | undefined,
     inspecting: false,
-    comment: undefined as { x: number; y: number; ref: string } | undefined,
+    comment: undefined as
+      | { x: number; y: number; ref: string; box?: { x: number; y: number; width: number; height: number } }
+      | undefined,
   })
 
   let container: HTMLDivElement | undefined
@@ -73,12 +75,38 @@ export function BrowserPanel() {
     }
   }
 
+  // Auto-create a single blank tab whenever the panel has none, so the
+  // address bar is usable without pressing the tab strip's "+" first.
+  // Guarded so a create already in flight (or a failing create) cannot loop.
+  let creatingTab = false
+  const ensureTab = async () => {
+    if (creatingTab) return
+    creatingTab = true
+    try {
+      await act((api) => api.open())
+    } finally {
+      creatingTab = false
+    }
+  }
+  createEffect(
+    on(
+      () => store.panel?.tabs.length,
+      (count) => {
+        if (count === 0) void ensureTab()
+      },
+    ),
+  )
+
   onMount(() => {
     void refresh()
     const timer = window.setInterval(() => void refresh(), POLL_MS)
     onCleanup(() => window.clearInterval(timer))
     const stop = makeEventListener(window, "keydown", (event: KeyboardEvent) => {
-      if (event.key === "Escape" && store.inspecting) setStore("inspecting", false)
+      if (event.key !== "Escape") return
+      // Escape dismisses an open comment editor first, then inspect mode,
+      // regardless of where focus currently is.
+      if (store.comment) setStore("comment", undefined)
+      else if (store.inspecting) setStore("inspecting", false)
     })
     onCleanup(stop)
   })
@@ -89,6 +117,18 @@ export function BrowserPanel() {
       () => focusedTab()?.id,
       (id, previous) => {
         if (id && id !== previous && isBlank(focusedTab()?.url)) addressApi?.focus()
+      },
+    ),
+  )
+
+  // Switching the focused tab ends picking and closes any open comment:
+  // both belong to the tab they were started on. (Hiding the panel
+  // unmounts it, which drops this state the same way.)
+  createEffect(
+    on(
+      () => focusedTab()?.id,
+      (id, previous) => {
+        if (previous && id !== previous) setStore({ comment: undefined, inspecting: false })
       },
     ),
   )
@@ -105,27 +145,55 @@ export function BrowserPanel() {
     return act((api) => run(api, tab.id))
   }
 
+  // Whether the open comment editor's draft is empty; a backdrop click
+  // dismisses the editor only when it would not discard a typed draft.
+  let commentDraftEmpty = true
+  // Sequence number for pick requests: only the newest click may open the
+  // comment editor, so a slow earlier pick cannot re-open it after Cancel.
+  let pickSeq = 0
   const onScreenshotClick = async (event: MouseEvent) => {
-    if (!store.inspecting) return
     const tab = focusedTab()
     if (!tab || !img || !container) return
+    // Coordinates are measured against the rendered <img> rect (which is the
+    // letterboxed page image), then scaled into the driver's viewport.
     const rect = img.getBoundingClientRect()
     if (rect.width === 0 || rect.height === 0) return
     const x = Math.round(((event.clientX - rect.left) / rect.width) * VIEWPORT_WIDTH)
     const y = Math.round(((event.clientY - rect.top) / rect.height) * VIEWPORT_HEIGHT)
+    if (!store.inspecting) {
+      // Normal click: forward it to the page so links/buttons work.
+      await act((api) => api.click(tab.id, x, y))
+      return
+    }
+    const seq = ++pickSeq
     try {
-      const { ref } = await api().pick(tab.id, x, y)
-      if (!ref) {
+      const picked = await api().pick(tab.id, x, y)
+      // Drop stale results: inspect mode was exited, a newer pick superseded
+      // this one, or an editor is already open.
+      if (seq !== pickSeq || !store.inspecting || store.comment) return
+      if (!picked.ref) {
         showToast({ title: language.t("browser.error.pick") })
         return
       }
       const box = container.getBoundingClientRect()
+      // The picked element's box, converted from driver viewport pixels
+      // into the same container coordinates the editor is positioned in,
+      // so the overlay can outline the actual element.
+      const outline = picked.box
+        ? {
+            x: rect.left - box.left + (picked.box.x / VIEWPORT_WIDTH) * rect.width,
+            y: rect.top - box.top + (picked.box.y / VIEWPORT_HEIGHT) * rect.height,
+            width: (picked.box.width / VIEWPORT_WIDTH) * rect.width,
+            height: (picked.box.height / VIEWPORT_HEIGHT) * rect.height,
+          }
+        : undefined
+      commentDraftEmpty = true
       setStore({
         inspecting: false,
-        comment: { x: event.clientX - box.left, y: event.clientY - box.top, ref },
+        comment: { x: event.clientX - box.left, y: event.clientY - box.top, ref: picked.ref, box: outline },
       })
     } catch {
-      showToast({ title: language.t("browser.error.pick") })
+      if (seq === pickSeq) showToast({ title: language.t("browser.error.pick") })
     }
   }
 
@@ -167,7 +235,7 @@ export function BrowserPanel() {
       <BrowserTabs
         tabs={store.panel?.tabs ?? []}
         focusedTabID={store.panel?.focusedTabID ?? null}
-        onFocus={(tabID) => void withTab((api, id) => api.focus(tabID))}
+        onFocus={(tabID) => void act((api) => api.focus(tabID))}
         onClose={(tabID) => void act((api) => api.close(tabID))}
         onNew={() => void act((api) => api.open())}
       />
@@ -181,7 +249,7 @@ export function BrowserPanel() {
               icon="arrow-left"
               variant="ghost"
               class="h-7 w-7"
-              disabled={!focusedTab()}
+              disabled={!focusedTab()?.canGoBack}
               onClick={() => void withTab((api, id) => api.back(id))}
               aria-label={language.t("common.goBack")}
             />
@@ -191,7 +259,7 @@ export function BrowserPanel() {
               icon="arrow-right"
               variant="ghost"
               class="h-7 w-7"
-              disabled={!focusedTab()}
+              disabled={!focusedTab()?.canGoForward}
               onClick={() => void withTab((api, id) => api.forward(id))}
               aria-label={language.t("common.goForward")}
             />
@@ -213,7 +281,7 @@ export function BrowserPanel() {
         <BrowserAddressBar
           url={focusedTab()?.url ?? ""}
           recent={store.panel?.recent ?? []}
-          disabled={!focusedTab()}
+          disabled={false}
           onNavigate={(url) => void go(url)}
           apiRef={(exposed) => (addressApi = exposed ?? undefined)}
         />
@@ -236,13 +304,19 @@ export function BrowserPanel() {
               classList={{ "text-v2-icon-icon-accent": store.inspecting }}
             />
           </Tooltip>
-          <DropdownMenu>
+          <DropdownMenu
+            onOpenChange={(open: boolean) => {
+              // The menu and the comment editor are mutually exclusive: the
+              // menu never opens over an open editor.
+              if (open) setStore("comment", undefined)
+            }}
+          >
             <DropdownMenu.Trigger
               as={IconButton}
               icon="menu"
               variant="ghost"
               class="h-7 w-7"
-              disabled={!focusedTab()}
+              disabled={!focusedTab() || !!store.comment}
               aria-label={language.t("browser.menu.options")}
             />
             <DropdownMenu.Portal>
@@ -369,9 +443,24 @@ export function BrowserPanel() {
             <div
               class="absolute inset-0 z-10"
               onClick={(event) => {
-                if (event.target === event.currentTarget) setStore("comment", undefined)
+                // Click-away dismisses only an empty draft; a typed draft
+                // survives until Cancel/submit or Escape.
+                if (event.target === event.currentTarget && commentDraftEmpty) setStore("comment", undefined)
               }}
             >
+              <Show when={comment().box}>
+                {(box) => (
+                  <div
+                    class="pointer-events-none absolute rounded-sm border-2 border-v2-icon-icon-accent"
+                    style={{
+                      left: `${box().x}px`,
+                      top: `${box().y}px`,
+                      width: `${box().width}px`,
+                      height: `${box().height}px`,
+                    }}
+                  />
+                )}
+              </Show>
               <BrowserCommentEditor
                 x={comment().x}
                 y={comment().y}
@@ -379,6 +468,7 @@ export function BrowserPanel() {
                 containerHeight={container?.clientHeight ?? 0}
                 onSubmit={submitComment}
                 onCancel={() => setStore("comment", undefined)}
+                onDraftChange={(empty) => (commentDraftEmpty = empty)}
               />
             </div>
           )}
