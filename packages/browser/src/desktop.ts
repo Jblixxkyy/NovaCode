@@ -97,6 +97,25 @@ export interface DesktopStillResult {
   readonly data: string
 }
 
+/** A diagnostics capture produced on the desktop; the server materializes it like a screenshot. */
+export interface DesktopFileData {
+  readonly name: string
+  readonly mime: string
+  readonly data: string
+}
+
+export interface DesktopCaptureResult {
+  readonly tab: Browser.Tab
+  readonly file: DesktopFileData
+}
+
+export interface DesktopLighthouseResult {
+  readonly tab: Browser.Tab
+  readonly scores: Array<{ id: string; title: string; score: number | null }>
+  readonly failures: Array<{ id: string; title: string; description: string }>
+  readonly files: DesktopFileData[]
+}
+
 export class DesktopError extends Error {
   readonly code: "unsupported" | "error" | "detached" | "timeout" | "unavailable"
   constructor(code: DesktopError["code"], message: string) {

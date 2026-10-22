@@ -28,6 +28,8 @@ interface FakeTab {
   boxes: Map<string, { x: number; y: number; width: number; height: number }>
   capture: BrowserCapture.TabCapture
   captureSession: BrowserCapture.CaptureSession
+  trace?: { chunks: unknown[]; startedAt: number; onData: (params: { value: unknown[] }) => void }
+  cpu?: { startedAt: number }
 }
 
 /** Adapt a Playwright CDPSession to the shared capture session shape. */
@@ -379,6 +381,102 @@ class FakeDesktop {
         const data = await tab.page.screenshot({ type: "png" })
         return { mime: "image/png", data: Buffer.from(data).toString("base64") }
       }
+      case "trace.start": {
+        const tab = this.require(action.tabID)
+        if (tab.trace) throw new Error("A trace recording is already running for this tab.")
+        const chunks: unknown[] = []
+        const onData = (params: { value: unknown[] }) => chunks.push(...params.value)
+        tab.session.on("Tracing.dataCollected", onData)
+        await tab.session.send("Tracing.start", {
+          categories: "devtools.timeline,v8.execute,blink.console,loading",
+          options: "sampling-frequency=10000",
+        })
+        tab.trace = { chunks, startedAt: Date.now(), onData }
+        return { tab: this.tab(tab), recording: true }
+      }
+      case "trace.stop": {
+        const tab = this.require(action.tabID)
+        const trace = tab.trace
+        if (!trace) throw new Error("No trace recording is running for this tab.")
+        tab.trace = undefined
+        const done = new Promise<void>((resolve) => {
+          const onComplete = () => {
+            tab.session.off("Tracing.tracingComplete", onComplete)
+            resolve()
+          }
+          tab.session.on("Tracing.tracingComplete", onComplete)
+          setTimeout(resolve, 10_000)
+        })
+        await tab.session.send("Tracing.end")
+        await done
+        tab.session.off("Tracing.dataCollected", trace.onData)
+        return {
+          tab: this.tab(tab),
+          file: {
+            name: `trace-${Date.now()}.json`,
+            mime: "application/json",
+            data: Buffer.from(JSON.stringify({ traceEvents: trace.chunks }), "utf8").toString("base64"),
+          },
+          durationMs: Date.now() - trace.startedAt,
+          incomplete: false,
+        }
+      }
+      case "cpu.start": {
+        const tab = this.require(action.tabID)
+        if (tab.cpu) throw new Error("CPU sampling is already running for this tab.")
+        await tab.session.send("Profiler.enable")
+        await tab.session.send("Profiler.setSamplingInterval", { interval: 100 }).catch(() => {})
+        await tab.session.send("Profiler.start")
+        tab.cpu = { startedAt: Date.now() }
+        return { tab: this.tab(tab), recording: true }
+      }
+      case "cpu.stop": {
+        const tab = this.require(action.tabID)
+        const cpu = tab.cpu
+        if (!cpu) throw new Error("CPU sampling is not running for this tab.")
+        tab.cpu = undefined
+        const result = (await tab.session.send("Profiler.stop")) as { profile: unknown }
+        return {
+          tab: this.tab(tab),
+          file: {
+            name: `cpu-${Date.now()}.cpuprofile`,
+            mime: "application/json",
+            data: Buffer.from(JSON.stringify(result.profile), "utf8").toString("base64"),
+          },
+          durationMs: Date.now() - cpu.startedAt,
+        }
+      }
+      case "heap.snapshot": {
+        const tab = this.require(action.tabID)
+        await tab.session.send("HeapProfiler.enable")
+        const chunks: string[] = []
+        const onChunk = (params: { chunk: string }) => chunks.push(params.chunk)
+        tab.session.on("HeapProfiler.addHeapSnapshotChunk", onChunk)
+        try {
+          await tab.session.send("HeapProfiler.takeHeapSnapshot", { reportProgress: false })
+        } finally {
+          tab.session.off("HeapProfiler.addHeapSnapshotChunk", onChunk)
+        }
+        return {
+          tab: this.tab(tab),
+          file: {
+            name: `heap-${Date.now()}.heapsnapshot`,
+            mime: "application/json",
+            data: Buffer.from(chunks.join(""), "utf8").toString("base64"),
+          },
+        }
+      }
+      case "lighthouse": {
+        const tab = this.require(action.tabID)
+        const url = tab.page.url()
+        if (!/^https?:/.test(url)) throw new Error(`Lighthouse needs an http(s) page, got ${url}`)
+        // Mirror the real executor: no standalone Chrome configured in tests.
+        if (!process.env.NOVACODE_DESKTOP_LIGHTHOUSE_CHROME)
+          throw new Error(
+            "Lighthouse is not available on desktop tabs in this build: an Electron webview exposes no remote-debugging port for Lighthouse to attach to. Set NOVACODE_DESKTOP_LIGHTHOUSE_CHROME to a Chrome/Chromium executable to run audits from the desktop, or run browser.lighthouse when no desktop is attached.",
+          )
+        throw new Error("Fake desktop never runs lighthouse")
+      }
       case "dialog": {
         const tab = this.require(action.tabID)
         if (action.action === "get") return { tab: this.tab(tab), dialog: tab.capture.dialog ?? null }
@@ -599,6 +697,34 @@ describe("desktop tunnel protocol with a routed Driver", () => {
     const dropped = (await driver.evaluate(tab.id, { script: "window.__dropped" })).value
     expect(dropped).toEqual(["note.txt:12"])
 
+    // Diagnostics produce captures the Driver materializes server-side,
+    // and the server-side analyzers read them back unchanged.
+    await driver.traceStart(tab.id, 5_000)
+    await driver.evaluate(tab.id, { script: "document.title" })
+    const trace = await driver.traceStop(tab.id)
+    expect(trace.files).toHaveLength(1)
+    const traceAnalysis = await driver.traceAnalyze(tab.id, { fileID: trace.files[0]!.id })
+    expect(traceAnalysis.metrics[0]?.name).toBe("events")
+
+    await driver.cpuStart(tab.id)
+    await driver.evaluate(tab.id, {
+      script: "(() => { let x = 0; for (let i = 0; i < 1000000; i++) x += i; return x })()",
+    })
+    const cpu = await driver.cpuStop(tab.id)
+    expect(cpu.files).toHaveLength(1)
+    const cpuAnalysis = await driver.cpuAnalyze(tab.id, { fileID: cpu.files[0]!.id })
+    expect(Array.isArray(cpuAnalysis.functions)).toBe(true)
+
+    const heap = await driver.heapSnapshot(tab.id)
+    expect(heap.files).toHaveLength(1)
+    const heapSummary = await driver.heapSummary(tab.id, { fileID: heap.files[0]!.id })
+    expect(heapSummary.nodes).toBeGreaterThan(0)
+    const heapQuery = await driver.heapQuery(tab.id, { fileID: heap.files[0]!.id, name: "Object" })
+    expect(Array.isArray(heapQuery.nodes)).toBe(true)
+
+    // Lighthouse reports its missing prerequisite instead of a fake audit.
+    await expect(driver.lighthouse(tab.id)).rejects.toThrow(/NOVACODE_DESKTOP_LIGHTHOUSE_CHROME/)
+
     const after = await driver.click(tab.id, { ref: linkRef! })
     expect(after.url).toBe(`${base}/two`)
     expect(after.title).toBe("Fake Two")
@@ -612,7 +738,8 @@ describe("desktop tunnel protocol with a routed Driver", () => {
     const shot = await driver.screenshot(tab.id)
     expect(shot.files).toHaveLength(1)
     expect(shot.data.byteLength).toBeGreaterThan(100)
-    expect(driver.filesList(tab.id).files).toHaveLength(1)
+    // Screenshot + trace + cpu + heap captures, all materialized server-side.
+    expect(driver.filesList(tab.id).files).toHaveLength(4)
     const got = await driver.filesGet(tab.id, shot.files[0]!.id)
     expect(got.files[0]?.id).toBe(shot.files[0]?.id)
 

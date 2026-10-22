@@ -60,7 +60,52 @@ export interface TabHandle {
   /** Console/network/dialog capture buffers, wired lazily by ensureCapture. */
   capture?: BrowserCapture.TabCapture
   captureReady?: Promise<void>
+  /** In-flight trace recording (Tracing.dataCollected chunks accumulate here). */
+  trace?: {
+    chunks: unknown[]
+    startedAt: number
+    onData: (params: Record<string, unknown>) => void
+    timer: ReturnType<typeof setTimeout>
+  }
+  /** A trace that hit its duration bound and waits for trace.stop to collect it. */
+  traceResult?: { chunks: unknown[]; durationMs: number; incomplete: boolean }
+  cpu?: { startedAt: number; timer: ReturnType<typeof setTimeout> }
+  cpuResult?: { profile: unknown; durationMs: number }
   boxes: Map<string, { x: number; y: number; width: number; height: number }>
+}
+
+/** End a running trace and stash its chunks for trace.stop (also the auto-stop path). */
+async function finishTrace(handle: TabHandle): Promise<void> {
+  const trace = handle.trace
+  if (!trace) return
+  handle.trace = undefined
+  clearTimeout(trace.timer)
+  const cdp = handle.contents.cdp
+  let incomplete = false
+  const done = new Promise<void>((resolve) => {
+    const onComplete = () => {
+      cdp.off("Tracing.tracingComplete", onComplete)
+      resolve()
+    }
+    cdp.on("Tracing.tracingComplete", onComplete)
+    setTimeout(resolve, 10_000).unref?.()
+  })
+  await cdp.send("Tracing.end").catch(() => {
+    incomplete = true
+  })
+  await done
+  cdp.off("Tracing.dataCollected", trace.onData)
+  handle.traceResult = { chunks: trace.chunks, durationMs: Date.now() - trace.startedAt, incomplete }
+}
+
+/** Stop CPU sampling and stash the profile for cpu.stop (also the auto-stop path). */
+async function finishCpu(handle: TabHandle): Promise<void> {
+  const cpu = handle.cpu
+  if (!cpu) return
+  handle.cpu = undefined
+  clearTimeout(cpu.timer)
+  const result = (await handle.contents.cdp.send("Profiler.stop")) as { profile: unknown }
+  handle.cpuResult = { profile: result.profile, durationMs: Date.now() - cpu.startedAt }
 }
 
 /**
@@ -758,6 +803,165 @@ export async function executeDesktopAction(
         [action.files],
       )
       return tabOf(handle)
+    }
+    case "trace.start": {
+      const handle = requireTab(inventory, scope, action.tabID)
+      if (handle.trace || handle.traceResult)
+        throw new Error("A trace recording is already running for this tab.")
+      const chunks: unknown[] = []
+      const onData = (params: Record<string, unknown>) => {
+        if (Array.isArray(params.value)) chunks.push(...params.value)
+      }
+      const cdp = handle.contents.cdp
+      cdp.on("Tracing.dataCollected", onData)
+      const bound = Math.min(action.durationMs ?? 30_000, 30_000)
+      try {
+        await cdp.send("Tracing.start", {
+          categories: "devtools.timeline,v8.execute,blink.console,loading",
+          options: "sampling-frequency=10000",
+        })
+      } catch (error) {
+        cdp.off("Tracing.dataCollected", onData)
+        throw new Error(`Cannot start trace: ${error instanceof Error ? error.message : String(error)}`)
+      }
+      const timer = setTimeout(() => void finishTrace(handle).catch(() => {}), bound)
+      timer.unref?.()
+      handle.trace = { chunks, startedAt: Date.now(), onData, timer }
+      return { tab: tabOf(handle), recording: true }
+    }
+    case "trace.stop": {
+      const handle = requireTab(inventory, scope, action.tabID)
+      if (handle.trace) await finishTrace(handle)
+      const result = handle.traceResult
+      if (!result) throw new Error("No trace recording is running for this tab.")
+      handle.traceResult = undefined
+      const data = Buffer.from(JSON.stringify({ traceEvents: result.chunks }), "utf8")
+      if (data.byteLength > Browser.MAX_FILE_BYTES)
+        throw new Error("Trace exceeds the 5 MiB transfer limit. Record for a shorter duration.")
+      return {
+        tab: tabOf(handle),
+        file: { name: `trace-${Date.now()}.json`, mime: "application/json", data: data.toString("base64") },
+        durationMs: result.durationMs,
+        incomplete: result.incomplete,
+      }
+    }
+    case "cpu.start": {
+      const handle = requireTab(inventory, scope, action.tabID)
+      if (handle.cpu || handle.cpuResult) throw new Error("CPU sampling is already running for this tab.")
+      const cdp = handle.contents.cdp
+      await cdp.send("Profiler.enable").catch((error) => {
+        throw new Error(`Cannot enable profiler: ${error instanceof Error ? error.message : String(error)}`)
+      })
+      await cdp.send("Profiler.setSamplingInterval", { interval: 100 }).catch(() => {})
+      await cdp.send("Profiler.start").catch((error) => {
+        throw new Error(`Cannot start CPU sampling: ${error instanceof Error ? error.message : String(error)}`)
+      })
+      const timer = setTimeout(() => void finishCpu(handle).catch(() => {}), 30_000)
+      timer.unref?.()
+      handle.cpu = { startedAt: Date.now(), timer }
+      return { tab: tabOf(handle), recording: true }
+    }
+    case "cpu.stop": {
+      const handle = requireTab(inventory, scope, action.tabID)
+      if (handle.cpu) await finishCpu(handle).catch((error) => {
+        throw new Error(`Cannot stop CPU sampling: ${error instanceof Error ? error.message : String(error)}`)
+      })
+      const result = handle.cpuResult
+      if (!result) throw new Error("CPU sampling is not running for this tab.")
+      handle.cpuResult = undefined
+      return {
+        tab: tabOf(handle),
+        file: {
+          name: `cpu-${Date.now()}.cpuprofile`,
+          mime: "application/json",
+          data: Buffer.from(JSON.stringify(result.profile), "utf8").toString("base64"),
+        },
+        durationMs: result.durationMs,
+      }
+    }
+    case "heap.snapshot": {
+      const handle = requireTab(inventory, scope, action.tabID)
+      const cdp = handle.contents.cdp
+      await cdp.send("HeapProfiler.enable").catch((error) => {
+        throw new Error(`Cannot enable heap profiler: ${error instanceof Error ? error.message : String(error)}`)
+      })
+      const chunks: string[] = []
+      const onChunk = (params: Record<string, unknown>) => chunks.push(String(params.chunk ?? ""))
+      cdp.on("HeapProfiler.addHeapSnapshotChunk", onChunk)
+      try {
+        await cdp.send("HeapProfiler.takeHeapSnapshot", { reportProgress: false })
+      } catch (error) {
+        throw new Error(`Heap snapshot failed: ${error instanceof Error ? error.message : String(error)}`)
+      } finally {
+        cdp.off("HeapProfiler.addHeapSnapshotChunk", onChunk)
+      }
+      const data = Buffer.from(chunks.join(""), "utf8")
+      if (data.byteLength > Browser.MAX_FILE_BYTES)
+        throw new Error("Heap snapshot exceeds the 5 MiB transfer limit.")
+      return {
+        tab: tabOf(handle),
+        file: { name: `heap-${Date.now()}.heapsnapshot`, mime: "application/json", data: data.toString("base64") },
+      }
+    }
+    case "lighthouse": {
+      const handle = requireTab(inventory, scope, action.tabID)
+      const url = handle.contents.getURL()
+      if (!/^https?:/.test(url)) throw new Error(`Lighthouse needs an http(s) page, got ${url}`)
+      // Lighthouse needs a Chrome it can launch and drive over a debugging
+      // port; an Electron WebContentsView exposes no such port, so the audit
+      // runs against a standalone Chrome the user points the desktop at.
+      const chromePath = process.env.NOVACODE_DESKTOP_LIGHTHOUSE_CHROME
+      if (!chromePath)
+        throw new Error(
+          "Lighthouse is not available on desktop tabs in this build: an Electron webview exposes no remote-debugging port for Lighthouse to attach to. Set NOVACODE_DESKTOP_LIGHTHOUSE_CHROME to a Chrome/Chromium executable to run audits from the desktop, or run browser.lighthouse when no desktop is attached.",
+        )
+      const previousChromePath = process.env.CHROME_PATH
+      process.env.CHROME_PATH = chromePath
+      try {
+        const { default: lighthouse } = await import("lighthouse")
+        const result = (await lighthouse(url, {
+          onlyCategories: ["accessibility", "best-practices", "seo"],
+          output: ["json", "html"],
+        })) as unknown as {
+          lhr: {
+            categories: Record<string, { id: string; title: string; score: number | null }>
+            audits: Record<
+              string,
+              { id: string; title: string; description: string; score: number | null; scoreDisplayMode: string }
+            >
+          }
+          report: [string, string]
+        }
+        return {
+          tab: tabOf(handle),
+          scores: Object.values(result.lhr.categories).map((category) => ({
+            id: category.id,
+            title: category.title,
+            score: category.score,
+          })),
+          failures: Object.values(result.lhr.audits)
+            .filter((audit) => audit.score !== null && audit.score < 0.9 && audit.scoreDisplayMode !== "notApplicable")
+            .slice(0, 50)
+            .map((audit) => ({ id: audit.id, title: audit.title, description: audit.description.slice(0, 2000) })),
+          files: [
+            {
+              name: `lighthouse-${Date.now()}.json`,
+              mime: "application/json",
+              data: Buffer.from(result.report[0] ?? "{}", "utf8").toString("base64"),
+            },
+            {
+              name: `lighthouse-${Date.now()}.html`,
+              mime: "text/html",
+              data: Buffer.from(result.report[1] ?? "", "utf8").toString("base64"),
+            },
+          ],
+        }
+      } catch (error) {
+        throw new Error(`Lighthouse audit failed: ${error instanceof Error ? error.message : String(error)}`)
+      } finally {
+        if (previousChromePath === undefined) delete process.env.CHROME_PATH
+        else process.env.CHROME_PATH = previousChromePath
+      }
     }
     case "network.get": {
       const handle = requireTab(inventory, scope, action.tabID)

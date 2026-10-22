@@ -43,6 +43,21 @@ class FakeCdp implements CdpSession {
         return { cssContentSize: { width: 800, height: 2000 } }
       case "Network.getResponseBody":
         return { body: `{"ok":true}`, base64Encoded: false }
+      case "Tracing.end":
+        this.emit("Tracing.tracingComplete", {})
+        return {}
+      case "Profiler.stop":
+        return {
+          profile: {
+            nodes: [{ id: 1, hitCount: 3, callFrame: { functionName: "work", url: "https://example.com/a.js", lineNumber: 7 } }],
+            startTime: 0,
+            endTime: 100_000,
+          },
+        }
+      case "HeapProfiler.takeHeapSnapshot":
+        this.emit("HeapProfiler.addHeapSnapshotChunk", { chunk: `{"snapshot":{"node_count":1},` })
+        this.emit("HeapProfiler.addHeapSnapshotChunk", { chunk: `"nodes":[]}` })
+        return {}
       case "Runtime.callFunctionOn": {
         const declaration = String(params?.functionDeclaration ?? "")
         if (declaration.includes("tagName")) return { result: { value: this.elementKind } }
@@ -494,6 +509,75 @@ describe("executeDesktopAction", () => {
       action: "get",
     })) as { dialog: unknown }
     expect(closed.dialog).toBeNull()
+  })
+
+  test("trace start/stop round-trips CDP chunks into a trace file payload", async () => {
+    const { cdp, inventory } = setup()
+    const handle = await inventory.open("/work", "https://example.com", true)
+    await expect(
+      executeDesktopAction(inventory, "/work", { type: "trace.stop", tabID: handle.id as never }),
+    ).rejects.toThrow(/No trace recording is running/)
+    const started = (await executeDesktopAction(inventory, "/work", {
+      type: "trace.start",
+      tabID: handle.id as never,
+    })) as { recording: boolean }
+    expect(started.recording).toBe(true)
+    expect(cdp.calls.some((call) => call.method === "Tracing.start")).toBe(true)
+    cdp.emit("Tracing.dataCollected", { value: [{ name: "FunctionCall", dur: 1200 }] })
+    cdp.emit("Tracing.dataCollected", { value: [{ name: "Paint", dur: 300 }] })
+    const stopped = (await executeDesktopAction(inventory, "/work", {
+      type: "trace.stop",
+      tabID: handle.id as never,
+    })) as { file: { name: string; mime: string; data: string }; incomplete: boolean }
+    expect(stopped.incomplete).toBe(false)
+    expect(stopped.file.name).toMatch(/^trace-\d+\.json$/)
+    const parsed = JSON.parse(Buffer.from(stopped.file.data, "base64").toString("utf8")) as {
+      traceEvents: Array<{ name: string }>
+    }
+    expect(parsed.traceEvents.map((event) => event.name)).toEqual(["FunctionCall", "Paint"])
+  })
+
+  test("cpu start/stop returns the profiler output as a .cpuprofile payload", async () => {
+    const { inventory } = setup()
+    const handle = await inventory.open("/work", "https://example.com", true)
+    await executeDesktopAction(inventory, "/work", { type: "cpu.start", tabID: handle.id as never })
+    const stopped = (await executeDesktopAction(inventory, "/work", {
+      type: "cpu.stop",
+      tabID: handle.id as never,
+    })) as { file: { name: string; data: string }; durationMs: number }
+    expect(stopped.file.name).toMatch(/^cpu-\d+\.cpuprofile$/)
+    const profile = JSON.parse(Buffer.from(stopped.file.data, "base64").toString("utf8")) as {
+      nodes: Array<{ callFrame: { functionName: string } }>
+    }
+    expect(profile.nodes[0]?.callFrame.functionName).toBe("work")
+    await expect(
+      executeDesktopAction(inventory, "/work", { type: "cpu.stop", tabID: handle.id as never }),
+    ).rejects.toThrow(/CPU sampling is not running/)
+  })
+
+  test("heap.snapshot joins CDP chunks into a .heapsnapshot payload", async () => {
+    const { inventory } = setup()
+    const handle = await inventory.open("/work", "https://example.com", true)
+    const result = (await executeDesktopAction(inventory, "/work", {
+      type: "heap.snapshot",
+      tabID: handle.id as never,
+    })) as { file: { name: string; data: string } }
+    expect(result.file.name).toMatch(/^heap-\d+\.heapsnapshot$/)
+    expect(Buffer.from(result.file.data, "base64").toString("utf8")).toBe(`{"snapshot":{"node_count":1},"nodes":[]}`)
+  })
+
+  test("lighthouse without a standalone Chrome reports its prerequisite honestly", async () => {
+    const { inventory } = setup()
+    const handle = await inventory.open("/work", "https://example.com", true)
+    const previous = process.env.NOVACODE_DESKTOP_LIGHTHOUSE_CHROME
+    delete process.env.NOVACODE_DESKTOP_LIGHTHOUSE_CHROME
+    try {
+      await expect(
+        executeDesktopAction(inventory, "/work", { type: "lighthouse", tabID: handle.id as never }),
+      ).rejects.toThrow(/NOVACODE_DESKTOP_LIGHTHOUSE_CHROME/)
+    } finally {
+      if (previous !== undefined) process.env.NOVACODE_DESKTOP_LIGHTHOUSE_CHROME = previous
+    }
   })
 
   test("unsupported actions raise DesktopUnsupportedError", async () => {
