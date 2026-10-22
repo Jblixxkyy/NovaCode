@@ -107,6 +107,10 @@ class ElectronPageContents implements PageContents {
       ? { width: bounds.width, height: bounds.height }
       : { width: 1280, height: 800 }
   }
+
+  capturePage() {
+    return this.webContents.capturePage()
+  }
 }
 
 function isAllowedURL(url: string): boolean {

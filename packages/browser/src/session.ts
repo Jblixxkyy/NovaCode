@@ -65,6 +65,9 @@ interface NetworkRecord {
 
 const MAX_LOG_ENTRIES = 500
 const DEFAULT_NAV_TIMEOUT = 30_000
+/** Panel polls must answer fast: a still or state fetch that stalls must never block the panel's state. */
+const PANEL_STILL_TIMEOUT_MS = 4_000
+const PANEL_STATE_TIMEOUT_MS = 5_000
 
 /** Server-side Playwright driver implementing the 44 browser operations. */
 export class Driver {
@@ -98,10 +101,15 @@ export class Driver {
     return BrowserDesktop.host.attached()
   }
 
-  private async forwardDesktop<T>(action: BrowserDesktop.DesktopAction): Promise<T> {
-    return BrowserDesktop.host.execute(this.options.scope, action).catch((error) => {
+  private async forwardDesktop<T>(action: BrowserDesktop.DesktopAction, timeoutMs?: number): Promise<T> {
+    return BrowserDesktop.host.execute(this.options.scope, action, timeoutMs).catch((error) => {
       throw BrowserError.from(error, "Desktop browser")
     }) as Promise<T>
+  }
+
+  /** fetchState() under the panel's short bound; the agent tools' fetchState() keeps the tunnel default. */
+  private async panelState(): Promise<Browser.State> {
+    return this.forwardDesktop<Browser.State>({ type: "tabs.list" }, PANEL_STATE_TIMEOUT_MS)
   }
 
   private guardDesktop(name: string): void {
@@ -1601,14 +1609,17 @@ export class Driver {
   }> {
     if (this.desktopAttached) {
       const published = BrowserDesktop.host.stateFor(this.options.scope)
-      const state = published?.state ?? (await this.fetchState())
+      const state = published?.state ?? (await this.panelState())
       this.foldRecent(state)
       const focused = state.focusedTabID
       if (!focused) return { ...state, recent: this.recent, screenshot: undefined, desktop: true, viewport: published?.viewport }
-      const still = await this.forwardDesktop<BrowserDesktop.DesktopStillResult>({
-        type: "panelStill",
-        tabID: focused,
-      }).catch(() => undefined)
+      const still = await this.forwardDesktop<BrowserDesktop.DesktopStillResult>(
+        {
+          type: "panelStill",
+          tabID: focused,
+        },
+        PANEL_STILL_TIMEOUT_MS,
+      ).catch(() => undefined)
       return { ...state, recent: this.recent, screenshot: still, desktop: true, viewport: published?.viewport }
     }
     const state = this.state()
