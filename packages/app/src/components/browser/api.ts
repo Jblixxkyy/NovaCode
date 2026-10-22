@@ -29,7 +29,12 @@ export interface BrowserApi {
   stop: (tabID: string) => Promise<BrowserPanelState>
   focus: (tabID: string) => Promise<BrowserPanelState>
   close: (tabID: string) => Promise<BrowserPanelState>
-  pick: (tabID: string, x: number, y: number) => Promise<{ ref?: string }>
+  pick: (
+    tabID: string,
+    x: number,
+    y: number,
+  ) => Promise<{ ref?: string; box?: { x: number; y: number; width: number; height: number } }>
+  click: (tabID: string, x: number, y: number) => Promise<BrowserPanelState>
   clearHistory: () => Promise<BrowserPanelState>
 }
 
@@ -84,7 +89,12 @@ export function createBrowserApi(input: {
     focus: tabAction("/browser/focus"),
     close: tabAction("/browser/close"),
     pick: (tabID: string, x: number, y: number) =>
-      call<{ ref?: string }>("/browser/pick", { tabID, x, y }),
+      call<{ ref?: string; box?: { x: number; y: number; width: number; height: number } }>("/browser/pick", {
+        tabID,
+        x,
+        y,
+      }),
+    click: (tabID: string, x: number, y: number) => call<BrowserPanelState>("/browser/click", { tabID, x, y }),
     clearHistory: () => call<BrowserPanelState>("/browser/clear-history", {}),
   }
 }

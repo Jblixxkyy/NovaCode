@@ -91,8 +91,15 @@ export const browserHandlers = HttpApiBuilder.group(InstanceHttpApi, "browser", 
     }) {
       const service = yield* driver()
       yield* Effect.promise(() => service.snapshot(ctx.payload.tabID, { boxes: true }))
-      const ref = yield* Effect.promise(() => service.refAtPoint(ctx.payload.tabID, ctx.payload.x, ctx.payload.y))
-      return { ref }
+      return yield* Effect.promise(() => service.pickAtPoint(ctx.payload.tabID, ctx.payload.x, ctx.payload.y))
+    })
+
+    const click = Effect.fn("BrowserHttpApi.click")(function* (ctx: {
+      payload: { tabID: string; x: number; y: number }
+    }) {
+      const service = yield* driver()
+      yield* Effect.promise(() => service.clickAtPoint(ctx.payload.tabID, { x: ctx.payload.x, y: ctx.payload.y }))
+      return yield* Effect.promise(() => service.panelSnapshot())
     })
 
     const clearHistory = Effect.fn("BrowserHttpApi.clearHistory")(function* () {
@@ -112,6 +119,7 @@ export const browserHandlers = HttpApiBuilder.group(InstanceHttpApi, "browser", 
       .handle("focus", focus)
       .handle("close", close)
       .handle("pick", pick)
+      .handle("click", click)
       .handle("clearHistory", clearHistory)
   }),
 ).pipe(Layer.provide(locationServiceMapLayer))
