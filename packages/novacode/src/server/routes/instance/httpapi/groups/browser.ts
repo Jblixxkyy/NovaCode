@@ -20,6 +20,15 @@ export const BrowserPanelState = Schema.Struct({
       data: Schema.String,
     }),
   ),
+  // Present when a desktop is attached and serving the panel: the page is a
+  // live webview whose on-screen size is `viewport` CSS pixels.
+  desktop: Schema.optional(Schema.Boolean),
+  viewport: Schema.optional(
+    Schema.Struct({
+      width: Schema.Number,
+      height: Schema.Number,
+    }),
+  ),
 }).annotate({ identifier: "Browser.PanelState" })
 
 export const BrowserTabIDPayload = Schema.Struct({
