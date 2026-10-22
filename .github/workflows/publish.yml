@@ -68,6 +68,8 @@ jobs:
 
           git add $pkgPath
           git commit -m "chore(desktop): bump to $next" --no-verify
+          git pull --rebase origin main
+          if ($LASTEXITCODE -ne 0) { exit 1 }
           git tag "v$next"
           git push origin HEAD:main --tags --no-verify
           echo "VERSION=$next" >> $env:GITHUB_ENV
