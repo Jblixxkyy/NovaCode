@@ -29,6 +29,13 @@ export type UpdaterAPI = {
   install: () => Promise<void>
 }
 
+export type BrowserEmbedInput = {
+  scope: string
+  tabID: string | null
+  rect: { x: number; y: number; width: number; height: number }
+  visible: boolean
+}
+
 export type LinuxDisplayBackend = "wayland" | "auto"
 export type TitlebarTheme = {
   mode: "light" | "dark"
@@ -115,4 +122,6 @@ export type ElectronAPI = {
   setNativeTranslations: (bundle: DesktopNativeBundle) => Promise<void>
   getDesktopSharingEnabled: () => Promise<boolean>
   setDesktopSharingEnabled: (enabled: boolean) => Promise<void>
+  browserEmbedSet: (input: BrowserEmbedInput) => void
+  browserEmbedClear: () => void
 }

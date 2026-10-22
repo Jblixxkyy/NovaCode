@@ -135,6 +135,8 @@ const api: ElectronAPI = {
   setNativeTranslations: (bundle) => ipcRenderer.invoke("set-native-translations", bundle),
   getDesktopSharingEnabled: () => ipcRenderer.invoke("get-desktop-sharing-enabled"),
   setDesktopSharingEnabled: (enabled: boolean) => ipcRenderer.invoke("set-desktop-sharing-enabled", enabled),
+  browserEmbedSet: (input) => ipcRenderer.send("browser-embed-set", input),
+  browserEmbedClear: () => ipcRenderer.send("browser-embed-clear"),
 }
 
 contextBridge.exposeInMainWorld("api", api)

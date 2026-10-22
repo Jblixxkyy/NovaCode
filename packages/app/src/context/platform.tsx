@@ -121,6 +121,24 @@ type PlatformBase = {
 
   /** Record a fatal renderer error in platform logs (desktop only) */
   recordFatalRendererError?(error: FatalRendererErrorLog): Promise<void>
+
+  /**
+   * Native browser embed (desktop only): the browser panel reports the
+   * page area's rect so the main process can place the live webview tab
+   * view there. `visible: false` freezes/hides the view (the panel shows
+   * a still frame) while overlays such as the comment editor are open.
+   */
+  browserEmbed?: {
+    set(input: BrowserEmbedInput): void
+    clear(): void
+  }
+}
+
+export type BrowserEmbedInput = {
+  scope: string
+  tabID: string | null
+  rect: { x: number; y: number; width: number; height: number }
+  visible: boolean
 }
 
 export type Platform = PlatformBase &

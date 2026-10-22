@@ -52,6 +52,9 @@ import { setNativeTranslations } from "./native-translations"
 import { cleanupWebAppProcesses } from "./desktop-menu-actions"
 import { getStore } from "./store"
 import { parseAutoAccept, startPermissionAutoResponder } from "./permission-auto-responder"
+import { startBrowserHost, type BrowserHostClient } from "./browser/host"
+import { browserTabs } from "./browser/tabs"
+import { clearBrowserEmbed, setBrowserEmbed } from "./browser/embed"
 
 const APP_NAMES: Record<string, string> = {
   dev: "NovaCode Dev",
@@ -70,6 +73,7 @@ const jsCallStackFeature = "DocumentPolicyIncludeJSCallStacksInCrashReports"
 let logger: ReturnType<typeof initLogging>
 let server: SidecarListener | null = null
 let permissionAutoResponder: { stop: () => Promise<void> } | null = null
+let browserHost: BrowserHostClient | null = null
 
 const GLOBAL_STORAGE = "novacode.global.dat"
 
@@ -85,6 +89,19 @@ function startPermissionAutoAccept(url: string, password: string) {
     password,
     readAutoAccept: () => parseAutoAccept(getStore(GLOBAL_STORAGE).get("permission")),
     log: (message, meta) => writeLog("permission", message, meta),
+  })
+}
+
+// Attaches this desktop's webview browser to the local sidecar: while the
+// attachment is live, browser tools run against these WebContentsView tabs
+// instead of the server's Playwright driver (see plans/desktop-webview-plan.md).
+function startBrowserHostClient(url: string, username: string, password: string) {
+  browserHost = startBrowserHost({
+    url,
+    username,
+    password,
+    manager: browserTabs,
+    log: (message, meta) => writeLog("browser", message, meta),
   })
 }
 
@@ -157,6 +174,9 @@ async function killSidecar() {
   const responder = permissionAutoResponder
   permissionAutoResponder = null
   await responder?.stop()
+  const host = browserHost
+  browserHost = null
+  await host?.stop()
   if (!server) return
   const current = server
   server = null
@@ -386,6 +406,8 @@ const main = Effect.gen(function* () {
     },
     getDesktopSharingEnabled: () => getDesktopSharingEnabled(),
     setDesktopSharingEnabled: (enabled) => setDesktopSharingEnabled(enabled),
+    browserEmbedSet: (win, input) => setBrowserEmbed(win, input),
+    browserEmbedClear: (win) => clearBrowserEmbed(win),
   })
   registerWslIpcHandlers(wslServers)
   void updater.start()
@@ -414,6 +436,7 @@ const main = Effect.gen(function* () {
         username: sidecar.username,
         password: sidecar.password,
       })
+      startBrowserHostClient(sidecar.url, sidecar.username, sidecar.password)
       writeDesktopDiscovery({ url: sidecar.url, username: sidecar.username, password: sidecar.password })
 
       if (process.platform === "win32") {
@@ -462,6 +485,7 @@ const main = Effect.gen(function* () {
     )
     server = listener
     startPermissionAutoAccept(url, password)
+    startBrowserHostClient(url, "novacode", password)
     yield* Deferred.succeed(serverReady, {
       url,
       username: "novacode",
