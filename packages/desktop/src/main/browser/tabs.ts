@@ -214,6 +214,13 @@ export class BrowserTabManager implements TabInventory {
     contents.on("did-navigate", () => this.changed(scope))
     contents.on("did-navigate-in-page", () => this.changed(scope))
     contents.on("page-title-updated", () => this.changed(scope))
+    contents.on("page-favicon-updated", (_event, favicons) => {
+      const favicon = favicons[0]?.slice(0, 2048)
+      if (favicon && handle.favicon !== favicon) {
+        handle.favicon = favicon
+        this.changed(scope)
+      }
+    })
     contents.on("did-start-loading", () => this.changed(scope))
     contents.on("did-stop-loading", () => this.changed(scope))
     contents.on("did-fail-load", (_event, errorCode, errorDescription, _validatedURL, isMainFrame) => {

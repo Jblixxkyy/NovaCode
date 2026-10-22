@@ -49,6 +49,10 @@ export interface TabHandle {
   readonly contents: PageContents
   generation: number
   loadError?: string
+  /** Latest favicon URL reported by the page (desktop tabs only). */
+  favicon?: string
+  /** Restored tab whose first load is deferred until activation. */
+  pendingURL?: string
   boxes: Map<string, { x: number; y: number; width: number; height: number }>
 }
 
@@ -65,8 +69,9 @@ export function tabOf(handle: TabHandle): Browser.Tab {
   const contents = handle.contents
   return {
     id: handle.id as Browser.TabID,
-    url: contents.getURL() || "about:blank",
-    title: contents.getTitle() || contents.getURL() || "about:blank",
+    url: contents.getURL() || handle.pendingURL || "about:blank",
+    title: contents.getTitle() || contents.getURL() || handle.pendingURL || "about:blank",
+    ...(handle.favicon ? { favicon: handle.favicon } : {}),
     loading: contents.isLoading(),
     ...(handle.loadError ? { loadError: handle.loadError } : {}),
     canGoBack: contents.canGoBack(),

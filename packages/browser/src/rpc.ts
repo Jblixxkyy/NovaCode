@@ -53,6 +53,8 @@ export const Tab = Schema.Struct({
   id: TabID,
   url: Schema.String.check(Schema.isMaxLength(16_384)),
   title: short,
+  /** The page's favicon URL when the backend reports one (desktop webview tabs). */
+  favicon: Schema.optional(short),
   loading: Schema.Boolean,
   loadError: Schema.optional(short),
   canGoBack: Schema.Boolean,

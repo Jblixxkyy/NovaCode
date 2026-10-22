@@ -5,6 +5,8 @@ export interface BrowserTabState {
   id: string
   url: string
   title: string
+  /** Favicon URL when the serving backend reports one (desktop webview tabs). */
+  favicon?: string
   loading: boolean
   loadError?: string
   canGoBack: boolean
