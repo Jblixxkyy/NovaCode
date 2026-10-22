@@ -683,7 +683,13 @@ export class Driver {
   }
 
   async drag(tabID: string, options: { from: string; to: string }): Promise<Browser.Tab> {
-    this.guardDesktop("browser.drag")
+    if (this.desktopAttached)
+      return this.forwardDesktop({
+        type: "drag",
+        tabID: tabID as Browser.TabID,
+        from: options.from as Browser.Ref,
+        to: options.to as Browser.Ref,
+      })
     const tab = this.requireTab(tabID)
     const frame = await this.frameFor(tab)
     const from = await this.resolveElement(frame, options.from)

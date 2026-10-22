@@ -310,6 +310,19 @@ class FakeDesktop {
         await element.fill(action.text)
         return this.tab(tab)
       }
+      case "drag": {
+        const tab = this.require(action.tabID)
+        const fromElement = await this.resolve(tab, action.from)
+        const toElement = await this.resolve(tab, action.to)
+        const fromBox = await fromElement.boundingBox()
+        const toBox = await toElement.boundingBox()
+        if (!fromBox || !toBox) throw new Error("Could not measure drag endpoints")
+        await tab.page.mouse.move(fromBox.x + fromBox.width / 2, fromBox.y + fromBox.height / 2)
+        await tab.page.mouse.down()
+        await tab.page.mouse.move(toBox.x + toBox.width / 2, toBox.y + toBox.height / 2, { steps: 12 })
+        await tab.page.mouse.up()
+        return this.tab(tab)
+      }
       case "evaluate": {
         const tab = this.require(action.tabID)
         const value = await tab.page.evaluate(action.script)
@@ -426,7 +439,7 @@ describe("desktop tunnel protocol with a routed Driver", () => {
             headers: { "content-type": "text/html" },
           })
         return new Response(
-          `<title>Fake One</title><input id="q" aria-label="Search"><a href="/two">Go two</a><script>console.log("fake page ready"); fetch("/two").catch(() => {})</script>`,
+          `<title>Fake One</title><input id="q" aria-label="Search"><a href="/two">Go two</a><button id="d1">DragSource</button><button id="d2">DragTarget</button><script>console.log("fake page ready"); fetch("/two").catch(() => {}); window.__dragLog = { down: null, moves: 0, up: null }; document.addEventListener("mousedown", (e) => { window.__dragLog.down = [e.clientX, e.clientY] }); document.addEventListener("mousemove", (e) => { if (e.buttons === 1) window.__dragLog.moves += 1 }); document.addEventListener("mouseup", (e) => { window.__dragLog.up = [e.clientX, e.clientY] })</script>`,
           { headers: { "content-type": "text/html" } },
         )
       },
@@ -518,6 +531,24 @@ describe("desktop tunnel protocol with a routed Driver", () => {
     expect(dialogState.dialog).toEqual({ type: "prompt", message: "Name?", defaultValue: "anon" })
     await driver.dialog(tab.id, { action: "accept", promptText: "josh" })
     expect((await answering).value).toBe("josh")
+
+    // Drag routes as a pressed mouse path between the two elements.
+    const dragSnap = await driver.snapshot(tab.id, { boxes: true })
+    const sourceRef = dragSnap.content.match(/button "DragSource" \[ref=(e\d+)\]/)?.[1]
+    const targetRef = dragSnap.content.match(/button "DragTarget" \[ref=(e\d+)\]/)?.[1]
+    expect(sourceRef).toBeTruthy()
+    expect(targetRef).toBeTruthy()
+    await driver.drag(tab.id, { from: sourceRef!, to: targetRef! })
+    const dragLog = (await driver.evaluate(tab.id, { script: "window.__dragLog" })).value as {
+      down: [number, number]
+      moves: number
+      up: [number, number]
+    }
+    const sourceBox = fake.boxOf(tab.id, sourceRef!)!
+    const targetBox = fake.boxOf(tab.id, targetRef!)!
+    expect(Math.abs(dragLog.down[0] - (sourceBox.x + sourceBox.width / 2))).toBeLessThan(2)
+    expect(dragLog.moves).toBeGreaterThanOrEqual(5)
+    expect(Math.abs(dragLog.up[0] - (targetBox.x + targetBox.width / 2))).toBeLessThan(2)
 
     const after = await driver.click(tab.id, { ref: linkRef! })
     expect(after.url).toBe(`${base}/two`)

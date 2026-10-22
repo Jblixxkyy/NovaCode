@@ -390,6 +390,25 @@ describe("executeDesktopAction", () => {
     ).rejects.toThrow(/Unknown request nope/)
   })
 
+  test("drag dispatches a pressed mouse path between element centers", async () => {
+    const { cdp, inventory } = setup()
+    const handle = await inventory.open("/work", "https://example.com", true)
+    await executeDesktopAction(inventory, "/work", { type: "snapshot", tabID: handle.id as never })
+    await executeDesktopAction(inventory, "/work", {
+      type: "drag",
+      tabID: handle.id as never,
+      from: "e1" as never,
+      to: "e2" as never,
+    })
+    const mouse = cdp.calls.filter((call) => call.method === "Input.dispatchMouseEvent")
+    // move + press + 12 interpolated moves + release
+    expect(mouse).toHaveLength(15)
+    expect(mouse[0]?.params).toMatchObject({ type: "mouseMoved" })
+    expect(mouse[1]?.params).toMatchObject({ type: "mousePressed", button: "left", buttons: 1 })
+    expect(mouse[13]?.params).toMatchObject({ type: "mouseMoved", buttons: 1 })
+    expect(mouse[14]?.params).toMatchObject({ type: "mouseReleased", button: "left", buttons: 0 })
+  })
+
   test("dialog routes through the CDP pending-dialog model", async () => {
     const { cdp, inventory } = setup()
     const handle = await inventory.open("/work", "https://example.com", true)

@@ -484,6 +484,43 @@ export async function executeDesktopAction(
       await handle.contents.cdp.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: center.x, y: center.y })
       return tabOf(handle)
     }
+    case "drag": {
+      const handle = requireTab(inventory, scope, action.tabID)
+      const from = await elementCenter(handle, action.from)
+      const to = await elementCenter(handle, action.to)
+      const cdp = handle.contents.cdp
+      // Mirror the Playwright driver's mouse path: move, press, 12
+      // interpolated moves, release — enough steps for HTML5 drag sources
+      // and range/slider inputs to track the gesture.
+      await cdp.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: from.x, y: from.y })
+      await cdp.send("Input.dispatchMouseEvent", {
+        type: "mousePressed",
+        x: from.x,
+        y: from.y,
+        button: "left",
+        buttons: 1,
+        clickCount: 1,
+      })
+      const steps = 12
+      for (let step = 1; step <= steps; step++) {
+        await cdp.send("Input.dispatchMouseEvent", {
+          type: "mouseMoved",
+          x: from.x + ((to.x - from.x) * step) / steps,
+          y: from.y + ((to.y - from.y) * step) / steps,
+          button: "left",
+          buttons: 1,
+        })
+      }
+      await cdp.send("Input.dispatchMouseEvent", {
+        type: "mouseReleased",
+        x: to.x,
+        y: to.y,
+        button: "left",
+        buttons: 0,
+        clickCount: 1,
+      })
+      return tabOf(handle)
+    }
     case "fill": {
       const handle = requireTab(inventory, scope, action.tabID)
       await fillElement(handle, action.ref, action.text)
