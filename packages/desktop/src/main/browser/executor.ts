@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto"
 import { mkdtemp, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import path from "node:path"
@@ -109,6 +110,16 @@ async function finishCpu(handle: TabHandle): Promise<void> {
 }
 
 /**
+ * One persistent Electron session partition per Location scope, so cookies
+ * and site storage stay isolated per project. The pre-phase-2 shared
+ * partition's data does not migrate: scopes start with fresh jars.
+ */
+export function partitionFor(scope: string): string {
+  if (!scope) return "persist:novacode-browser"
+  return `persist:novacode-browser-${createHash("sha256").update(scope).digest("hex").slice(0, 16)}`
+}
+
+/**
  * Wire CDP console/network/dialog capture for a tab (idempotent). Called
  * when a tab is created and again defensively before capture-backed
  * actions, so popup tabs created outside the executor are covered too.
@@ -127,6 +138,12 @@ export interface TabInventory {
   open(scope: string, url: string | undefined, focus: boolean): Promise<TabHandle>
   focus(scope: string, tabID: string): TabHandle | undefined
   close(scope: string, tabID: string): Promise<void>
+  /**
+   * Optional domain-ACL gate (browser-acl.json, delivered with the tunnel
+   * attachment): throws when a navigation target is denied. The real tab
+   * manager implements it; test inventories may omit it.
+   */
+  checkNavigation?(url: string): void
 }
 
 export function tabOf(handle: TabHandle): Browser.Tab {
@@ -420,9 +437,11 @@ async function evaluateScript(
   return result.result?.value ?? null
 }
 
-async function navigate(handle: TabHandle, rawUrl: string): Promise<Browser.Tab> {
+async function navigate(inventory: TabInventory, handle: TabHandle, rawUrl: string): Promise<Browser.Tab> {
   const action = Browser.normalizeAction({ type: "navigate", tabID: handle.id as Browser.TabID, url: rawUrl })
   if (action.type !== "navigate") throw new Error("URL normalization failed")
+  // Same gate, same messages as the Playwright driver's navigate().
+  inventory.checkNavigation?.(action.url)
   handle.loadError = undefined
   try {
     await handle.contents.loadURL(action.url)
@@ -464,7 +483,7 @@ export async function executeDesktopAction(
       return stateOf(inventory, scope)
     }
     case "navigate":
-      return navigate(requireTab(inventory, scope, action.tabID), action.url)
+      return navigate(inventory, requireTab(inventory, scope, action.tabID), action.url)
     case "back": {
       const handle = requireTab(inventory, scope, action.tabID)
       handle.contents.goBack()

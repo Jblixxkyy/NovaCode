@@ -11,6 +11,16 @@ describe("DesktopHost", () => {
     await expect(host.execute("scope", { type: "tabs.list" })).rejects.toMatchObject({ code: "unavailable" })
   })
 
+  test("attach hands the desktop the server domain ACL and refreshes it per attach", () => {
+    const host = new BrowserDesktop.DesktopHost()
+    const first = host.attach("test-client", { allow: ["example.com"], deny: ["evil.com"] })
+    expect(first.acl).toEqual({ allow: ["example.com"], deny: ["evil.com"] })
+    const second = host.attach("test-client")
+    expect(second.acl).toEqual({ allow: ["example.com"], deny: ["evil.com"] })
+    const third = host.attach("test-client", { allow: [], deny: [] })
+    expect(third.acl).toEqual({ allow: [], deny: [] })
+  })
+
   test("attach, poll, and complete round-trip a command", async () => {
     const host = new DesktopHost()
     const { attachment, replaced } = host.attach("test-client")

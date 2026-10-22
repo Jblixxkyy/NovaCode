@@ -104,9 +104,14 @@ export function startBrowserHost(input: {
   const attach = async (): Promise<boolean> => {
     const response = await post("/browser/desktop/attach", { client: "novacode-desktop" }).catch(() => undefined)
     if (!response?.ok) return false
-    const body = (await response.json().catch(() => undefined)) as { attachment?: string } | undefined
+    const body = (await response.json().catch(() => undefined)) as
+      | { attachment?: string; acl?: { allow: string[]; deny: string[] } }
+      | undefined
     if (!body?.attachment) return false
     attachment = body.attachment
+    // The server ships its effective domain ACL with the attachment; the
+    // tab manager enforces it on every webview navigation from here on.
+    if (body.acl) manager.setACL(body.acl)
     publishAll()
     return true
   }

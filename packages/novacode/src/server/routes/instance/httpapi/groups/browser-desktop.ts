@@ -41,6 +41,13 @@ export const BrowserDesktopApi = HttpApi.make("browser-desktop")
             Schema.Struct({
               attachment: Schema.String,
               replaced: Schema.Boolean,
+              // The server's effective domain ACL (browser-acl.json): the
+              // desktop enforces it on webview navigation so both browser
+              // backends apply the same allow/deny rules.
+              acl: Schema.Struct({
+                allow: Schema.Array(Schema.String),
+                deny: Schema.Array(Schema.String),
+              }),
             }),
             "Desktop browser attachment",
           ),

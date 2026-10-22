@@ -1,4 +1,6 @@
 import { BrowserDesktop } from "@novacode-ai/browser/desktop"
+import { BrowserPermissions } from "@novacode-ai/browser/permissions"
+import { Global } from "@novacode-ai/core/global"
 import { Effect } from "effect"
 import { HttpApiBuilder } from "effect/unstable/httpapi"
 import { RootHttpApi } from "../api"
@@ -13,7 +15,10 @@ export const browserDesktopHandlers = HttpApiBuilder.group(RootHttpApi, "browser
     const host = BrowserDesktop.host
 
     const attach = Effect.fn("BrowserDesktopHttpApi.attach")(function* (ctx: { payload: { client: string } }) {
-      return yield* Effect.sync(() => host.attach(ctx.payload.client))
+      // Ship the effective domain ACL with the attachment so the desktop's
+      // webview navigation enforces the same rules as the Playwright driver.
+      const acl = yield* Effect.promise(() => BrowserPermissions.loadACL(Global.Path.config))
+      return yield* Effect.sync(() => host.attach(ctx.payload.client, acl))
     })
 
     const commands = Effect.fn("BrowserDesktopHttpApi.commands")(function* (ctx: {

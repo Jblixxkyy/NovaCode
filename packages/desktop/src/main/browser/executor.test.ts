@@ -6,6 +6,7 @@ import {
   executeDesktopAction,
   formatSnapshot,
   keyEventFor,
+  partitionFor,
   stateOf,
   type AXNodeLike,
   type PageContents,
@@ -138,7 +139,14 @@ class FakeInventory implements TabInventory {
   tabs = new Map<string, TabHandle>()
   focused: string | null = null
   opened: Array<{ url: string | undefined; focus: boolean }> = []
+  deniedHosts: string[] = []
   private counter = 0
+
+  checkNavigation(url: string) {
+    const host = new URL(url).hostname
+    if (this.deniedHosts.includes(host))
+      throw new Error(`Navigation to ${host} is denied by browser-acl.json.`)
+  }
 
   constructor(private cdp: FakeCdp) {}
 
@@ -578,6 +586,52 @@ describe("executeDesktopAction", () => {
     } finally {
       if (previous !== undefined) process.env.NOVACODE_DESKTOP_LIGHTHOUSE_CHROME = previous
     }
+  })
+
+  test("navigate is gated by the inventory's ACL check with the driver's message", async () => {
+    const { inventory } = setup()
+    const handle = await inventory.open("/work", "https://example.com", true)
+    inventory.deniedHosts = ["evil.com"]
+    await expect(
+      executeDesktopAction(inventory, "/work", {
+        type: "navigate",
+        tabID: handle.id as never,
+        url: "https://evil.com/phish",
+      }),
+    ).rejects.toThrow("Navigation to evil.com is denied by browser-acl.json.")
+    const ok = (await executeDesktopAction(inventory, "/work", {
+      type: "navigate",
+      tabID: handle.id as never,
+      url: "https://example.com/ok",
+    })) as { url: string }
+    expect(ok.url).toBe("https://example.com/ok")
+  })
+
+  test("partitions are stable per scope and isolated across scopes", () => {
+    expect(partitionFor("/work")).toBe(partitionFor("/work"))
+    expect(partitionFor("/work")).not.toBe(partitionFor("/other"))
+    expect(partitionFor("/work")).toMatch(/^persist:novacode-browser-[0-9a-f]{16}$/)
+    expect(partitionFor("")).toBe("persist:novacode-browser")
+  })
+
+  test("restored (deferred) tabs report their pending URL in state", async () => {
+    const { cdp, inventory } = setup()
+    const contents = new FakeContents(cdp)
+    contents.url = "" // A never-loaded webContents reports an empty URL.
+    const handle: TabHandle = {
+      id: "tab_restored",
+      contents,
+      generation: 0,
+      boxes: new Map(),
+      pendingURL: "https://example.com/later",
+    }
+    inventory.tabs.set(handle.id, handle)
+    inventory.focused = handle.id
+    const state = stateOf(inventory, "/work")
+    expect(state.focusedTabID).toBe(handle.id)
+    expect(state.tabs[0]?.url).toBe("https://example.com/later")
+    expect(state.tabs[0]?.title).toBe("https://example.com/later")
+    expect(state.tabs[0]?.loading).toBe(false)
   })
 
   test("unsupported actions raise DesktopUnsupportedError", async () => {

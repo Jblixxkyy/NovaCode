@@ -1,4 +1,5 @@
 import { Schema } from "effect"
+import type { BrowserPermissions } from "./permissions"
 import { Browser } from "./rpc"
 
 /**
@@ -154,13 +155,23 @@ export class DesktopHost {
     []
   private pending = new Map<string, Pending>()
   private published = new Map<string, PublishedState>()
+  /**
+   * The server's effective domain ACL (browser-acl.json), handed to each
+   * attaching desktop so webview navigation enforces the same allow/deny
+   * rules as the Playwright driver. Refreshed on every attach.
+   */
+  private acl: BrowserPermissions.DomainACL = { allow: [], deny: [] }
 
-  attach(client: string): { attachment: string; replaced: boolean } {
+  attach(
+    client: string,
+    acl?: BrowserPermissions.DomainACL,
+  ): { attachment: string; replaced: boolean; acl: BrowserPermissions.DomainACL } {
+    if (acl) this.acl = acl
     const replaced = this.attachment !== undefined && this.live()
     if (this.attachment) this.drop("The desktop browser attachment was replaced by a newer desktop window.")
     const attachment = `attach_${crypto.randomUUID()}`
     this.attachment = { id: attachment, client, lastSeen: Date.now() }
-    return { attachment, replaced }
+    return { attachment, replaced, acl: this.acl }
   }
 
   detach(attachment: string): boolean {
