@@ -1497,7 +1497,7 @@ function AssistantMessage(props: { message: AssistantMessage; parts: Part[]; las
   // Desktop-style grouping: consecutive completed "used" tools collapse
   // into one Used/Using header. Running tools stay as their own full
   // cards, so the header updates live as each call finishes. Context
-  // tools (read/glob/grep/list) and question/todowrite are not grouped.
+  // tools (grep/list) and question/todowrite are not grouped; read/glob are now included.
   const segments = createMemo(() => {
     type Segment = { kind: "single"; part: Part } | { kind: "used"; parts: ToolPart[] }
     const segments: Segment[] = []
@@ -1746,7 +1746,7 @@ function TextPart(props: { last: boolean; part: TextPart; message: AssistantMess
   )
 }
 
-const CONTEXT_GROUP_TOOLS = new Set(["read", "glob", "grep", "list"])
+const CONTEXT_GROUP_TOOLS = new Set(["grep", "list"])
 const USED_GROUP_BLOCKED = new Set(["question", "todowrite"])
 
 function isUsedGroupTool(part: Part): part is ToolPart {
