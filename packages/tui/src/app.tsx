@@ -137,6 +137,7 @@ const appBindingCommands = [
   "app.toggle.diffwrap",
   "app.toggle.paste_summary",
   "app.toggle.session_directory_filter",
+  "session.toggle.tool_cards_expanded",
 ] as const
 
 export type TuiInput = {
@@ -593,6 +594,17 @@ function App(props: { onSnapshot?: () => Promise<string[]>; pluginHost: TuiPlugi
           route.navigate({
             type: "home",
           })
+          dialog.clear()
+        },
+      },
+      {
+        name: "session.toggle.tool_cards_expanded",
+        title: "Toggle tool cards expanded by default",
+        category: "Session",
+        slashName: "tool-cards",
+        slashAliases: ["toggle-tool-cards"],
+        run: () => {
+          kv.set("tool_cards_expanded", !kv.get("tool_cards_expanded", false))
           dialog.clear()
         },
       },

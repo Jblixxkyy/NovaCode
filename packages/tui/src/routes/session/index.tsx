@@ -164,6 +164,7 @@ const context = createContext<{
   showTimestamps: () => boolean
   showDetails: () => boolean
   showGenericToolOutput: () => boolean
+  toolCardsExpanded: () => boolean
   diffWrapMode: () => "word" | "none"
   providers: () => ReadonlyMap<string, Provider>
   sync: ReturnType<typeof useSync>
@@ -268,6 +269,7 @@ export function Session() {
   const [diffWrapMode] = kv.signal<"word" | "none">("diff_wrap_mode", "word")
   const [_animationsEnabled, _setAnimationsEnabled] = kv.signal("animations_enabled", true)
   const [showGenericToolOutput, setShowGenericToolOutput] = kv.signal("generic_tool_output_visibility", false)
+  const [toolCardsExpanded] = kv.signal("tool_cards_expanded", false)
 
   const wide = createMemo(() => dimensions().width > 120)
   const sidebarVisible = createMemo(() => {
@@ -1170,6 +1172,7 @@ export function Session() {
           showTimestamps,
           showDetails,
           showGenericToolOutput,
+          toolCardsExpanded,
           diffWrapMode,
           providers,
           sync,
@@ -1491,15 +1494,52 @@ function AssistantMessage(props: { message: AssistantMessage; parts: Part[]; las
   const childShortcut = useCommandShortcut("session.child.first")
   const backgroundShortcut = useCommandShortcut("session.background")
 
+  // Desktop-style grouping: consecutive completed "used" tools collapse
+  // into one Used/Using header. Running tools stay as their own full
+  // cards, so the header updates live as each call finishes. Context
+  // tools (read/glob/grep/list) and question/todowrite are not grouped.
+  const segments = createMemo(() => {
+    type Segment = { kind: "single"; part: Part } | { kind: "used"; parts: ToolPart[] }
+    const segments: Segment[] = []
+    let used: ToolPart[] = []
+    const flush = () => {
+      if (used.length) {
+        segments.push({ kind: "used", parts: used })
+        used = []
+      }
+    }
+    for (const part of props.parts) {
+      if (isUsedGroupTool(part) && part.state.status !== "pending" && part.state.status !== "running") {
+        used.push(part)
+        continue
+      }
+      flush()
+      segments.push({ kind: "single", part })
+    }
+    flush()
+    return segments
+  })
+
   return (
     <>
-      <For each={props.parts}>
-        {(part, index) => {
+      <For each={segments()}>
+        {(segment, index) => {
+          if (segment.kind === "used") {
+            return (
+              <UsedToolGroup
+                parts={segment.parts}
+                message={props.message}
+                busy={() => props.last && !final()}
+                last={index() === segments().length - 1}
+              />
+            )
+          }
+          const part = segment.part
           const component = createMemo(() => PART_MAPPING[part.type as keyof typeof PART_MAPPING])
           return (
             <Show when={component()}>
               <Dynamic
-                last={index() === props.parts.length - 1}
+                last={index() === segments().length - 1}
                 component={component()}
                 part={part as any}
                 message={props.message}
@@ -1706,6 +1746,64 @@ function TextPart(props: { last: boolean; part: TextPart; message: AssistantMess
   )
 }
 
+const CONTEXT_GROUP_TOOLS = new Set(["read", "glob", "grep", "list"])
+const USED_GROUP_BLOCKED = new Set(["question", "todowrite"])
+
+function isUsedGroupTool(part: Part): part is ToolPart {
+  return part.type === "tool" && !CONTEXT_GROUP_TOOLS.has(part.tool) && !USED_GROUP_BLOCKED.has(part.tool)
+}
+
+function toolTitle(tool: string) {
+  switch (tool) {
+    case "bash":
+    case "shell":
+      return "Shell"
+    case "apply_patch":
+      return "Patch"
+    case "todowrite":
+      return "Todos"
+    default:
+      return tool.charAt(0).toUpperCase() + tool.slice(1)
+  }
+}
+
+function UsedToolGroup(props: {
+  parts: ToolPart[]
+  message: AssistantMessage
+  busy: () => boolean
+  last: boolean
+}) {
+  const { theme } = useTheme()
+  const [open, setOpen] = createSignal(false)
+  const count = () => props.parts.length
+  const names = () => {
+    const seen = new Set<string>()
+    props.parts.forEach((part) => {
+      const title = toolTitle(part.tool)
+      if (title) seen.add(title)
+    })
+    return [...seen]
+  }
+  const label = () => (props.busy() ? "Using tools" : "Used tools")
+  return (
+    <box marginTop={1} paddingLeft={3} flexShrink={0}>
+      <box flexDirection="row" gap={1} onMouseUp={() => setOpen((prev) => !prev)}>
+        <text fg={theme.success}>{label()}</text>
+        <text fg={theme.text}>{count()}</text>
+        <text fg={theme.textMuted}>{names().join(", ")}</text>
+        <text fg={theme.textMuted}>{open() ? "▲" : "▼"}</text>
+      </box>
+      <Show when={open()}>
+        <box paddingLeft={3}>
+          <For each={props.parts}>
+            {(part) => <ToolPart last={false} part={part} message={props.message} />}
+          </For>
+        </box>
+      </Show>
+    </box>
+  )
+}
+
 // Pending messages moved to individual tool pending functions
 
 function ToolPart(props: { last: boolean; part: ToolPart; message: AssistantMessage }) {
@@ -1828,7 +1926,8 @@ function GenericTool(props: ToolProps) {
   const { theme } = useTheme()
   const ctx = use()
   const output = createMemo(() => props.output?.trim() ?? "")
-  const [expanded, setExpanded] = createSignal(false)
+  const [manualExpanded, setManualExpanded] = createSignal<boolean | undefined>(undefined)
+  const expanded = createMemo(() => manualExpanded() ?? ctx.toolCardsExpanded())
   const maxLines = 3
   const maxChars = createMemo(() => maxLines * Math.max(20, ctx.width - 6))
   const collapsed = createMemo(() => collapseToolOutput(output(), maxLines, maxChars()))
@@ -1850,6 +1949,8 @@ function GenericTool(props: ToolProps) {
             title: props.tool,
             subtitle: input(props.input),
           }}
+          open={expanded()}
+          onOpenChange={setManualExpanded}
         />
       }
     >
@@ -1862,8 +1963,8 @@ function GenericTool(props: ToolProps) {
           title: props.tool,
           subtitle: input(props.input),
         }}
-        defaultOpen={true}
-        onOpenChange={collapsed().overflow ? setExpanded : undefined}
+        open={expanded()}
+        onOpenChange={setManualExpanded}
       >
         <box gap={1}>
           <text fg={theme.text}>{limited()}</text>
@@ -1961,7 +2062,8 @@ function Shell(props: ToolProps) {
   const pathFormatter = usePathFormatter()
   const ctx = use()
   const output = createMemo(() => stripAnsi(stringValue(props.metadata.output)?.trim() ?? ""))
-  const [expanded, setExpanded] = createSignal(false)
+  const [manualExpanded, setManualExpanded] = createSignal<boolean | undefined>(undefined)
+  const expanded = createMemo(() => manualExpanded() ?? ctx.toolCardsExpanded())
   const maxLines = 10
   const maxChars = createMemo(() => maxLines * Math.max(20, ctx.width - 6))
   const collapsed = createMemo(() => collapseToolOutput(output(), maxLines, maxChars()))
@@ -1991,8 +2093,8 @@ function Shell(props: ToolProps) {
         subtitle: stringValue(props.input.command),
         args: workdirDisplay() ? [workdirDisplay()!] : undefined,
       }}
-      defaultOpen={true}
-      onOpenChange={collapsed().overflow ? setExpanded : undefined}
+      open={expanded()}
+      onOpenChange={setManualExpanded}
       allowOpenWhilePending={true}
     >
       <box gap={1}>
