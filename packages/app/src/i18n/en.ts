@@ -668,6 +668,7 @@ export const dict = {
   "home.empty.description": "Get started by opening a local project",
   "home.title": "Home",
   "home.projects": "Projects",
+  "home.workspaces": "Workspaces",
   "home.project.add": "Add project",
   "home.recentlyClosed": "Recently closed",
   "home.server.collapse": "Collapse server projects",
