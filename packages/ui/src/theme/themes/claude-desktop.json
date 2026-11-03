@@ -1,0 +1,53 @@
+{
+  "$schema": "https://opencode.ai/desktop-theme.json",
+  "name": "Claude Desktop",
+  "id": "claude-desktop",
+  "light": {
+    "palette": {
+      "neutral": "#8a8378",
+      "ink": "#262624",
+      "primary": "#bc5633",
+      "accent": "#4a7ca5",
+      "interactive": "#bc5633",
+      "success": "#5c7f43",
+      "warning": "#96690f",
+      "error": "#b3372a",
+      "info": "#4a7ca5",
+      "diffAdd": "#5c7f43",
+      "diffDelete": "#b3372a"
+    },
+    "overrides": {
+      "syntax-comment": "#8a8378",
+      "syntax-keyword": "#bc5633",
+      "syntax-string": "#5f7a36",
+      "syntax-function": "#9a6a1c",
+      "syntax-number": "#b06f1f",
+      "markdown-heading": "#bc5633",
+      "markdown-link": "#a34a28"
+    }
+  },
+  "dark": {
+    "palette": {
+      "neutral": "#5b5850",
+      "ink": "#f0eee6",
+      "primary": "#d97757",
+      "accent": "#7fa8c9",
+      "interactive": "#e08b6d",
+      "success": "#97b67f",
+      "warning": "#d9a441",
+      "error": "#e06c5c",
+      "info": "#7fa8c9",
+      "diffAdd": "#97b67f",
+      "diffDelete": "#e06c5c"
+    },
+    "overrides": {
+      "syntax-comment": "#8a8578",
+      "syntax-keyword": "#d97757",
+      "syntax-string": "#a9bc7a",
+      "syntax-function": "#e3b778",
+      "syntax-number": "#e0a458",
+      "markdown-heading": "#d97757",
+      "markdown-link": "#e08b6d"
+    }
+  }
+}

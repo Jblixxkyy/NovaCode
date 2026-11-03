@@ -1,0 +1,11 @@
+{
+  "dmPolicy": "open",
+  "dmAllowFrom": [],
+  "requireMention": true,
+  "streaming": {
+    "enabled": true
+  },
+  "approvals": {
+    "enabled": true
+  }
+}

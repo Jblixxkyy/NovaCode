@@ -1,48 +1,13 @@
 {
-  "pairings": [
-    [
-      "0b36071d",
-      {
-        "userId": 7527277539,
-        "createdAt": 1788156513962,
-        "expiresAt": 1788160113962
-      }
-    ],
-    [
-      "c3d10444",
-      {
-        "userId": 7527277539,
-        "createdAt": 1788156515233,
-        "expiresAt": 1788160115233
-      }
-    ]
-  ],
+  "pairings": [],
   "pairedUsers": [
     7527277539
   ],
-  "sessions": [
-    [
-      "7527277539",
-      {
-        "sessionId": "ses_fa69150c8ffe1G2acL52WSlM5I",
-        "createdAt": 1788206821192
-      }
-    ]
-  ],
-  "updateOffsets": [
-    [
-      "8896679023:AAFUG8dCtV5N9OmuHfEZvGguR17ohyLLOXE",
-      293192508
-    ]
-  ],
-  "sentMessages": [
-    [
-      "7527277539:main",
-      390
-    ]
-  ],
+  "sessions": [],
+  "updateOffsets": [],
+  "sentMessages": [],
   "audit": {
-    "lastConfigLoad": 1788208902623,
+    "lastConfigLoad": 1793329640540,
     "transport": "polling"
   }
 }

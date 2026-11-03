@@ -112,7 +112,6 @@ type AuthInput = Parameters<typeof auth.authorize>[0]
 bot.on("message", async (ctx) => {
   const msg = ctx.message
   if (!msg) return
-  if (msg.text?.startsWith("/")) return
 
   const media = MediaHandler.fromMessage(msg)
   const groupId = (msg as { media_group_id?: string }).media_group_id

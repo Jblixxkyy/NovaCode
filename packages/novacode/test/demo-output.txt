@@ -1,0 +1,3 @@
+Hello from the write tool demonstration!
+
+This file was created using novacode's write tool.

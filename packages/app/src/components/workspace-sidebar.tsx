@@ -2,8 +2,9 @@ import { ScrollView } from "@novacode-ai/ui/scroll-view"
 import { ButtonV2 } from "@novacode-ai/ui/v2/button-v2"
 import { Icon as IconV2 } from "@novacode-ai/ui/v2/icon"
 import { IconButtonV2 } from "@novacode-ai/ui/v2/icon-button-v2"
-import { createMemo, For, Show } from "solid-js"
+import { createEffect, createMemo, For, Show } from "solid-js"
 import { createStore } from "solid-js/store"
+import { useSettings } from "@/context/settings"
 import { displayName } from "@/pages/layout/helpers"
 import { sessionTitle } from "@/utils/session-title"
 import { createHomeController } from "@/pages/home/home-controller"
@@ -20,11 +21,18 @@ export function WorkspaceSidebar() {
   const home = createHomeController()
   const projects = createHomeProjectsController(home)
   const sessions = createHomeSessionsController(home)
+  const settings = useSettings()
   const [sidebar, setSidebar] = createStore({
     filter: "",
     expanded: {} as Record<string, boolean>,
   })
   const language = projects.copy.language
+  // When the auto-collapse setting changes, reset manual expansions so
+  // the new default takes effect right away, not just on a remount.
+  createEffect(() => {
+    settings.general.autoCollapseSidebarSessions()
+    setSidebar("expanded", {})
+  })
   const groupedSessions = createMemo(() => {
     const byProject = new Map<string, HomeSessionRecord[]>()
     const filter = sidebar.filter.trim().toLowerCase()
@@ -47,20 +55,23 @@ export function WorkspaceSidebar() {
       return (groupedSessions().get(project.worktree) ?? []).length > 0
     })
   })
-  // All workspaces start expanded, so all of their sessions are visible
-  // on open. Clicking a workspace header still collapses it.
-  const isExpanded = (worktree: string) => sidebar.expanded[worktree] ?? true
+  // Default: all workspaces start expanded, so all of their sessions are
+  // visible on open. With auto-collapse on, workspaces start collapsed,
+  // and opening a session collapses every other workspace. Clicking a
+  // workspace header still toggles it manually either way.
+  const isExpanded = (worktree: string) =>
+    sidebar.expanded[worktree] ?? !settings.general.autoCollapseSidebarSessions()
   const open = workspaceSidebar.open
   return (
     <>
       <aside
         data-component="workspace-sidebar"
-        class="fixed bottom-0 left-0 top-9 z-50 flex w-[280px] flex-col overflow-hidden border-r border-v2-border-border-base bg-v2-background-bg-base shadow-[var(--v2-elevation-raised)] transition-transform duration-200 ease-in-out"
-        style={{ transform: open() ? "translateX(0)" : "translateX(-100%)" }}
+        class="fixed bottom-0 left-0 top-0 z-50 flex w-[280px] flex-col overflow-hidden border-r border-v2-border-border-base bg-v2-background-bg-base shadow-[var(--v2-elevation-raised)] transition-transform duration-200 ease-in-out"
+        style={{ transform: open() ? "translateX(0)" : "translateX(-100%)", top: "calc(44px + env(safe-area-inset-top, 0px))" }}
         aria-label={language.t("sidebar.nav.projectsAndSessions")}
         aria-hidden={!open()}
       >
-        <div class="flex shrink-0 flex-col gap-2 px-3 pb-2 pt-3">
+        <div class="flex shrink-0 flex-col gap-3 px-3 pb-2 pt-4">
           <ButtonV2
             data-action="workspace-sidebar-new-session"
             variant="neutral"
@@ -145,7 +156,16 @@ export function WorkspaceSidebar() {
                                 text-v2-text-text-muted [font-weight:440]
                                 hover:bg-v2-background-bg-layer-01 hover:text-v2-text-text-base
                               `}
-                              onClick={() => sessions.session.open(record.session)}
+                              onClick={() => {
+                                if (settings.general.autoCollapseSidebarSessions()) {
+                                  const next: Record<string, boolean> = {}
+                                  for (const project of home.project.list()) {
+                                    next[project.worktree] = project.worktree === record.project.worktree
+                                  }
+                                  setSidebar("expanded", next)
+                                }
+                                sessions.session.open(record.session)
+                              }}
                             >
                               <span class="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
                                 {sessionTitle(record.session.title) || record.session.id}
