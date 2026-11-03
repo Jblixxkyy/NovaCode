@@ -1602,14 +1602,18 @@ function AssistantMessage(props: { message: AssistantMessage; parts: Part[]; las
       <For each={segments()}>
         {(segment, index) => {
           if (segment.kind === "used") {
-            if (props.hideUsedGroups) return <></>
+            // NOTE: must be <Show>, not a plain if — a plain if in a For
+            // callback only runs once, so groups rendered while the turn
+            // was still running never disappeared when the turn completed.
             return (
-              <UsedToolGroup
-                parts={segment.parts}
-                message={props.message}
-                busy={() => props.last && !final()}
-                last={index() === segments().length - 1}
-              />
+              <Show when={!props.hideUsedGroups}>
+                <UsedToolGroup
+                  parts={segment.parts}
+                  message={props.message}
+                  busy={() => props.last && !final()}
+                  last={index() === segments().length - 1}
+                />
+              </Show>
             )
           }
           const part = segment.part
