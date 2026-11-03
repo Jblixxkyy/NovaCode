@@ -49,7 +49,6 @@ import { migrate } from "./migrate"
 import { cleanupStoreFiles } from "./store-cleanup"
 import { startBackgroundCli } from "./background-cli"
 import { setNativeTranslations } from "./native-translations"
-import { cleanupWebAppProcesses } from "./desktop-menu-actions"
 import { getStore } from "./store"
 import { parseAutoAccept, startPermissionAutoResponder } from "./permission-auto-responder"
 import { createTelegramBotManager } from "./telegram-bot"
@@ -239,7 +238,6 @@ const main = Effect.gen(function* () {
   )
   const telegramBot = createTelegramBotManager()
   const stopSidecars = async () => {
-    cleanupWebAppProcesses()
     await telegramBot.stop()
     await killSidecar()
     wslServers.stopAll()

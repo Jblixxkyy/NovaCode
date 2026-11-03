@@ -140,6 +140,7 @@ export type ElectronAPI = {
   setNativeTranslations: (bundle: DesktopNativeBundle) => Promise<void>
   getDesktopSharingEnabled: () => Promise<boolean>
   setDesktopSharingEnabled: (enabled: boolean) => Promise<void>
+  openWebApp: () => Promise<boolean>
   telegramBotStatus: () => Promise<TelegramBotStatus>
   startTelegramBot: (config: TelegramBotConfig) => Promise<TelegramBotStatus>
   stopTelegramBot: () => Promise<TelegramBotStatus>

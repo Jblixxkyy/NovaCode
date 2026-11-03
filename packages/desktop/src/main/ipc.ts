@@ -30,6 +30,7 @@ import type { UpdaterController } from "./updater-controller"
 import { createUpdaterSubscriptions } from "./updater-subscriptions"
 import { createDesktopDraftStore } from "./draft-store"
 import { nativeT } from "./native-translations"
+import { openWebApp } from "./web-app"
 
 const pickerFilters = (ext?: string[]) => {
   if (!ext || ext.length === 0) return undefined
@@ -309,6 +310,14 @@ export function registerIpcHandlers(deps: Deps) {
     })
   })
 
+  ipcMain.handle("open-web-app", async () => {
+    try {
+      const server = await deps.awaitInitialization()
+      return await openWebApp(server)
+    } catch {
+      return false
+    }
+  })
   ipcMain.handle("get-desktop-sharing-enabled", () => {
     if (deps.getDesktopSharingEnabled) return deps.getDesktopSharingEnabled()
     try {

@@ -135,6 +135,7 @@ const api: ElectronAPI = {
   setNativeTranslations: (bundle) => ipcRenderer.invoke("set-native-translations", bundle),
   getDesktopSharingEnabled: () => ipcRenderer.invoke("get-desktop-sharing-enabled"),
   setDesktopSharingEnabled: (enabled: boolean) => ipcRenderer.invoke("set-desktop-sharing-enabled", enabled),
+  openWebApp: () => ipcRenderer.invoke("open-web-app"),
   telegramBotStatus: () => ipcRenderer.invoke("telegram-bot-status"),
   startTelegramBot: (config) => ipcRenderer.invoke("telegram-bot-start", config),
   stopTelegramBot: () => ipcRenderer.invoke("telegram-bot-stop"),

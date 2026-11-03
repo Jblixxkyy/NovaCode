@@ -67,6 +67,8 @@ function DesktopSharingToggle() {
   const language = useLanguage()
   const [enabled, setEnabled] = createSignal<boolean | undefined>(undefined)
   const [busy, setBusy] = createSignal(false)
+  const [opening, setOpening] = createSignal(false)
+  const [openFailed, setOpenFailed] = createSignal(false)
 
   createEffect(() => {
     const api = (window as unknown as { api?: { getDesktopSharingEnabled?: () => Promise<boolean> } }).api
@@ -85,6 +87,24 @@ function DesktopSharingToggle() {
     }
   }
 
+  // The prod web app: open this desktop's own sidecar in the browser.
+  // No repo, no dev server — the sidecar already serves the web UI, and
+  // the main process passes its credentials via ?auth_token=, so the
+  // browser lands straight on the desktop's sessions.
+  const openWebApp = async () => {
+    setOpening(true)
+    setOpenFailed(false)
+    try {
+      const api = (window as unknown as { api?: { openWebApp?: () => Promise<boolean> } }).api
+      const ok = api?.openWebApp ? await api.openWebApp() : false
+      if (!ok) setOpenFailed(true)
+    } catch {
+      setOpenFailed(true)
+    } finally {
+      setOpening(false)
+    }
+  }
+
   return (
     <div class="settings-v2-servers-desktop-section" data-testid="desktop-sharing-toggle">
       <div class="settings-v2-servers-desktop-header">
@@ -99,6 +119,22 @@ function DesktopSharingToggle() {
           <Switch checked={enabled()!} disabled={busy()} onChange={toggle} />
         </Show>
       </div>
+      <div class="settings-v2-servers-desktop-header">
+        <div class="settings-v2-servers-desktop-info">
+          <div>
+            <span class="settings-v2-servers-desktop-title">{language.t("dialog.server.desktop.openWebApp") ?? "Open web app"}</span>
+            <span class="settings-v2-servers-desktop-desc">{language.t("dialog.server.desktop.openWebAppDescription") ?? "Open this desktop's sessions in your browser — no repo, no dev server, it just opens."}</span>
+          </div>
+        </div>
+        <Button variant="primary" size="small" disabled={opening()} onClick={() => void openWebApp()} data-testid="desktop-open-web-app">
+          {language.t("dialog.server.desktop.openWebApp") ?? "Open web app"}
+        </Button>
+      </div>
+      <Show when={openFailed()}>
+        <div class="settings-v2-servers-desktop-hint text-12-regular text-text-weak">
+          {language.t("dialog.server.desktop.openWebAppFailed") ?? "Could not open the web app. Make sure the desktop server is running, then try again."}
+        </div>
+      </Show>
       <Show when={enabled() === false}>
         <div class="settings-v2-servers-desktop-hint text-12-regular text-text-weak">
           {language.t("dialog.server.desktop.shareOffHint") ?? "Sharing is off — the web app will show “Desktop app not running”."}

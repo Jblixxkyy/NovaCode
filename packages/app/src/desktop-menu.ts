@@ -22,9 +22,6 @@ export type DesktopMenuAction =
   | "window.close"
   | "window.minimize"
   | "window.toggleMaximize"
-  | "dev.webapp.shared"
-  | "dev.webapp.standalone"
-  | "dev.webapp.stop"
 
 export type DesktopMenuRole =
   | "about"
@@ -276,28 +273,6 @@ export const DESKTOP_MENU: DesktopMenu[] = [
       { type: "item", labelKey: "desktop.menu.maximize", action: "window.toggleMaximize" },
       { type: "separator" },
       { type: "item", labelKey: "desktop.menu.closeWindow", action: "window.close" },
-    ],
-  },
-  {
-    id: "developer",
-    labelKey: "desktop.menu.developer",
-    items: [
-      {
-        type: "item",
-        labelKey: "desktop.menu.webapp.shared",
-        action: "dev.webapp.shared",
-      },
-      {
-        type: "item",
-        labelKey: "desktop.menu.webapp.standalone",
-        action: "dev.webapp.standalone",
-      },
-      { type: "separator" },
-      {
-        type: "item",
-        labelKey: "desktop.menu.webapp.stop",
-        action: "dev.webapp.stop",
-      },
     ],
   },
   {
