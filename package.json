@@ -141,7 +141,9 @@
     "@opentui/keymap": "catalog:",
     "@opentui/solid": "catalog:",
     "@types/bun": "catalog:",
-    "@types/node": "catalog:"
+    "@types/node": "catalog:",
+    "@ai-sdk/anthropic": "3.0.82",
+    "@ai-sdk/provider-utils": "4.0.27"
   },
   "patchedDependencies": {
     "@dnd-kit/dom@0.5.0": "patches/@dnd-kit%2Fdom@0.5.0.patch",
