@@ -10,10 +10,13 @@ import { createHomeController } from "@/pages/home/home-controller"
 import { createHomeProjectsController } from "@/pages/home/home-projects-controller"
 import { HomeUtilityNav } from "@/pages/home/home-projects-view"
 import { createHomeSessionsController, type HomeSessionRecord } from "@/pages/home/home-sessions-controller"
+import { workspaceSidebar } from "./workspace-sidebar-state"
 
 // Standalone slide-out sidebar. It is not a home page: it lives in the global
 // layout and can be pulled out from any route (home, session, draft).
-export function WorkspaceSidebar(props: { open: boolean; onClose: () => void }) {
+// It only opens and closes with the titlebar Home button — no backdrop click
+// and no close button inside the sidebar itself.
+export function WorkspaceSidebar() {
   const home = createHomeController()
   const projects = createHomeProjectsController(home)
   const sessions = createHomeSessionsController(home)
@@ -25,7 +28,8 @@ export function WorkspaceSidebar(props: { open: boolean; onClose: () => void }) 
   const groupedSessions = createMemo(() => {
     const byProject = new Map<string, HomeSessionRecord[]>()
     const filter = sidebar.filter.trim().toLowerCase()
-    for (const record of sessions.data.records()) {
+    // All sessions in all workspaces, not just the selected project.
+    for (const record of sessions.data.allProjectRecords()) {
       const title = (sessionTitle(record.session.title) || record.session.id).toLowerCase()
       if (filter && !title.includes(filter) && !record.projectName.toLowerCase().includes(filter)) continue
       const key = record.project.worktree
@@ -43,23 +47,18 @@ export function WorkspaceSidebar(props: { open: boolean; onClose: () => void }) 
       return (groupedSessions().get(project.worktree) ?? []).length > 0
     })
   })
-  const isExpanded = (worktree: string) =>
-    sidebar.expanded[worktree] ?? home.selection.value().directory === worktree
+  // All workspaces start expanded, so all of their sessions are visible
+  // on open. Clicking a workspace header still collapses it.
+  const isExpanded = (worktree: string) => sidebar.expanded[worktree] ?? true
+  const open = workspaceSidebar.open
   return (
     <>
-      <Show when={props.open}>
-        <div
-          data-component="workspace-sidebar-backdrop"
-          class="fixed bottom-0 left-0 right-0 top-9 z-40 bg-black/30"
-          onClick={() => props.onClose()}
-        />
-      </Show>
       <aside
         data-component="workspace-sidebar"
         class="fixed bottom-0 left-0 top-9 z-50 flex w-[280px] flex-col overflow-hidden border-r border-v2-border-border-base bg-v2-background-bg-base shadow-[var(--v2-elevation-raised)] transition-transform duration-200 ease-in-out"
-        style={{ transform: props.open ? "translateX(0)" : "translateX(-100%)" }}
+        style={{ transform: open() ? "translateX(0)" : "translateX(-100%)" }}
         aria-label={language.t("sidebar.nav.projectsAndSessions")}
-        aria-hidden={!props.open}
+        aria-hidden={!open()}
       >
         <div class="flex shrink-0 flex-col gap-2 px-3 pb-2 pt-3">
           <ButtonV2
@@ -85,14 +84,6 @@ export function WorkspaceSidebar(props: { open: boolean; onClose: () => void }) 
                   const conn = home.server.focused()
                   if (conn) projects.project.choose(conn)
                 }}
-              />
-              <IconButtonV2
-                type="button"
-                variant="ghost-muted"
-                size="small"
-                icon={<IconV2 name="menu" size="small" />}
-                aria-label={language.t("command.sidebar.toggle")}
-                onClick={() => props.onClose()}
               />
             </div>
           </div>
@@ -144,7 +135,7 @@ export function WorkspaceSidebar(props: { open: boolean; onClose: () => void }) 
                     </button>
                     <Show when={isExpanded(project.worktree)}>
                       <div class="flex min-w-0 flex-col gap-px pb-2 pl-6">
-                        <For each={worktreeSessions().slice(0, 8)}>
+                        <For each={worktreeSessions()}>
                           {(record) => (
                             <button
                               type="button"

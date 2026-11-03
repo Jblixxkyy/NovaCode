@@ -98,6 +98,18 @@ export function createHomeSessionsController(home: HomeController) {
     }),
   )
   const records = createMemo(() => allRecords().slice(0, HOME_SESSION_LIMIT))
+  // Sidebar version: all sessions in ALL workspaces, not just the selected
+  // project, and not capped at 64 total. allRecords above is filtered to
+  // the selected project (via projectDirectories), so a sidebar built on
+  // records() would show other workspaces as empty.
+  const allProjectRecords = createMemo(() =>
+    buildHomeSessionRecords({
+      sessions: indexedSessions,
+      projectDirectories: () => home.project.list().flatMap(directories),
+      projects: home.project.list,
+      projectByID,
+    }),
+  )
   const groups = createMemo(() => groupSessions(records(), language))
   const prefetched = new Set<string>()
 
@@ -173,6 +185,7 @@ export function createHomeSessionsController(home: HomeController) {
     data: {
       records,
       groups,
+      allProjectRecords,
       loading: () => sessionLoad.isLoading,
       searchRecords: allRecords,
     },

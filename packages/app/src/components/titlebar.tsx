@@ -39,6 +39,7 @@ import type { PromptSession } from "@/context/prompt"
 import "./titlebar.css"
 import { newTabTooltipKeybind } from "./command-tooltip-keybind"
 import { normalizeSessionInfo } from "@/utils/session"
+import { workspaceSidebar } from "./workspace-sidebar-state"
 
 const legacyTitlebarHeight = 40
 const v2TitlebarHeight = 36
@@ -311,7 +312,20 @@ export function Titlebar(props: { update?: TitlebarUpdate; debugTools?: { visibl
 
               tabs.newDraft({ server: fallback.server, directory: fallback.project.worktree }, "")
             }
-            const toggleHome = () => tabs.toggleHome({ home: layout.route().type === "home", current: currentTab() })
+            // The titlebar Home button IS the sidebar button, and the
+            // draft/new-session screen IS the home screen. So:
+            // - Sidebar open -> click closes the sidebar only.
+            // - Sidebar closed -> click opens the sidebar and goes home,
+            //   which lands on the draft screen (or creates one).
+            // There is no other close path.
+            const toggleHome = () => {
+              if (workspaceSidebar.open()) {
+                workspaceSidebar.setOpen(false)
+                return
+              }
+              workspaceSidebar.setOpen(true)
+              tabs.toggleHome({ home: false, current: currentTab() })
+            }
 
             command.register("titlebar-home", () => [
               {
@@ -388,10 +402,10 @@ export function Titlebar(props: { update?: TitlebarUpdate; debugTools?: { visibl
                     size="large"
                     class="!w-9 shrink-0"
                     icon={<IconV2 name="grid-plus" />}
-                    state={layout.route().type === "home" ? "pressed" : undefined}
+                    state={workspaceSidebar.open() ? "pressed" : undefined}
                     onClick={toggleHome}
                     aria-label={language.t("home.title")}
-                    aria-pressed={layout.route().type === "home"}
+                    aria-pressed={workspaceSidebar.open()}
                   />
                 </TooltipV2>
 
