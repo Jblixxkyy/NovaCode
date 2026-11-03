@@ -1359,7 +1359,7 @@ export function Session() {
                             last={lastAssistant()?.id === message.id}
                             message={message as AssistantMessage}
                             parts={sync.data.part[message.id] ?? []}
-                            hideUsedGroups={turnToolSummary().get(message.id)?.hideUsed}
+                            hideUsedGroups={() => turnToolSummary().get(message.id)?.hideUsed ?? false}
                           />
                           <Show when={turnToolSummary().get(message.id)?.summary}>
                             <UsedToolGroup
@@ -1548,7 +1548,7 @@ function UserMessage(props: {
   )
 }
 
-function AssistantMessage(props: { message: AssistantMessage; parts: Part[]; last: boolean; hideUsedGroups?: boolean }) {
+function AssistantMessage(props: { message: AssistantMessage; parts: Part[]; last: boolean; hideUsedGroups?: () => boolean }) {
   const ctx = use()
   const local = useLocal()
   const { theme } = useTheme()
@@ -1606,7 +1606,7 @@ function AssistantMessage(props: { message: AssistantMessage; parts: Part[]; las
             // callback only runs once, so groups rendered while the turn
             // was still running never disappeared when the turn completed.
             return (
-              <Show when={!props.hideUsedGroups}>
+              <Show when={!props.hideUsedGroups?.()}>
                 <UsedToolGroup
                   parts={segment.parts}
                   message={props.message}
