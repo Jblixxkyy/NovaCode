@@ -394,6 +394,28 @@ export const SettingsGeneralV2: Component<{
 
         <ShellSetting controller={shell} />
 
+        <Show when={mobile() && import.meta.env.VITE_NOVACODE_CHANNEL !== "prod"}>
+          <SettingsRowV2
+            title={language.t("settings.general.row.mobileTitlebarBottom.title")}
+            description={language.t("settings.general.row.mobileTitlebarBottom.description")}
+          >
+            <div data-action="settings-mobile-titlebar-bottom">
+              <Switch
+                checked={settings.general.mobileTitlebarPosition() === "bottom"}
+                onChange={(checked) => settings.general.setMobileTitlebarPosition(checked ? "bottom" : "top")}
+              />
+            </div>
+          </SettingsRowV2>
+        </Show>
+      </SettingsListV2>
+    </div>
+  )
+
+  const FeedSection = () => (
+    <div class="settings-v2-section">
+      <h3 class="settings-v2-section-title">{language.t("settings.general.section.feed")}</h3>
+
+      <SettingsListV2>
         <SettingsRowV2
           title={language.t("settings.general.row.reasoningSummaries.title")}
           description={language.t("settings.general.row.reasoningSummaries.description")}
@@ -429,7 +451,15 @@ export const SettingsGeneralV2: Component<{
             />
           </div>
         </SettingsRowV2>
+      </SettingsListV2>
+    </div>
+  )
 
+  const SidebarSection = () => (
+    <div class="settings-v2-section">
+      <h3 class="settings-v2-section-title">{language.t("settings.general.section.sidebar")}</h3>
+
+      <SettingsListV2>
         <SettingsRowV2
           title={language.t("settings.general.row.sidebarAutoCollapse.title")}
           description={language.t("settings.general.row.sidebarAutoCollapse.description")}
@@ -441,20 +471,6 @@ export const SettingsGeneralV2: Component<{
             />
           </div>
         </SettingsRowV2>
-
-        <Show when={mobile() && import.meta.env.VITE_NOVACODE_CHANNEL !== "prod"}>
-          <SettingsRowV2
-            title={language.t("settings.general.row.mobileTitlebarBottom.title")}
-            description={language.t("settings.general.row.mobileTitlebarBottom.description")}
-          >
-            <div data-action="settings-mobile-titlebar-bottom">
-              <Switch
-                checked={settings.general.mobileTitlebarPosition() === "bottom"}
-                onChange={(checked) => settings.general.setMobileTitlebarPosition(checked ? "bottom" : "top")}
-              />
-            </div>
-          </SettingsRowV2>
-        </Show>
       </SettingsListV2>
     </div>
   )
@@ -624,6 +640,10 @@ export const SettingsGeneralV2: Component<{
         </Show>
 
         <GeneralSection />
+
+        <FeedSection />
+
+        <SidebarSection />
 
         <AppearanceSection controller={appearance} />
 

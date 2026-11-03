@@ -985,6 +985,7 @@ export const dict = {
   "settings.general.section.updates": "Updates",
   "settings.general.section.sounds": "Sound effects",
   "settings.general.section.feed": "Feed",
+  "settings.general.section.sidebar": "Sidebar",
   "settings.general.section.display": "Display",
 
   "settings.general.row.language.title": "Language",
