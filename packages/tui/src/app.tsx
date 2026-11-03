@@ -138,6 +138,7 @@ const appBindingCommands = [
   "app.toggle.paste_summary",
   "app.toggle.session_directory_filter",
   "session.toggle.tool_cards_expanded",
+  "session.toggle.tool_groups_collapse_on_complete",
 ] as const
 
 export type TuiInput = {
@@ -605,6 +606,17 @@ function App(props: { onSnapshot?: () => Promise<string[]>; pluginHost: TuiPlugi
         slashAliases: ["toggle-tool-cards"],
         run: () => {
           kv.set("tool_cards_expanded", !kv.get("tool_cards_expanded", false))
+          dialog.clear()
+        },
+      },
+      {
+        name: "session.toggle.tool_groups_collapse_on_complete",
+        title: "Toggle collapse tool groups at end of turn",
+        category: "Session",
+        slashName: "collapse-tool-groups",
+        slashAliases: ["toggle-collapse-tool-groups"],
+        run: () => {
+          kv.set("tool_groups_collapse_on_complete", !kv.get("tool_groups_collapse_on_complete", true))
           dialog.clear()
         },
       },

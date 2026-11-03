@@ -165,6 +165,7 @@ const context = createContext<{
   showDetails: () => boolean
   showGenericToolOutput: () => boolean
   toolCardsExpanded: () => boolean
+  toolGroupsCollapseOnComplete: () => boolean
   diffWrapMode: () => "word" | "none"
   providers: () => ReadonlyMap<string, Provider>
   sync: ReturnType<typeof useSync>
@@ -255,6 +256,68 @@ export function Session() {
     return messages().findLast((x) => x.role === "assistant")
   })
 
+  // Turn-end tool grouping: a turn is the assistant messages after one user
+  // message, up to the next user message. When a turn is complete and its
+  // tools were split into more than one Used group (Thoughts break groups),
+  // hide those per-message groups and show one total after the last tool
+  // message in the turn, before the final answer. Thoughts and text stay.
+  // Only used-group tools count; question/todowrite are still excluded
+  // (they render as prompts/todos, not tool cards).
+  const turnToolSummary = createMemo(() => {
+    const result = new Map<string, { hideUsed: boolean; summary?: { parts: ToolPart[]; message: any } }>()
+    if (!toolGroupsCollapseOnComplete()) return result
+    const all = messages() as any[]
+    const turns: any[][] = []
+    let current: any[] = []
+    for (const message of all) {
+      if (message.role === "user") {
+        if (current.length) turns.push(current)
+        current = []
+        continue
+      }
+      if (message.role === "assistant") current.push(message)
+    }
+    if (current.length) turns.push(current)
+    turns.forEach((turn, turnIndex) => {
+      const endedByUser = turnIndex < turns.length - 1
+      const lastMsg = turn[turn.length - 1]
+      const complete =
+        endedByUser ||
+        (lastMsg?.finish && !["tool-calls", "unknown"].includes(lastMsg.finish)) ||
+        Boolean(lastMsg?.error)
+      if (!complete) return
+      const tools: ToolPart[] = []
+      let groupCount = 0
+      let lastToolMessage: any = undefined
+      for (const message of turn) {
+        const parts = (sync.data.part[message.id] ?? []) as Part[]
+        let inGroup = false
+        for (const part of parts) {
+          if (isUsedGroupTool(part) && part.state.status !== "pending" && part.state.status !== "running") {
+            if (!inGroup) {
+              groupCount += 1
+              inGroup = true
+            }
+            tools.push(part)
+            lastToolMessage = message
+          } else {
+            inGroup = false
+          }
+        }
+      }
+      if (groupCount <= 1 || !lastToolMessage) return
+      for (const message of turn) {
+        const entry = result.get(message.id) ?? { hideUsed: false }
+        entry.hideUsed = true
+        result.set(message.id, entry)
+      }
+      const summaryEntry = result.get(lastToolMessage.id) ?? { hideUsed: false }
+      summaryEntry.summary = { parts: tools, message: lastToolMessage }
+      result.set(lastToolMessage.id, summaryEntry)
+    })
+    return result
+  })
+
   const dimensions = useTerminalDimensions()
   const [sidebar, setSidebar] = kv.signal<"auto" | "hide">("sidebar", "auto")
   const [sidebarOpen, setSidebarOpen] = createSignal(false)
@@ -270,6 +333,7 @@ export function Session() {
   const [_animationsEnabled, _setAnimationsEnabled] = kv.signal("animations_enabled", true)
   const [showGenericToolOutput, setShowGenericToolOutput] = kv.signal("generic_tool_output_visibility", false)
   const [toolCardsExpanded] = kv.signal("tool_cards_expanded", false)
+  const [toolGroupsCollapseOnComplete] = kv.signal("tool_groups_collapse_on_complete", true)
 
   const wide = createMemo(() => dimensions().width > 120)
   const sidebarVisible = createMemo(() => {
@@ -1173,6 +1237,7 @@ export function Session() {
           showDetails,
           showGenericToolOutput,
           toolCardsExpanded,
+          toolGroupsCollapseOnComplete,
           diffWrapMode,
           providers,
           sync,
@@ -1288,11 +1353,22 @@ export function Session() {
                         />
                       </Match>
                       <Match when={message.role === "assistant"}>
-                        <AssistantMessage
-                          last={lastAssistant()?.id === message.id}
-                          message={message as AssistantMessage}
-                          parts={sync.data.part[message.id] ?? []}
-                        />
+                        <>
+                          <AssistantMessage
+                            last={lastAssistant()?.id === message.id}
+                            message={message as AssistantMessage}
+                            parts={sync.data.part[message.id] ?? []}
+                            hideUsedGroups={turnToolSummary().get(message.id)?.hideUsed}
+                          />
+                          <Show when={turnToolSummary().get(message.id)?.summary}>
+                            <UsedToolGroup
+                              parts={turnToolSummary().get(message.id)!.summary!.parts}
+                              message={turnToolSummary().get(message.id)!.summary!.message}
+                              busy={() => false}
+                              last={false}
+                            />
+                          </Show>
+                        </>
                       </Match>
                     </Switch>
                   )}
@@ -1471,7 +1547,7 @@ function UserMessage(props: {
   )
 }
 
-function AssistantMessage(props: { message: AssistantMessage; parts: Part[]; last: boolean }) {
+function AssistantMessage(props: { message: AssistantMessage; parts: Part[]; last: boolean; hideUsedGroups?: boolean }) {
   const ctx = use()
   const local = useLocal()
   const { theme } = useTheme()
@@ -1497,7 +1573,7 @@ function AssistantMessage(props: { message: AssistantMessage; parts: Part[]; las
   // Desktop-style grouping: consecutive completed "used" tools collapse
   // into one Used/Using header. Running tools stay as their own full
   // cards, so the header updates live as each call finishes. Context
-  // tools (grep/list) and question/todowrite are not grouped; read/glob are now included.
+  // Every tool except question/todowrite is grouped (grep/list/read/glob included).
   const segments = createMemo(() => {
     type Segment = { kind: "single"; part: Part } | { kind: "used"; parts: ToolPart[] }
     const segments: Segment[] = []
@@ -1525,6 +1601,7 @@ function AssistantMessage(props: { message: AssistantMessage; parts: Part[]; las
       <For each={segments()}>
         {(segment, index) => {
           if (segment.kind === "used") {
+            if (props.hideUsedGroups) return <></>
             return (
               <UsedToolGroup
                 parts={segment.parts}
@@ -1746,11 +1823,10 @@ function TextPart(props: { last: boolean; part: TextPart; message: AssistantMess
   )
 }
 
-const CONTEXT_GROUP_TOOLS = new Set(["grep", "list"])
 const USED_GROUP_BLOCKED = new Set(["question", "todowrite"])
 
 function isUsedGroupTool(part: Part): part is ToolPart {
-  return part.type === "tool" && !CONTEXT_GROUP_TOOLS.has(part.tool) && !USED_GROUP_BLOCKED.has(part.tool)
+  return part.type === "tool" && !USED_GROUP_BLOCKED.has(part.tool)
 }
 
 function toolTitle(tool: string) {
