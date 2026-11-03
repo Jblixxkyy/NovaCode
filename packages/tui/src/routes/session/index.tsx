@@ -256,6 +256,34 @@ export function Session() {
     return messages().findLast((x) => x.role === "assistant")
   })
 
+  const dimensions = useTerminalDimensions()
+  const [sidebar, setSidebar] = kv.signal<"auto" | "hide">("sidebar", "auto")
+  const [sidebarOpen, setSidebarOpen] = createSignal(false)
+  const [conceal, setConceal] = createSignal(true)
+  const thinking = useThinkingMode()
+  const thinkingMode = thinking.mode
+  const showThinking = createMemo(() => true)
+  const [timestamps, setTimestamps] = kv.signal<"hide" | "show">("timestamps", "hide")
+  const [showDetails, setShowDetails] = kv.signal("tool_details_visibility", true)
+  const [showAssistantMetadata, _setShowAssistantMetadata] = kv.signal("assistant_metadata_visibility", true)
+  const [showScrollbar, setShowScrollbar] = kv.signal("scrollbar_visible", false)
+  const [diffWrapMode] = kv.signal<"word" | "none">("diff_wrap_mode", "word")
+  const [_animationsEnabled, _setAnimationsEnabled] = kv.signal("animations_enabled", true)
+  const [showGenericToolOutput, setShowGenericToolOutput] = kv.signal("generic_tool_output_visibility", false)
+  const [toolCardsExpanded] = kv.signal("tool_cards_expanded", false)
+  const [toolGroupsCollapseOnComplete] = kv.signal("tool_groups_collapse_on_complete", true)
+
+  const wide = createMemo(() => dimensions().width > 120)
+  const sidebarVisible = createMemo(() => {
+    if (session()?.parentID) return false
+    if (sidebarOpen()) return true
+    if (sidebar() === "auto" && wide()) return true
+    return false
+  })
+  const showTimestamps = createMemo(() => timestamps() === "show")
+  const contentWidth = createMemo(() => dimensions().width - (sidebarVisible() ? 42 : 0) - 4)
+  const providers = createMemo(() => Model.index(sync.data.provider))
+
   // Turn-end tool grouping: a turn is the assistant messages after one user
   // message, up to the next user message. When a turn is complete and its
   // tools were split into more than one Used group (Thoughts break groups),
@@ -318,33 +346,6 @@ export function Session() {
     return result
   })
 
-  const dimensions = useTerminalDimensions()
-  const [sidebar, setSidebar] = kv.signal<"auto" | "hide">("sidebar", "auto")
-  const [sidebarOpen, setSidebarOpen] = createSignal(false)
-  const [conceal, setConceal] = createSignal(true)
-  const thinking = useThinkingMode()
-  const thinkingMode = thinking.mode
-  const showThinking = createMemo(() => true)
-  const [timestamps, setTimestamps] = kv.signal<"hide" | "show">("timestamps", "hide")
-  const [showDetails, setShowDetails] = kv.signal("tool_details_visibility", true)
-  const [showAssistantMetadata, _setShowAssistantMetadata] = kv.signal("assistant_metadata_visibility", true)
-  const [showScrollbar, setShowScrollbar] = kv.signal("scrollbar_visible", false)
-  const [diffWrapMode] = kv.signal<"word" | "none">("diff_wrap_mode", "word")
-  const [_animationsEnabled, _setAnimationsEnabled] = kv.signal("animations_enabled", true)
-  const [showGenericToolOutput, setShowGenericToolOutput] = kv.signal("generic_tool_output_visibility", false)
-  const [toolCardsExpanded] = kv.signal("tool_cards_expanded", false)
-  const [toolGroupsCollapseOnComplete] = kv.signal("tool_groups_collapse_on_complete", true)
-
-  const wide = createMemo(() => dimensions().width > 120)
-  const sidebarVisible = createMemo(() => {
-    if (session()?.parentID) return false
-    if (sidebarOpen()) return true
-    if (sidebar() === "auto" && wide()) return true
-    return false
-  })
-  const showTimestamps = createMemo(() => timestamps() === "show")
-  const contentWidth = createMemo(() => dimensions().width - (sidebarVisible() ? 42 : 0) - 4)
-  const providers = createMemo(() => Model.index(sync.data.provider))
 
   const scrollAcceleration = createMemo(() => getScrollAcceleration(tuiConfig))
   const toast = useToast()
