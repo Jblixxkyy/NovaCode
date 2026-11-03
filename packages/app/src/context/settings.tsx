@@ -33,6 +33,7 @@ export interface Settings {
     shellToolPartsExpanded: boolean
     editToolPartsExpanded: boolean
     showCustomAgents: boolean
+    autoCollapseSidebarSessions: boolean
     mobileTitlebarPosition: "top" | "bottom"
     newLayoutDesigns?: boolean
     layoutTransitionEligible?: boolean
@@ -209,6 +210,7 @@ const defaultSettings: Settings = {
     shellToolPartsExpanded: false,
     editToolPartsExpanded: false,
     showCustomAgents: false,
+    autoCollapseSidebarSessions: false,
     mobileTitlebarPosition: "top",
   },
   appearance: {
@@ -439,6 +441,13 @@ export const { use: useSettings, provider: SettingsProvider } = createSimpleCont
         showCustomAgents,
         setShowCustomAgents(value: boolean) {
           setStore("general", "showCustomAgents", value)
+        },
+        autoCollapseSidebarSessions: withFallback(
+          () => store.general?.autoCollapseSidebarSessions,
+          defaultSettings.general.autoCollapseSidebarSessions,
+        ),
+        setAutoCollapseSidebarSessions(value: boolean) {
+          setStore("general", "autoCollapseSidebarSessions", value)
         },
         mobileTitlebarPosition: withFallback(
           () => store.general?.mobileTitlebarPosition,

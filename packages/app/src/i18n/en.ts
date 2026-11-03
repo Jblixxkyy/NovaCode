@@ -1040,6 +1040,9 @@ export const dict = {
   "settings.general.row.editToolPartsExpanded.title": "Expand edit tool parts",
   "settings.general.row.editToolPartsExpanded.description":
     "Show edit, write, and patch tool parts expanded by default in the timeline",
+  "settings.general.row.sidebarAutoCollapse.title": "Auto-collapse sidebar sessions",
+  "settings.general.row.sidebarAutoCollapse.description":
+    "Collapse workspace sessions in the sidebar, keeping only the current workspace expanded",
   "settings.general.row.newInterface.title": "New layout",
   "settings.general.row.newInterface.badge": "New",
   "settings.general.row.newInterface.description":

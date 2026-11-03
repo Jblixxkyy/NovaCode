@@ -430,6 +430,18 @@ export const SettingsGeneralV2: Component<{
           </div>
         </SettingsRowV2>
 
+        <SettingsRowV2
+          title={language.t("settings.general.row.sidebarAutoCollapse.title")}
+          description={language.t("settings.general.row.sidebarAutoCollapse.description")}
+        >
+          <div data-action="settings-sidebar-auto-collapse">
+            <Switch
+              checked={settings.general.autoCollapseSidebarSessions()}
+              onChange={(checked) => settings.general.setAutoCollapseSidebarSessions(checked)}
+            />
+          </div>
+        </SettingsRowV2>
+
         <Show when={mobile() && import.meta.env.VITE_NOVACODE_CHANNEL !== "prod"}>
           <SettingsRowV2
             title={language.t("settings.general.row.mobileTitlebarBottom.title")}

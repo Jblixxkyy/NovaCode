@@ -312,20 +312,11 @@ export function Titlebar(props: { update?: TitlebarUpdate; debugTools?: { visibl
 
               tabs.newDraft({ server: fallback.server, directory: fallback.project.worktree }, "")
             }
-            // The titlebar Home button IS the sidebar button, and the
-            // draft/new-session screen IS the home screen. So:
-            // - Sidebar open -> click closes the sidebar only.
-            // - Sidebar closed -> click opens the sidebar and goes home,
-            //   which lands on the draft screen (or creates one).
-            // There is no other close path.
-            const toggleHome = () => {
-              if (workspaceSidebar.open()) {
-                workspaceSidebar.setOpen(false)
-                return
-              }
-              workspaceSidebar.setOpen(true)
-              tabs.toggleHome({ home: false, current: currentTab() })
-            }
+            // The titlebar Home button IS the sidebar button, and nothing
+            // else: clicking it, or its Mod+B shortcut, only opens or
+            // closes the sidebar. It never navigates away — you stay on
+            // whatever screen you were on (session, draft, or home).
+            const toggleHome = () => workspaceSidebar.toggle()
 
             command.register("titlebar-home", () => [
               {
