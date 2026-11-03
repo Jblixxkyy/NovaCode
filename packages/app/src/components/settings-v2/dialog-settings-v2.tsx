@@ -11,6 +11,7 @@ import { SettingsModelsV2 } from "./models"
 import { SettingsSkillsV2 } from "./skills"
 import "./settings-v2.css"
 import { SettingsServersV2 } from "./servers"
+import { SettingsTelegramV2 } from "./telegram"
 import { useDialog } from "@novacode-ai/ui/context/dialog"
 import { useLayout } from "@/context/layout"
 import { useTabs } from "@/context/tabs"
@@ -88,6 +89,10 @@ export const DialogSettings: Component<{
                       <Icon name="code" />
                       {language.t("settings.skills.title")}
                     </TabsV2.Trigger>
+                    <TabsV2.Trigger value="telegram">
+                      <Icon name="comment" />
+                      {language.t("settings.tab.telegram")}
+                    </TabsV2.Trigger>
                   </div>
                 </div>
               </div>
@@ -115,6 +120,9 @@ export const DialogSettings: Component<{
         </TabsV2.Content>
         <TabsV2.Content value="skills" class="settings-v2-panel">
           <SettingsSkillsV2 directory={directory} />
+        </TabsV2.Content>
+        <TabsV2.Content value="telegram" class="settings-v2-panel">
+          <SettingsTelegramV2 />
         </TabsV2.Content>
       </TabsV2>
     </Dialog>

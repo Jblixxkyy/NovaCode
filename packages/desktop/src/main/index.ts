@@ -52,6 +52,7 @@ import { setNativeTranslations } from "./native-translations"
 import { cleanupWebAppProcesses } from "./desktop-menu-actions"
 import { getStore } from "./store"
 import { parseAutoAccept, startPermissionAutoResponder } from "./permission-auto-responder"
+import { createTelegramBotManager } from "./telegram-bot"
 
 const APP_NAMES: Record<string, string> = {
   dev: "NovaCode Dev",
@@ -236,8 +237,10 @@ const main = Effect.gen(function* () {
       },
     },
   )
+  const telegramBot = createTelegramBotManager()
   const stopSidecars = async () => {
     cleanupWebAppProcesses()
+    await telegramBot.stop()
     await killSidecar()
     wslServers.stopAll()
   }
@@ -386,6 +389,9 @@ const main = Effect.gen(function* () {
     },
     getDesktopSharingEnabled: () => getDesktopSharingEnabled(),
     setDesktopSharingEnabled: (enabled) => setDesktopSharingEnabled(enabled),
+    telegramBotStatus: () => telegramBot.status(),
+    startTelegramBot: (config) => telegramBot.start(config),
+    stopTelegramBot: () => telegramBot.stop(),
   })
   registerWslIpcHandlers(wslServers)
   void updater.start()

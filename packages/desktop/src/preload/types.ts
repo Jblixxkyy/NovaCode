@@ -42,6 +42,31 @@ export type FatalRendererError = {
   os?: string
 }
 
+export type TelegramBotConfig = {
+  token: string
+  dmPolicy: "pairing" | "allowlist" | "open" | "disabled"
+  dmAllowFrom: number[]
+  requireMention: boolean
+  streamingEnabled: boolean
+  approvalsEnabled: boolean
+}
+
+export type TelegramBotErrorCode =
+  | "no-token"
+  | "invalid-token"
+  | "network"
+  | "not-available"
+  | "bun-not-found"
+  | "bot-exited"
+
+export type TelegramBotStatus = {
+  available: boolean
+  running: boolean
+  botUsername?: string
+  errorCode?: TelegramBotErrorCode
+  errorDetail?: string
+}
+
 export type ElectronAPI = {
   killSidecar: () => Promise<void>
   installCli: () => Promise<string>
@@ -115,4 +140,7 @@ export type ElectronAPI = {
   setNativeTranslations: (bundle: DesktopNativeBundle) => Promise<void>
   getDesktopSharingEnabled: () => Promise<boolean>
   setDesktopSharingEnabled: (enabled: boolean) => Promise<void>
+  telegramBotStatus: () => Promise<TelegramBotStatus>
+  startTelegramBot: (config: TelegramBotConfig) => Promise<TelegramBotStatus>
+  stopTelegramBot: () => Promise<TelegramBotStatus>
 }

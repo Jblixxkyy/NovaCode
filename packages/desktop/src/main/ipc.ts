@@ -6,7 +6,13 @@ import type { IpcMainEvent, IpcMainInvokeEvent } from "electron"
 import type { DesktopMenuAction } from "@novacode-ai/app/desktop-menu"
 import { parseDesktopNativeBundle, type DesktopNativeBundle } from "@novacode-ai/app/i18n/desktop-native"
 
-import type { FatalRendererError, ServerReadyData, TitlebarTheme } from "../preload/types"
+import type {
+  FatalRendererError,
+  ServerReadyData,
+  TelegramBotConfig,
+  TelegramBotStatus,
+  TitlebarTheme,
+} from "../preload/types"
 import { runDesktopMenuAction } from "./desktop-menu-actions"
 import { setForceFocus } from "./debug"
 import { assertAttachmentBudget, createPickedFileAuthorizations } from "./attachment-picker"
@@ -54,6 +60,9 @@ type Deps = {
   setNativeTranslations: (bundle: DesktopNativeBundle) => void
   getDesktopSharingEnabled?: () => Promise<boolean> | boolean
   setDesktopSharingEnabled?: (enabled: boolean) => Promise<void> | void
+  telegramBotStatus?: () => Promise<TelegramBotStatus> | TelegramBotStatus
+  startTelegramBot?: (config: TelegramBotConfig) => Promise<TelegramBotStatus> | TelegramBotStatus
+  stopTelegramBot?: () => Promise<TelegramBotStatus> | TelegramBotStatus
 }
 
 export function registerIpcHandlers(deps: Deps) {
@@ -309,6 +318,11 @@ export function registerIpcHandlers(deps: Deps) {
       return true
     }
   })
+  ipcMain.handle("telegram-bot-status", () => deps.telegramBotStatus?.() ?? { available: false, running: false })
+  ipcMain.handle("telegram-bot-start", (_event: IpcMainInvokeEvent, config: TelegramBotConfig) =>
+    deps.startTelegramBot?.(config) ?? { available: false, running: false },
+  )
+  ipcMain.handle("telegram-bot-stop", () => deps.stopTelegramBot?.() ?? { available: false, running: false })
   ipcMain.handle("set-desktop-sharing-enabled", (_event: IpcMainInvokeEvent, enabled: boolean) => {
     if (deps.setDesktopSharingEnabled) return deps.setDesktopSharingEnabled(enabled)
     try {
