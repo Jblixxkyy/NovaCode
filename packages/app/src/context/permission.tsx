@@ -170,6 +170,12 @@ export const { use: usePermission, provider: PermissionProvider } = createSimple
       toggleAutoAcceptDirectory(directory: string) {
         selected().toggleAutoAcceptDirectory(directory)
       },
+      enableAutoAcceptDirectory(directory: string) {
+        selected().enableAutoAcceptDirectory(directory)
+      },
+      disableAutoAcceptDirectory(directory: string) {
+        selected().disableAutoAcceptDirectory(directory)
+      },
       enableAutoAccept(sessionID: string, directory: string) {
         selected().enableAutoAccept(sessionID, directory)
       },
@@ -355,8 +361,12 @@ function createServerPermissionState(input: { sdk: ServerSDK; sync: ServerSync }
   function enableDirectory(directory: string) {
     if (meta.disposed) return
     const key = directoryAcceptKey(directory)
+    const prefix = key.slice(0, -1)
     setStore(
       produce((draft) => {
+        for (const existing of Object.keys(draft.autoAccept)) {
+          if (existing.startsWith(prefix) && existing !== key) delete draft.autoAccept[existing]
+        }
         draft.autoAccept[key] = true
       }),
     )
@@ -375,8 +385,12 @@ function createServerPermissionState(input: { sdk: ServerSDK; sync: ServerSync }
   function disableDirectory(directory: string) {
     if (meta.disposed) return
     const key = directoryAcceptKey(directory)
+    const prefix = key.slice(0, -1)
     setStore(
       produce((draft) => {
+        for (const existing of Object.keys(draft.autoAccept)) {
+          if (existing.startsWith(prefix) && existing !== key) delete draft.autoAccept[existing]
+        }
         draft.autoAccept[key] = false
       }),
     )
@@ -453,6 +467,14 @@ function createServerPermissionState(input: { sdk: ServerSDK; sync: ServerSync }
         return
       }
       enableDirectory(directory)
+    },
+    enableAutoAcceptDirectory(directory: string) {
+      if (meta.disposed) return
+      enableDirectory(directory)
+    },
+    disableAutoAcceptDirectory(directory: string) {
+      if (meta.disposed) return
+      disableDirectory(directory)
     },
     enableAutoAccept(sessionID: string, directory: string) {
       if (meta.disposed) return
