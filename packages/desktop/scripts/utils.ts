@@ -49,3 +49,18 @@ export async function copyLocalCliToResources() {
 
   console.warn(`No locally built CLI found in ${distRoot}. Run: bun run --cwd packages/novacode build --single`)
 }
+
+/**
+ * Compile the Telegram bot (`packages/telegram/src/index.ts`) into a
+ * self-contained executable via `bun build --compile`. The binary bundles the
+ * bun runtime and all dependencies, so packaged desktop apps can run the bot
+ * without requiring `bun` or `packages/telegram` on the user's machine.
+ */
+export async function compileTelegramBot() {
+  const exe = process.platform === "win32" ? "telegram-bot.exe" : "telegram-bot"
+  const dest = path.join(import.meta.dir, "../resources", exe)
+  const src = path.join(import.meta.dir, "../../packages/telegram/src/index.ts")
+  await $`bun build ${src} --compile --outfile ${dest}`
+  if (process.platform !== "win32") await $`chmod 755 ${dest}`
+  console.log(`Compiled telegram bot to ${dest}`)
+}

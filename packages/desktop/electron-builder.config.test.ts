@@ -89,3 +89,20 @@ for (const channel of ["beta", "prod"] as const) {
     })
   })
 }
+
+for (const channel of ["dev", "beta", "prod"] as const) {
+  test(`bundles the telegram bot binary in ${channel} builds`, async () => {
+    const previous = process.env.NOVACODE_CHANNEL
+    process.env.NOVACODE_CHANNEL = channel
+    const module = await import(`./electron-builder.config.ts?telegram-resource=${channel}`)
+    const config = module.default as Configuration
+    if (previous === undefined) delete process.env.NOVACODE_CHANNEL
+    else process.env.NOVACODE_CHANNEL = previous
+
+    expect(config.extraResources).toContainEqual({
+      from: "resources/",
+      to: "",
+      filter: ["telegram-bot*"],
+    })
+  })
+}

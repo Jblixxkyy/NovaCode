@@ -1,5 +1,6 @@
 import { spawn, type ChildProcess } from "node:child_process"
 import { copyFileSync, existsSync, writeFileSync } from "node:fs"
+import { chmod, copyFile, mkdir } from "node:fs/promises"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { app } from "electron"
@@ -29,6 +30,10 @@ export type TelegramBotStatus = {
   errorDetail?: string
 }
 
+function executableName() {
+  return process.platform === "win32" ? "telegram-bot.exe" : "telegram-bot"
+}
+
 function findTelegramDir(): string | undefined {
   const starts: string[] = []
   try {
@@ -50,6 +55,36 @@ function findTelegramDir(): string | undefined {
   return undefined
 }
 
+/**
+ * In packaged builds the compiled telegram-bot binary is bundled under
+ * `process.resourcesPath` by electron-builder (extraResources). Return that
+ * directory so `status()` can report availability before a start.
+ */
+function findPackagedBotDir(): string | undefined {
+  if (!app.isPackaged) return undefined
+  const binary = join(process.resourcesPath, executableName())
+  if (existsSync(binary)) return process.resourcesPath
+  return undefined
+}
+
+/**
+ * Copy the bundled binary from the read-only resources dir into a writable
+ * userData subdirectory so the bot can write `telegram.json` and state files
+ * next to itself. Returns the staging directory used as the process cwd.
+ */
+async function stagePackagedBot(): Promise<string> {
+  const userData = app.getPath("userData")
+  const dir = join(userData, "telegram-bot")
+  const dest = join(dir, executableName())
+  if (!existsSync(dest)) {
+    await mkdir(dir, { recursive: true })
+    const source = join(process.resourcesPath, executableName())
+    await copyFile(source, dest)
+    if (process.platform !== "win32") await chmod(dest, 0o755)
+  }
+  return dir
+}
+
 export function createTelegramBotManager() {
   let child: ChildProcess | undefined
   let botUsername: string | undefined
@@ -67,12 +102,14 @@ export function createTelegramBotManager() {
     }
   }
 
+  const telegramDir = (): string | undefined => (app.isPackaged ? findPackagedBotDir() : findTelegramDir())
+
   const status = (): TelegramBotStatus => {
     const running = !!child && child.exitCode === null && !child.killed
-    const telegramDir = findTelegramDir()
+    const dir = telegramDir()
     if (!running && errorCode) {
       return {
-        available: !!telegramDir,
+        available: !!dir,
         running: false,
         botUsername,
         errorCode,
@@ -80,7 +117,7 @@ export function createTelegramBotManager() {
       }
     }
     return {
-      available: !!telegramDir,
+      available: !!dir,
       running,
       botUsername: running ? botUsername : undefined,
     }
@@ -112,8 +149,15 @@ export function createTelegramBotManager() {
 
   const start = async (config: TelegramBotConfig): Promise<TelegramBotStatus> => {
     if (status().running) return status()
-    const telegramDir = findTelegramDir()
-    if (!telegramDir) {
+    let dir: string | undefined
+    try {
+      dir = app.isPackaged ? await stagePackagedBot() : findTelegramDir()
+    } catch {
+      errorCode = "bun-not-found"
+      errorDetail = undefined
+      return status()
+    }
+    if (!dir) {
       errorCode = "not-available"
       errorDetail = undefined
       return status()
@@ -141,9 +185,9 @@ export function createTelegramBotManager() {
       return status()
     }
 
-    const configPath = join(telegramDir, "telegram.json")
+    const configPath = join(dir, "telegram.json")
     try {
-      if (existsSync(configPath)) copyFileSync(configPath, join(telegramDir, "telegram.json.bak"))
+      if (existsSync(configPath)) copyFileSync(configPath, join(dir, "telegram.json.bak"))
       writeFileSync(
         configPath,
         JSON.stringify(
@@ -170,8 +214,9 @@ export function createTelegramBotManager() {
     botUsername = me.username
     stopping = false
 
-    const next = spawn("bun", ["run", "dev"], {
-      cwd: telegramDir,
+    const binaryPath = join(dir, executableName())
+    const next = spawn(binaryPath, [], {
+      cwd: dir,
       env: { ...process.env, TELEGRAM_BOT_TOKEN: token },
       stdio: ["ignore", "pipe", "pipe"],
       windowsHide: true,

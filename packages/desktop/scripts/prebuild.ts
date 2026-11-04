@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 import { $ } from "bun"
 
-import { copyLocalCliToResources, resolveChannel } from "./utils"
+import { compileTelegramBot, copyLocalCliToResources, resolveChannel } from "./utils"
 
 const channel = resolveChannel()
 await $`bun ./scripts/copy-icons.ts ${channel}`
@@ -9,3 +9,4 @@ await $`bun ./scripts/copy-metainfo.ts ${channel}`
 
 await $`cd ../novacode && bun ./script/build-node.ts`
 if (channel === "dev") await copyLocalCliToResources()
+await compileTelegramBot()
