@@ -59,7 +59,7 @@ export async function copyLocalCliToResources() {
 export async function compileTelegramBot() {
   const exe = process.platform === "win32" ? "telegram-bot.exe" : "telegram-bot"
   const dest = path.join(import.meta.dir, "../resources", exe)
-  const src = path.join(import.meta.dir, "../../packages/telegram/src/index.ts")
+  const src = path.join(import.meta.dir, "../../telegram/src/index.ts")
   await $`bun build ${src} --compile --outfile ${dest}`
   if (process.platform !== "win32") await $`chmod 755 ${dest}`
   console.log(`Compiled telegram bot to ${dest}`)
