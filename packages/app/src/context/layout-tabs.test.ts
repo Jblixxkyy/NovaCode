@@ -63,6 +63,12 @@ describe("openSessionTab", () => {
     )
   })
 
+  test("keeps the preview when opening the Browser", () => {
+    expect(openSessionTab(state(["file://a.ts"], "file://a.ts", "file://a.ts"), "browser")).toEqual(
+      state(["browser", "file://a.ts"], "browser", "file://a.ts"),
+    )
+  })
+
   test("replaces a restored Open File placeholder with a direct open", () => {
     expect(openSessionTab(state(["file://a.ts", SESSION_OPEN_FILE_TAB], SESSION_OPEN_FILE_TAB), "file://b.ts")).toEqual(
       state(["file://a.ts", "file://b.ts"], "file://b.ts"),
@@ -78,5 +84,11 @@ describe("closeSessionTab", () => {
         "file://b.ts",
       ),
     ).toEqual(state(["file://a.ts", "file://c.ts"], "file://a.ts"))
+  })
+
+  test("closing the Browser selects the next tab", () => {
+    expect(closeSessionTab(state(["browser", "file://a.ts"], "browser"), "browser")).toEqual(
+      state(["file://a.ts"], "file://a.ts"),
+    )
   })
 })

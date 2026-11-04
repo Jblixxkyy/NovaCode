@@ -7,6 +7,7 @@ import type { DesktopMenuAction } from "@novacode-ai/app/desktop-menu"
 import { parseDesktopNativeBundle, type DesktopNativeBundle } from "@novacode-ai/app/i18n/desktop-native"
 
 import type {
+  BrowserEmbedInput,
   FatalRendererError,
   ServerReadyData,
   TelegramBotConfig,
@@ -64,6 +65,8 @@ type Deps = {
   telegramBotStatus?: () => Promise<TelegramBotStatus> | TelegramBotStatus
   startTelegramBot?: (config: TelegramBotConfig) => Promise<TelegramBotStatus> | TelegramBotStatus
   stopTelegramBot?: () => Promise<TelegramBotStatus> | TelegramBotStatus
+  browserEmbedSet?: (win: BrowserWindow, input: BrowserEmbedInput) => void
+  browserEmbedClear?: (win: BrowserWindow) => void
 }
 
 export function registerIpcHandlers(deps: Deps) {
@@ -338,6 +341,30 @@ export function registerIpcHandlers(deps: Deps) {
       getStore().set("desktopSharingEnabled", enabled)
     } catch {}
     return enabled
+  })
+
+  // Browser panel embed placement: fire-and-forget, sent on every rect
+  // change while the panel is open. Bounds are renderer CSS pixels.
+  ipcMain.on("browser-embed-set", (event: IpcMainEvent, input: BrowserEmbedInput) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (!win || win.isDestroyed() || !deps.browserEmbedSet) return
+    if (
+      !input ||
+      typeof input.scope !== "string" ||
+      typeof input.visible !== "boolean" ||
+      !input.rect ||
+      typeof input.rect.x !== "number" ||
+      typeof input.rect.y !== "number" ||
+      typeof input.rect.width !== "number" ||
+      typeof input.rect.height !== "number"
+    )
+      return
+    deps.browserEmbedSet(win, input)
+  })
+  ipcMain.on("browser-embed-clear", (event: IpcMainEvent) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (!win || win.isDestroyed() || !deps.browserEmbedClear) return
+    deps.browserEmbedClear(win)
   })
 }
 

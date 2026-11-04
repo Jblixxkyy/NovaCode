@@ -52,6 +52,10 @@ import { setNativeTranslations } from "./native-translations"
 import { getStore } from "./store"
 import { parseAutoAccept, startPermissionAutoResponder } from "./permission-auto-responder"
 import { createTelegramBotManager } from "./telegram-bot"
+import { startBrowserHost, type BrowserHostClient } from "./browser/host"
+import { browserTabs } from "./browser/tabs"
+import { BROWSER_TABS_KEY, BROWSER_TABS_STORE } from "./store-keys"
+import { clearBrowserEmbed, setBrowserEmbed } from "./browser/embed"
 
 const APP_NAMES: Record<string, string> = {
   dev: "NovaCode Dev",
@@ -70,6 +74,7 @@ const jsCallStackFeature = "DocumentPolicyIncludeJSCallStacksInCrashReports"
 let logger: ReturnType<typeof initLogging>
 let server: SidecarListener | null = null
 let permissionAutoResponder: { stop: () => Promise<void> } | null = null
+let browserHost: BrowserHostClient | null = null
 
 const GLOBAL_STORAGE = "novacode.global.dat"
 
@@ -87,6 +92,30 @@ function startPermissionAutoAccept(url: string, password: string) {
     log: (message, meta) => writeLog("permission", message, meta),
   })
 }
+
+// Attaches this desktop's webview browser to the local sidecar: while the
+// attachment is live, browser tools run against these WebContentsView tabs
+// instead of the server's Playwright driver (see plans/desktop-webview-plan.md).
+function startBrowserHostClient(url: string, username: string, password: string) {
+  browserHost = startBrowserHost({
+    url,
+    username,
+    password,
+    manager: browserTabs,
+    log: (message, meta) => writeLog("browser", message, meta),
+  })
+}
+
+// Tab restore across restarts: persist each scope's tab URLs + focused tab
+// (debounced inside the manager) and recreate them deferred on startup —
+// views stay unattached and unloaded until the panel embeds them.
+browserTabs.setPersister(() => {
+  getStore(BROWSER_TABS_STORE).set(BROWSER_TABS_KEY, browserTabs.snapshotRestoreState())
+})
+const savedBrowserTabs = getStore(BROWSER_TABS_STORE).get(BROWSER_TABS_KEY) as
+  | Parameters<typeof browserTabs.restoreScopes>[0]
+  | undefined
+if (savedBrowserTabs) browserTabs.restoreScopes(savedBrowserTabs)
 
 const pendingDeepLinks: string[] = []
 
@@ -157,6 +186,9 @@ async function killSidecar() {
   const responder = permissionAutoResponder
   permissionAutoResponder = null
   await responder?.stop()
+  const host = browserHost
+  browserHost = null
+  await host?.stop()
   if (!server) return
   const current = server
   server = null
@@ -390,6 +422,8 @@ const main = Effect.gen(function* () {
     telegramBotStatus: () => telegramBot.status(),
     startTelegramBot: (config) => telegramBot.start(config),
     stopTelegramBot: () => telegramBot.stop(),
+    browserEmbedSet: (win, input) => setBrowserEmbed(win, input),
+    browserEmbedClear: (win) => clearBrowserEmbed(win),
   })
   registerWslIpcHandlers(wslServers)
   void updater.start()
@@ -418,6 +452,7 @@ const main = Effect.gen(function* () {
         username: sidecar.username,
         password: sidecar.password,
       })
+      startBrowserHostClient(sidecar.url, sidecar.username, sidecar.password)
       writeDesktopDiscovery({ url: sidecar.url, username: sidecar.username, password: sidecar.password })
 
       if (process.platform === "win32") {
@@ -466,6 +501,7 @@ const main = Effect.gen(function* () {
     )
     server = listener
     startPermissionAutoAccept(url, password)
+    startBrowserHostClient(url, "novacode", password)
     yield* Deferred.succeed(serverReady, {
       url,
       username: "novacode",

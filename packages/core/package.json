@@ -94,6 +94,7 @@
     "@novacode-ai/llm": "workspace:*",
     "@novacode-ai/schema": "workspace:*",
     "@novacode-ai/plugin": "workspace:*",
+    "@novacode-ai/browser": "workspace:*",
     "@opentelemetry/api": "1.9.0",
     "@opentelemetry/context-async-hooks": "2.6.1",
     "@opentelemetry/exporter-trace-otlp-http": "0.214.0",

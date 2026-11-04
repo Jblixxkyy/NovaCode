@@ -139,6 +139,8 @@ const api: ElectronAPI = {
   telegramBotStatus: () => ipcRenderer.invoke("telegram-bot-status"),
   startTelegramBot: (config) => ipcRenderer.invoke("telegram-bot-start", config),
   stopTelegramBot: () => ipcRenderer.invoke("telegram-bot-stop"),
+  browserEmbedSet: (input) => ipcRenderer.send("browser-embed-set", input),
+  browserEmbedClear: () => ipcRenderer.send("browser-embed-clear"),
 }
 
 contextBridge.exposeInMainWorld("api", api)

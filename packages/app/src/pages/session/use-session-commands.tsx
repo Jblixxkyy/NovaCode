@@ -1,3 +1,4 @@
+import { createEffect, onMount } from "solid-js"
 import { useNavigate } from "@solidjs/router"
 import { useCommand, type CommandOption } from "@/context/command"
 import { useDialog } from "@novacode-ai/ui/context/dialog"
@@ -17,6 +18,8 @@ import { findLast } from "@novacode-ai/core/util/array"
 import { createSessionTabs } from "@/pages/session/helpers"
 import { extractPromptFromParts } from "@/utils/prompt"
 import { Message, Part, UserMessage } from "@novacode-ai/sdk/v2"
+import { useServerSDK } from "@/context/server-sdk"
+import { createBrowserApi } from "@/components/browser/api"
 import { useSessionLayout } from "@/pages/session/session-layout"
 import { useSessionArchive } from "@/pages/session/session-archive"
 import { createSessionOwnership } from "./session-ownership"
@@ -266,6 +269,78 @@ export const useSessionCommands = (actions: SessionCommandContext) => {
       (x) => dialog.show(() => <x.DialogSelectFile onOpenFile={showAllFiles} />),
     )
   }
+
+  const openBrowser = () => {
+    if (!view().reviewPanel.opened()) view().reviewPanel.open()
+    void tabs().open("browser")
+    tabs().setActive("browser")
+  }
+
+  // When the agent opens or navigates a page, surface it for the user
+  // instead of leaving it hidden behind a closed side panel. The browser
+  // state is shared, so the agent's page lives in its own new browser tab
+  // next to the user's tabs: focus that tab in the panel and show the
+  // panel, without re-navigating or closing anything the user has open.
+  const serverSDK = useServerSDK()
+  const agentBrowserTools = new Set(["browser.tabs.open", "browser.navigate", "browser_tabs_open", "browser_navigate"])
+  const seenAgentBrowserCalls = new Set<string>()
+  let knownBrowserTabs = new Map<string, { url: string; generation: number }>()
+
+  const browserApi = () => createBrowserApi({ url: sdk().url, server: serverSDK().server, directory: sdk().directory })
+
+  // Baseline of pre-existing browser tabs, so only agent-driven changes
+  // (new tab ids, navigations) are treated as the agent's page.
+  onMount(() => {
+    void browserApi()
+      .state()
+      .then((state) => {
+        knownBrowserTabs = new Map(state.tabs.map((tab) => [tab.id, { url: tab.url, generation: tab.generation }]))
+      })
+      .catch(() => {})
+  })
+
+  const surfaceAgentBrowser = async () => {
+    const state = await browserApi()
+      .state()
+      .catch(() => undefined)
+    if (state) {
+      const target =
+        state.tabs.find((tab) => !knownBrowserTabs.has(tab.id)) ??
+        state.tabs.find((tab) => {
+          const known = knownBrowserTabs.get(tab.id)
+          return known && (known.url !== tab.url || known.generation !== tab.generation)
+        })
+      knownBrowserTabs = new Map(state.tabs.map((tab) => [tab.id, { url: tab.url, generation: tab.generation }]))
+      const targetID = target?.id ?? state.focusedTabID ?? undefined
+      // Already watching the agent's tab in the open panel: a repeat
+      // navigation inside it needs no focus change and no panel churn.
+      if (tabState.browserOpen() && tabs().active() === "browser" && targetID && targetID === state.focusedTabID) return
+      if (targetID && state.focusedTabID !== targetID) await browserApi().focus(targetID).catch(() => {})
+    }
+    if (!tabState.browserOpen()) {
+      openBrowser()
+      return
+    }
+    if (!view().reviewPanel.opened()) view().reviewPanel.open()
+    tabs().setActive("browser")
+  }
+
+  createEffect(() => {
+    const id = params.id
+    if (!id) return
+    for (const message of sync().data.message[id] ?? []) {
+      for (const part of sync().data.part[message.id] ?? []) {
+        if (part.type !== "tool" || !agentBrowserTools.has(part.tool)) continue
+        if (seenAgentBrowserCalls.has(part.callID)) continue
+        seenAgentBrowserCalls.add(part.callID)
+        // Only react to calls first observed while still in flight. A call
+        // first seen already completed is history loaded on mount (the
+        // baseline), not new agent activity.
+        if (part.state.status !== "pending" && part.state.status !== "running") continue
+        void surfaceAgentBrowser()
+      }
+    }
+  })
 
   const closeTab = () => {
     const tab = closableTab()
@@ -564,6 +639,12 @@ export const useSessionCommands = (actions: SessionCommandContext) => {
       title: language.t("command.review.toggle"),
       keybind: "mod+shift+r",
       onSelect: () => view().reviewPanel.toggle(),
+    }),
+    viewCommand({
+      id: "browser.open",
+      title: language.t("command.browser.open"),
+      keybind: "mod+shift+b",
+      onSelect: openBrowser,
     }),
     ...(shown()
       ? [

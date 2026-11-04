@@ -7,6 +7,8 @@ import { Integration } from "@novacode-ai/core/integration"
 import { SkillV2 } from "@novacode-ai/core/skill"
 import { InstanceDisposed } from "@/server/event"
 import { Question } from "@/question"
+import { BrowserApi } from "./groups/browser"
+import { BrowserDesktopApi } from "./groups/browser-desktop"
 import { ConfigApi } from "./groups/config"
 import { ControlApi } from "./groups/control"
 import { ControlPlaneApi } from "./groups/control-plane"
@@ -53,6 +55,7 @@ export const ServerApi = makeApi({
 })
 
 export const RootHttpApi = HttpApi.make("opencode-root")
+  .addHttpApi(BrowserDesktopApi)
   .addHttpApi(ControlApi)
   .addHttpApi(ControlPlaneApi)
   .addHttpApi(GlobalApi)
@@ -60,6 +63,7 @@ export const RootHttpApi = HttpApi.make("opencode-root")
   .middleware(Authorization)
 
 export const InstanceHttpApi = HttpApi.make("opencode-instance")
+  .addHttpApi(BrowserApi)
   .addHttpApi(ConfigApi)
   .addHttpApi(ExperimentalApi)
   .addHttpApi(FileApi)

@@ -132,7 +132,8 @@ export function make<
 }
 
 export const validateName = (name: string) =>
-  /^[A-Za-z][A-Za-z0-9_-]{0,63}$/.test(name)
+  // Dots are allowed for namespaced tools (e.g. browser.tabs.open).
+  /^[A-Za-z][A-Za-z0-9_.-]{0,63}$/.test(name)
     ? Effect.void
     : Effect.fail(new RegistrationError({ name, message: `Invalid tool name: ${name}` }))
 
