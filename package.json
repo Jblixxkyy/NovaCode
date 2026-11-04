@@ -138,12 +138,13 @@
     "electron"
   ],
   "overrides": {
-    "@ai-sdk/provider-utils": "4.0.59",
     "@opentui/core": "catalog:",
     "@opentui/keymap": "catalog:",
     "@opentui/solid": "catalog:",
     "@types/bun": "catalog:",
-    "@types/node": "catalog:"
+    "@types/node": "catalog:",
+    "@ai-sdk/anthropic": "3.0.111",
+    "@ai-sdk/provider-utils": "4.0.63"
   },
   "patchedDependencies": {
     "@dnd-kit/dom@0.5.0": "patches/@dnd-kit%2Fdom@0.5.0.patch",
