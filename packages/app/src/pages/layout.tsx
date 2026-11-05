@@ -2,6 +2,7 @@ import {
   createEffect,
   createMemo,
   createResource,
+  createSignal,
   For,
   on,
   onCleanup,
@@ -1707,7 +1708,14 @@ export default function LegacyLayout(props: ParentProps) {
     )
   })
 
-  const side = createMemo(() => Math.max(layout.sidebar.width(), 244))
+  const [windowWidth, setWindowWidth] = createSignal(window.innerWidth)
+  makeEventListener(window, "resize", () => setWindowWidth(window.innerWidth))
+
+  const side = createMemo(() => {
+    const width = layout.sidebar.width()
+    const maxWidth = Math.floor(windowWidth() * 0.4)
+    return Math.min(Math.max(width, 244), maxWidth)
+  })
   const panel = createMemo(() => Math.max(side() - 64, 0))
 
   const loadedSessionDirs = new Set<string>()

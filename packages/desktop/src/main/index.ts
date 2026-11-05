@@ -109,13 +109,16 @@ function startBrowserHostClient(url: string, username: string, password: string)
 // Tab restore across restarts: persist each scope's tab URLs + focused tab
 // (debounced inside the manager) and recreate them deferred on startup —
 // views stay unattached and unloaded until the panel embeds them.
+// NOTE: do NOT read the store or restore tabs here at module load time.
+// restoreScopes() creates WebContentsViews, which Electron forbids before
+// app.whenReady() — on Windows that crashed the app natively (exit -36861,
+// Crashpad not connected, no log written) for anyone with saved tabs.
+// getStore() here also runs before app.setPath("userData") in main(), so
+// it reads/writes Electron's default data folder instead of the real one.
+// Restore runs in main(), after whenReady() and setPath(), instead.
 browserTabs.setPersister(() => {
   getStore(BROWSER_TABS_STORE).set(BROWSER_TABS_KEY, browserTabs.snapshotRestoreState())
 })
-const savedBrowserTabs = getStore(BROWSER_TABS_STORE).get(BROWSER_TABS_KEY) as
-  | Parameters<typeof browserTabs.restoreScopes>[0]
-  | undefined
-if (savedBrowserTabs) browserTabs.restoreScopes(savedBrowserTabs)
 
 const pendingDeepLinks: string[] = []
 
@@ -360,6 +363,19 @@ const main = Effect.gen(function* () {
   const serverReady = Deferred.makeUnsafe<ServerReadyData, unknown>()
 
   yield* Effect.promise(() => app.whenReady())
+
+  // Browser tabs must only be restored after the app is ready: restoreScopes
+  // creates WebContentsViews, which Electron forbids before whenReady().
+  // A failed restore must never take the app down — log and continue
+  // with no restored tabs instead.
+  try {
+    const savedBrowserTabs = getStore(BROWSER_TABS_STORE).get(BROWSER_TABS_KEY) as
+      | Parameters<typeof browserTabs.restoreScopes>[0]
+      | undefined
+    if (savedBrowserTabs) browserTabs.restoreScopes(savedBrowserTabs)
+  } catch (error) {
+    logger.warn("failed to restore browser tabs", error)
+  }
 
   if (!TEST_ONBOARDING) migrate()
   yield* Effect.promise(() => cleanupStoreFiles(app.getPath("userData"))).pipe(

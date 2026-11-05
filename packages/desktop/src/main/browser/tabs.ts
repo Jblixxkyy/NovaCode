@@ -1,4 +1,4 @@
-import { WebContentsView, type BrowserWindow, type Rectangle, type WebContents } from "electron"
+import { app, WebContentsView, type BrowserWindow, type Rectangle, type WebContents } from "electron"
 import { BrowserPermissions } from "@novacode-ai/browser/permissions"
 import type { BrowserDesktop } from "@novacode-ai/browser/desktop"
 import type { Browser } from "@novacode-ai/browser/rpc"
@@ -248,6 +248,13 @@ export class BrowserTabManager implements TabInventory {
 
   /** Create a tab's view and wire its events. Deferred tabs load nothing until activated. */
   private createTab(scope: string, url: string | undefined, focus: boolean, deferred = false): EmbeddedTab {
+    // WebContentsView cannot be created before app.whenReady(). Doing so
+    // crashed Windows launches natively (exit -36861) when saved tabs were
+    // restored at module load time. Fail loudly in JS instead of crashing
+    // natively, so the caller can log and continue without tabs.
+    if (!app.isReady()) {
+      throw new Error("BrowserTabManager: cannot create a tab before app is ready")
+    }
     const group = this.scopeTabs(scope)
     const view = new WebContentsView({
       webPreferences: {

@@ -97,6 +97,7 @@ const WorkspaceHeader = (props: {
   renameWorkspace: WorkspaceSidebarContext["renameWorkspace"]
   setEditor: WorkspaceSidebarContext["setEditor"]
   projectId?: string
+  newSession?: () => void
 }): JSX.Element => (
   <div class="flex items-center gap-1 min-w-0 flex-1">
     <div class="flex items-center justify-center shrink-0 size-6">
@@ -131,6 +132,21 @@ const WorkspaceHeader = (props: {
         openOnDblClick={false}
       />
     </Show>
+    {props.newSession ? (
+      <IconButtonV2
+        icon={<IconV2 name="edit" size="small" />}
+        variant="ghost"
+        size="small"
+        class="size-6 rounded-md shrink-0 opacity-50 group-hover/workspace:opacity-100"
+        data-action="workspace-new-session"
+        aria-label={props.language.t("command.session.new")}
+        onClick={(event) => {
+          event.preventDefault()
+          event.stopPropagation()
+          props.newSession?.()
+        }}
+      />
+    ) : null}
     <div class="flex items-center justify-center shrink-0 overflow-hidden w-0 opacity-0 transition-all duration-200 group-hover/workspace:w-3.5 group-hover/workspace:opacity-100 group-focus-within/workspace:w-3.5 group-focus-within/workspace:opacity-100">
       <Icon name={props.open() ? "chevron-down" : "chevron-right"} size="small" class="text-icon-base" />
     </div>
@@ -348,6 +364,7 @@ export const SortableWorkspace = (props: {
       InlineEditor={props.ctx.InlineEditor}
       renameWorkspace={props.ctx.renameWorkspace}
       setEditor={props.ctx.setEditor}
+      newSession={() => navigate(`/${slug()}/session`)}
       projectId={props.project.id}
     />
   )

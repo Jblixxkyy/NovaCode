@@ -1,6 +1,8 @@
 import type { Session } from "@novacode-ai/sdk/v2/client"
 import { preloadMarkdown } from "@novacode-ai/session-ui/markdown-cache"
 import { useDialog } from "@novacode-ai/ui/context/dialog"
+import { ButtonV2 } from "@novacode-ai/ui/v2/button-v2"
+import { DialogFooter, DialogHeader, DialogTitleGroup, DialogV2 } from "@novacode-ai/ui/v2/dialog-v2"
 import { useQuery } from "@tanstack/solid-query"
 import { DateTime } from "luxon"
 import { type Accessor, createEffect, createMemo, createRoot, type JSX, startTransition } from "solid-js"
@@ -17,6 +19,8 @@ import { ServerConnection } from "@/context/server"
 import { sessionHasOpenTab, useTabs } from "@/context/tabs"
 import { compareSessionTime, displayName, errorMessage, projectForSession } from "@/pages/layout/helpers"
 import { useSessionTabAvatarState } from "@/pages/layout/project-avatar-state"
+import { notifySessionTabsRemoved } from "@/components/titlebar-session-events"
+import { sessionTitle } from "@/utils/session-title"
 import { pathKey } from "@/utils/path-key"
 import { showToast } from "@/utils/toast"
 import { Binary } from "@novacode-ai/core/util/binary"
@@ -187,6 +191,18 @@ export function createHomeSessionsController(home: HomeController) {
       groups,
       allProjectRecords,
       loading: () => sessionLoad.isLoading,
+      // Sidebar auto-pickup: re-fetch the saved-session index on demand,
+      // so sessions saved outside this app run (CLI, another client, or a
+      // project added after the first load) show up without a restart.
+      // The live event stream still applies in-app creates/updates.
+      refresh: () => void sessionLoad.refetch(),
+      // Raw session directories, before project filtering: used by the
+      // sidebar to auto-discover workspaces that have saved sessions but
+      // were never added as projects. Excludes nothing here — the caller
+      // skips already-added, recently-closed, and subfolder directories.
+      allSessionDirectories: createMemo(() =>
+        [...new Set(indexedSessions().map((session) => session.directory))].sort(),
+      ),
       searchRecords: allRecords,
     },
     session: {
@@ -219,6 +235,54 @@ export function createHomeSessionsController(home: HomeController) {
           const tab = tabs.addSessionTab({ server: ServerConnection.key(conn), sessionId: session.id })
           tabs.select(tab)
         })
+      },
+      // Delete a session for real (not archive): asks first, then calls the
+      // same session.remove the session page's own delete dialog uses. On
+      // success the tab system closes any tab on it and moves on, and the
+      // session index is re-fetched so the sidebar list drops it.
+      delete: (session: Session) => {
+        const conn = home.server.focused()
+        const ctx = home.server.focusedContext()
+        if (!conn || !ctx) return
+        const name = sessionTitle(session.title) || session.id
+        void dialog.show(() => (
+          <DialogV2 fit>
+            <DialogHeader hideClose>
+              <DialogTitleGroup
+                title={language.t("session.delete.title")}
+                description={language.t("session.delete.confirm", { name })}
+              />
+            </DialogHeader>
+            <DialogFooter>
+              <ButtonV2 variant="ghost" onClick={() => dialog.close()}>
+                {language.t("common.cancel")}
+              </ButtonV2>
+              <ButtonV2
+                variant="danger"
+                onClick={async () => {
+                  dialog.close()
+                  try {
+                    await ctx.sdk.api.session.remove({ sessionID: session.id })
+                  } catch (err) {
+                    showToast({
+                      title: language.t("session.delete.failed.title"),
+                      description: errorMessage(err, language.t("common.requestFailed")),
+                    })
+                    return
+                  }
+                  notifySessionTabsRemoved({
+                    server: ServerConnection.key(conn),
+                    directory: session.directory,
+                    sessionIDs: [session.id],
+                  })
+                  void sessionLoad.refetch()
+                }}
+              >
+                {language.t("session.delete.button")}
+              </ButtonV2>
+            </DialogFooter>
+          </DialogV2>
+        ))
       },
       archive: async (session: Session) => {
         const conn = home.server.focused()
