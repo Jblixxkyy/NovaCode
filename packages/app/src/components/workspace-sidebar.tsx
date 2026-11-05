@@ -3,6 +3,7 @@ import { ButtonV2 } from "@novacode-ai/ui/v2/button-v2"
 import { Icon as IconV2 } from "@novacode-ai/ui/v2/icon"
 import { IconButtonV2 } from "@novacode-ai/ui/v2/icon-button-v2"
 import { MenuV2 } from "@novacode-ai/ui/v2/menu-v2"
+import { createMediaQuery } from "@solid-primitives/media"
 import { createEffect, createMemo, For, Show } from "solid-js"
 import { createStore } from "solid-js/store"
 import { usePlatform } from "@/context/platform"
@@ -71,6 +72,13 @@ export function WorkspaceSidebar() {
   const isExpanded = (worktree: string) =>
     sidebar.expanded[worktree] ?? !settings.general.autoCollapseSidebarSessions()
   const open = workspaceSidebar.open
+  // Same 767px breakpoint the titlebar and settings use for "mobile".
+  const isMobile = createMediaQuery("(max-width: 767px)")
+  // On a phone the sidebar is an overlay, so opening anything from it
+  // should get out of the way and hand the full screen back to the chat.
+  const closeOnMobile = () => {
+    if (isMobile()) workspaceSidebar.setOpen(false)
+  }
   // Auto-pickup: whenever the sidebar opens, and whenever the project list
   // changes (a workspace is added or removed), re-fetch the saved-session
   // index so sessions saved elsewhere show up right away instead of only
@@ -113,10 +121,31 @@ export function WorkspaceSidebar() {
   })
   return (
     <>
+      <Show when={isMobile() && open()}>
+        <div
+          class="fixed inset-x-0 top-10 bottom-0 z-40 bg-black/50"
+          onClick={() => workspaceSidebar.setOpen(false)}
+        />
+      </Show>
+      {/* Floating card, like the review panel and the session frame: rounded
+          corners + raised shadow and no hard border, with the same 8px gap
+          the panels get from the session row's p-2 / gap-2. Old design keeps
+          the flat bordered panel. Margins collapse with the width so a closed
+          sidebar takes up no space. */}
       <aside
         data-component="workspace-sidebar"
-        class="flex shrink-0 flex-col overflow-hidden border-r border-v2-border-border-base bg-v2-background-bg-base transition-[width] duration-200 ease-in-out"
-        style={{ width: open() ? "280px" : "0px", "border-right-width": open() ? "1px" : "0px" }}
+        class="flex shrink-0 flex-col overflow-hidden bg-v2-background-bg-base transition-[width,margin] duration-200 ease-in-out max-md:fixed max-md:bottom-0 max-md:left-0 max-md:top-10 max-md:z-50"
+        classList={{
+          "rounded-[10px] shadow-[var(--v2-elevation-raised)]": settings.general.newLayoutDesigns(),
+          "border-r border-v2-border-border-base": !settings.general.newLayoutDesigns(),
+        }}
+        style={{
+          width: open() ? "280px" : "0px",
+          "margin-top": settings.general.newLayoutDesigns() && open() ? "8px" : "0px",
+          "margin-bottom": settings.general.newLayoutDesigns() && open() ? "8px" : "0px",
+          "margin-left": settings.general.newLayoutDesigns() && open() ? "8px" : "0px",
+          "border-right-width": !settings.general.newLayoutDesigns() && open() ? "1px" : "0px",
+        }}
         aria-label={language.t("sidebar.nav.projectsAndSessions")}
         aria-hidden={!open()}
       >
@@ -128,7 +157,10 @@ export function WorkspaceSidebar() {
             size="normal"
             icon="edit"
             class="h-9 w-full justify-start px-3 [font-weight:530]"
-            onClick={() => sessions.session.create()}
+            onClick={() => {
+              sessions.session.create()
+              closeOnMobile()
+            }}
           >
             {language.t("command.session.new")}
           </ButtonV2>
@@ -224,6 +256,7 @@ export function WorkspaceSidebar() {
                                 onSelect={() => {
                                   const conn = home.server.focused()
                                   if (conn) projects.project.openNewSession(conn, project.worktree)
+                                  closeOnMobile()
                                 }}
                               >
                                 {language.t("command.session.new")}
@@ -312,6 +345,7 @@ export function WorkspaceSidebar() {
                                       setSidebar("expanded", next)
                                     }
                                     sessions.session.open(record.session)
+                                    closeOnMobile()
                                   }}
                                 >
                                   <span class="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
