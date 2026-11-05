@@ -518,8 +518,11 @@ export class Driver {
     const lines: string[] = []
     let counter = 0
     const refs = new Map<string, number>()
+    // Build the parent map once: resolving depth per node would rebuild it
+    // every time, turning a snapshot into quadratic work on dense pages.
+    const parents = parentMap(nodes)
     for (const node of nodes) {
-      const depth = nodeDepth(nodes, node)
+      const depth = depthOf(parents, node.nodeId)
       if (depth > maxDepth) continue
       if (!node.backendDOMNodeId) continue
       counter += 1
@@ -1878,12 +1881,16 @@ interface AXNode {
   readonly backendDOMNodeId?: number
 }
 
-function nodeDepth(nodes: ReadonlyArray<AXNode>, node: AXNode): number {
+function parentMap(nodes: ReadonlyArray<AXNode>): Map<string, string> {
   const parents = new Map<string, string>()
   for (const candidate of nodes)
     for (const child of candidate.childIds ?? []) parents.set(child, candidate.nodeId)
+  return parents
+}
+
+function depthOf(parents: Map<string, string>, nodeId: string): number {
   let depth = 0
-  let current = parents.get(node.nodeId)
+  let current = parents.get(nodeId)
   while (current !== undefined && depth < 100) {
     depth += 1
     current = parents.get(current)

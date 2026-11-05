@@ -75,6 +75,8 @@ export interface TabHandle {
   /** CDP Overlay inspect mode is engaged on this tab. */
   inspecting?: boolean
   inspectWired?: boolean
+  /** Backend node id per snapshot ref, so actions can resolve refs on demand. */
+  refBackendIds?: Map<string, number>
   boxes: Map<string, { x: number; y: number; width: number; height: number }>
 }
 
@@ -197,11 +199,15 @@ export interface AXNodeLike {
   backendDOMNodeId?: number
 }
 
-export function nodeDepth(nodes: AXNodeLike[], node: AXNodeLike): number {
+function parentMap(nodes: AXNodeLike[]): Map<string, string> {
   const parents = new Map<string, string>()
   for (const candidate of nodes) for (const child of candidate.childIds ?? []) parents.set(child, candidate.nodeId)
+  return parents
+}
+
+function depthOf(parents: Map<string, string>, nodeId: string): number {
   let depth = 0
-  let current = parents.get(node.nodeId)
+  let current = parents.get(nodeId)
   while (current !== undefined && depth < 100) {
     depth += 1
     current = parents.get(current)
@@ -209,13 +215,20 @@ export function nodeDepth(nodes: AXNodeLike[], node: AXNodeLike): number {
   return depth
 }
 
+export function nodeDepth(nodes: AXNodeLike[], node: AXNodeLike): number {
+  return depthOf(parentMap(nodes), node.nodeId)
+}
+
 /** Pure snapshot line formatting; refs are assigned in tree order. */
 export function formatSnapshot(nodes: AXNodeLike[], maxDepth: number): { lines: string[]; refs: Map<string, number> } {
   const lines: string[] = []
   const refs = new Map<string, number>()
+  // Build the parent map once: resolving depth per node would rebuild it
+  // every time, turning a snapshot into quadratic work on dense pages.
+  const parents = parentMap(nodes)
   let counter = 0
   for (const node of nodes) {
-    const depth = nodeDepth(nodes, node)
+    const depth = depthOf(parents, node.nodeId)
     if (depth > maxDepth) continue
     if (!node.backendDOMNodeId) continue
     counter += 1
@@ -321,9 +334,23 @@ async function resolveObjectID(handle: TabHandle, ref: string): Promise<string> 
     returnByValue: false,
   })) as { result?: { objectId?: string } }
   const objectId = result.result?.objectId
-  if (!objectId)
+  if (objectId) return objectId
+  // Not registered in the page yet: snapshots no longer register every ref
+  // up front (3 CDP round trips per node on every snapshot), so resolve
+  // this one on demand from the last snapshot's backend node id.
+  const backendNodeId = handle.refBackendIds?.get(id)
+  if (backendNodeId === undefined)
     throw new Error(`Ref ${ref} is stale. Take a fresh browser.snapshot first.`)
-  return objectId
+  const resolved = (await handle.contents.cdp.send("DOM.resolveNode", { backendNodeId })) as {
+    object: { objectId: string }
+  }
+  const resolvedId = resolved.object.objectId
+  await handle.contents.cdp.send("Runtime.callFunctionOn", {
+    objectId: resolvedId,
+    functionDeclaration: `function(ref) { (globalThis.__novacodeRefs = globalThis.__novacodeRefs || new Map()).set(ref, this) }`,
+    arguments: [{ value: id }],
+  })
+  return resolvedId
 }
 
 async function callOnElement(handle: TabHandle, ref: string, functionDeclaration: string, args: unknown[] = []) {
@@ -474,17 +501,16 @@ async function takeSnapshot(
   const tree = (await cdp.send("Accessibility.getFullAXTree", { depth: options.depth })) as { nodes?: AXNodeLike[] }
   const nodes = tree.nodes ?? []
   const { lines, refs } = formatSnapshot(nodes, maxDepth)
+  // Remember which backend node each ref points at so actions can resolve
+  // refs on demand. Registering every ref up front used to cost 3 CDP
+  // round trips per node on every snapshot; the Playwright driver still
+  // registers eagerly, so its snapshots stay the slower path.
+  handle.refBackendIds = refs
   handle.boxes.clear()
   const boxes: Record<string, { x: number; y: number; width: number; height: number }> = {}
-  for (const [ref, backendNodeId] of refs) {
-    try {
-      const resolved = (await cdp.send("DOM.resolveNode", { backendNodeId })) as { object: { objectId: string } }
-      await cdp.send("Runtime.callFunctionOn", {
-        objectId: resolved.object.objectId,
-        functionDeclaration: `function(ref) { (globalThis.__novacodeRefs = globalThis.__novacodeRefs || new Map()).set(ref, this) }`,
-        arguments: [{ value: ref }],
-      })
-      if (options.boxes) {
+  if (options.boxes) {
+    for (const [ref, backendNodeId] of refs) {
+      try {
         const box = (await cdp
           .send("DOM.getBoxModel", { backendNodeId })
           .catch(() => undefined)) as { model: { content: number[] } } | undefined
@@ -498,10 +524,9 @@ async function takeSnapshot(
           handle.boxes.set(ref, entry)
           boxes[ref] = entry
         }
+      } catch {
+        // Node vanished mid-snapshot; skip it.
       }
-      await cdp.send("Runtime.releaseObject", { objectId: resolved.object.objectId })
-    } catch {
-      // Node vanished mid-snapshot; skip it.
     }
   }
   handle.generation += 1

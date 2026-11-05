@@ -13,6 +13,8 @@ import type { BrowserTabManager } from "./tabs"
 
 const RECONNECT_DELAY_MS = 2_000
 const PUBLISH_HEARTBEAT_MS = 10_000
+/** Change bursts during a page load (start/stop/title/favicon) collapse into one publish. */
+const PUBLISH_DEBOUNCE_MS = 150
 
 type Logger = (message: string, meta?: Record<string, unknown>) => void
 
@@ -77,8 +79,25 @@ export function startBrowserHost(input: {
     for (const scope of manager.knownScopes()) void publish(scope)
   }
 
+  // Tab events arrive in bursts (a single page load fires start/stop,
+  // navigate, title and favicon changes); publishing each one immediately
+  // spams the sidecar with the full tab inventory. Coalesce per scope so
+  // a burst becomes one publish. The 10s heartbeat is the staleness
+  // backstop, so a delayed publish can never leave the server stale.
+  const publishTimers = new Map<string, ReturnType<typeof setTimeout>>()
+  const publishSoon = (scope: string) => {
+    const existing = publishTimers.get(scope)
+    if (existing) clearTimeout(existing)
+    const timer = setTimeout(() => {
+      publishTimers.delete(scope)
+      void publish(scope)
+    }, PUBLISH_DEBOUNCE_MS)
+    timer.unref?.()
+    publishTimers.set(scope, timer)
+  }
+
   const unsubscribe = manager.onChange((scope) => {
-    void publish(scope)
+    publishSoon(scope)
   })
   const unsubscribeInspect = manager.onInspectEvent((scope, event) => {
     if (!attachment || stopped) return
@@ -150,7 +169,12 @@ export function startBrowserHost(input: {
         if (attachment === current) attachment = undefined
         continue
       }
-      if (polled.status === "command") void execute(polled.command)
+      // Run commands one at a time, like the Playwright driver: the next
+      // poll only goes out once this command's result is posted, so two
+      // commands can never run concurrently against the same tab. The
+      // 10s state heartbeat keeps the attachment alive while a long
+      // command runs, and the server queues the next command meanwhile.
+      if (polled.status === "command") await execute(polled.command)
     }
   })()
 
@@ -158,6 +182,8 @@ export function startBrowserHost(input: {
     stop: async () => {
       stopped = true
       clearInterval(heartbeat)
+      for (const timer of publishTimers.values()) clearTimeout(timer)
+      publishTimers.clear()
       unsubscribe()
       unsubscribeInspect()
       const current = attachment
