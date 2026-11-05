@@ -18,6 +18,8 @@ class FakeCdp implements CdpSession {
   calls: Array<{ method: string; params?: Record<string, unknown> }> = []
   evaluateResult: unknown = null
   elementKind: { tag: string; type: string | null } = { tag: "INPUT", type: "file" }
+  /** Refs registered in the page's __novacodeRefs map, like the real page. */
+  registered = new Set<string>()
   private listeners = new Map<string, Set<(params: Record<string, unknown>) => void>>()
 
   constructor(private nodes: AXNodeLike[]) {}
@@ -31,7 +33,13 @@ class FakeCdp implements CdpSession {
         return { object: { objectId: `obj_${String(params?.backendNodeId)}` } }
       case "Runtime.evaluate": {
         const expression = String(params?.expression ?? "")
-        if (expression.includes("__novacodeRefs")) return { result: { objectId: "obj_ref" } }
+        if (expression.includes("__novacodeRefs")) {
+          // Only a ref the page actually registered resolves to an object;
+          // anything else looks like a stale ref, like the real page.
+          const ref = expression.match(/__novacodeRefs\?\.get\("([^"]+)"\)/)?.[1]
+          if (ref && this.registered.has(ref)) return { result: { objectId: "obj_ref" } }
+          return { result: { value: null } }
+        }
         return { result: { value: this.evaluateResult } }
       }
       case "DOM.getBoxModel":
@@ -62,6 +70,12 @@ class FakeCdp implements CdpSession {
       case "Runtime.callFunctionOn": {
         const declaration = String(params?.functionDeclaration ?? "")
         if (declaration.includes("tagName")) return { result: { value: this.elementKind } }
+        // Ref registration: the function stores its ref argument in the
+        // page's __novacodeRefs map, so later lookups resolve to an object.
+        if (declaration.includes("__novacodeRefs")) {
+          const ref = (params?.arguments as Array<{ value?: unknown }> | undefined)?.[0]?.value
+          if (typeof ref === "string") this.registered.add(ref)
+        }
         return { result: {} }
       }
       default:
@@ -272,7 +286,7 @@ describe("executeDesktopAction", () => {
     ).rejects.toThrow(/Unknown tab/)
   })
 
-  test("snapshot formats content, registers refs, and returns boxes", async () => {
+  test("snapshot formats content and returns boxes without registering refs up front", async () => {
     const { cdp, inventory } = setup()
     const handle = await inventory.open("/work", "https://example.com", true)
     const result = (await executeDesktopAction(inventory, "/work", {
@@ -284,13 +298,31 @@ describe("executeDesktopAction", () => {
     expect(result.truncated).toBe(false)
     expect(Object.keys(result.boxes)).toEqual(["e1", "e2", "e3"])
     expect(result.boxes.e1).toEqual({ x: 0, y: 0, width: 10, height: 10 })
-    expect(cdp.calls.filter((call) => call.method === "Runtime.callFunctionOn")).toHaveLength(3)
+    // Refs resolve lazily when an action uses them, so a snapshot makes no
+    // per-ref CDP calls at all — on a dense page that was 3 round trips
+    // per node before any action ran.
+    expect(cdp.calls.filter((call) => call.method === "DOM.resolveNode")).toHaveLength(0)
+    expect(cdp.calls.filter((call) => call.method === "Runtime.callFunctionOn")).toHaveLength(0)
     expect(handle.generation).toBe(1)
+  })
+
+  test("click after a snapshot resolves the ref lazily from the snapshot", async () => {
+    const { cdp, inventory } = setup()
+    const handle = await inventory.open("/work", "https://example.com", true)
+    await executeDesktopAction(inventory, "/work", { type: "snapshot", tabID: handle.id as never })
+    await executeDesktopAction(inventory, "/work", { type: "click", tabID: handle.id as never, ref: "e2" as never })
+    const resolved = cdp.calls.filter((call) => call.method === "DOM.resolveNode")
+    expect(resolved).toHaveLength(1)
+    expect(resolved[0]?.params).toEqual({ backendNodeId: 2 })
+    const mouse = cdp.calls.filter((call) => call.method === "Input.dispatchMouseEvent")
+    expect(mouse.map((call) => call.params?.type)).toEqual(["mousePressed", "mouseReleased"])
+    expect(mouse[0]?.params).toMatchObject({ x: 50, y: 10, button: "left" })
   })
 
   test("click dispatches CDP mouse events at the element center", async () => {
     const { cdp, inventory } = setup()
     const handle = await inventory.open("/work", "https://example.com", true)
+    await executeDesktopAction(inventory, "/work", { type: "snapshot", tabID: handle.id as never })
     await executeDesktopAction(inventory, "/work", { type: "click", tabID: handle.id as never, ref: "e2" as never })
     const mouse = cdp.calls.filter((call) => call.method === "Input.dispatchMouseEvent")
     expect(mouse.map((call) => call.params?.type)).toEqual(["mousePressed", "mouseReleased"])
@@ -300,6 +332,7 @@ describe("executeDesktopAction", () => {
   test("fill focuses the element and inserts text", async () => {
     const { cdp, inventory } = setup()
     const handle = await inventory.open("/work", "https://example.com", true)
+    await executeDesktopAction(inventory, "/work", { type: "snapshot", tabID: handle.id as never })
     await executeDesktopAction(inventory, "/work", {
       type: "fill",
       tabID: handle.id as never,

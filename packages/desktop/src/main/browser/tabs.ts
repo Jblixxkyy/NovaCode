@@ -134,6 +134,15 @@ export class BrowserTabManager implements TabInventory {
   private scopes = new Map<string, ScopeTabs>()
   private owned = new Set<WebContentsView>()
   private embeds = new Map<number, { window: BrowserWindow; request: BrowserEmbedRequest }>()
+  /**
+   * Last embed state actually applied per window, so a refresh that changes
+   * nothing (a title update, a favicon, a loading tick) skips the whole
+   * attach/detach loop and the setBounds layout instead of redoing it.
+   */
+  private lastEmbeds = new Map<
+    number,
+    { tabID: string | null; x: number; y: number; width: number; height: number; visible: boolean }
+  >()
   private listeners = new Set<(scope: string) => void>()
   /**
    * The server's domain ACL (browser-acl.json), delivered with the tunnel
@@ -280,7 +289,10 @@ export class BrowserTabManager implements TabInventory {
     this.owned.add(view)
     if (focus || !group.focusedID) group.focusedID = handle.id
     // Capture console/network/dialog from the tab's first navigation on.
-    void ensureCapture(handle).catch(() => {})
+    // Deferred (restored) tabs skip this until activate() loads them, so a
+    // restart with many saved tabs doesn't enable CDP domains on views that
+    // may never load anything.
+    if (!deferred) void ensureCapture(handle).catch(() => {})
 
     contents.setWindowOpenHandler(({ url: popupUrl }) => {
       // Popups become regular tabs in the same scope instead of windows.
@@ -333,6 +345,9 @@ export class BrowserTabManager implements TabInventory {
     if (!isAllowedURL(pending)) return
     handle.loadError = undefined
     handle.generation += 1
+    // Now that the tab is actually loading, wire console/network capture
+    // (skipped at restore time so idle tabs cost nothing).
+    void ensureCapture(handle).catch(() => {})
     void handle.view.webContents.loadURL(pending).catch((error: unknown) => {
       handle.loadError = (error instanceof Error ? error.message : String(error)).slice(0, 2048)
       this.changed(scope)
@@ -404,8 +419,10 @@ export class BrowserTabManager implements TabInventory {
 
   /** Show/hide the embedded view for one window. Called from IPC. */
   setEmbed(window: BrowserWindow, request: BrowserEmbedRequest | null) {
-    if (!request) this.embeds.delete(window.id)
-    else this.embeds.set(window.id, { window, request })
+    if (!request) {
+      this.embeds.delete(window.id)
+      this.lastEmbeds.delete(window.id)
+    } else this.embeds.set(window.id, { window, request })
     this.refreshEmbeds()
   }
 
@@ -414,6 +431,7 @@ export class BrowserTabManager implements TabInventory {
       const { window, request } = embed
       if (window.isDestroyed()) {
         this.embeds.delete(windowID)
+        this.lastEmbeds.delete(windowID)
         continue
       }
       const group = this.scopes.get(request.scope)
@@ -425,6 +443,29 @@ export class BrowserTabManager implements TabInventory {
         width: Math.round(request.rect.width * zoom),
         height: Math.round(request.rect.height * zoom),
       }
+      // changed() fires on every tab event (title, favicon, loading ticks),
+      // most of which say nothing about the embed. If the wanted tab, rect
+      // and visibility are exactly what was last applied, there is nothing
+      // to attach, detach or re-lay-out — skip the whole pass.
+      const last = this.lastEmbeds.get(windowID)
+      if (
+        last &&
+        last.tabID === wantedID &&
+        last.x === rect.x &&
+        last.y === rect.y &&
+        last.width === rect.width &&
+        last.height === rect.height &&
+        last.visible === request.visible
+      )
+        continue
+      this.lastEmbeds.set(windowID, {
+        tabID: wantedID,
+        x: rect.x,
+        y: rect.y,
+        width: rect.width,
+        height: rect.height,
+        visible: request.visible,
+      })
       let wantedView: WebContentsView | undefined
       for (const scopeGroup of this.scopes.values()) {
         for (const handle of scopeGroup.tabs.values()) {
