@@ -1183,7 +1183,7 @@ describe("ProviderTransform.schema - gemini type arrays", () => {
     expect(result.properties.status.description).toBe("status filter")
   })
 
-  test("lifts null into nullable for a nullable type array", () => {
+  test("collapses a single non-null type with null to that type plus nullable", () => {
     const schema = {
       type: "object",
       properties: {
@@ -1193,9 +1193,69 @@ describe("ProviderTransform.schema - gemini type arrays", () => {
 
     const result = ProviderTransform.schema(geminiModel, schema) as any
 
-    expect(result.properties.maybe.type).toBeUndefined()
-    expect(result.properties.maybe.anyOf).toEqual([{ type: "string" }])
+    // A single non-null type collapses instead of building an anyOf, so
+    // type-specific keywords (items, properties, ...) stay with the type.
+    expect(result.properties.maybe.type).toBe("string")
+    expect(result.properties.maybe.anyOf).toBeUndefined()
     expect(result.properties.maybe.nullable).toBe(true)
+  })
+
+  test("keeps items on a nullable array instead of stranding them beside an anyOf", () => {
+    const schema = {
+      type: "object",
+      properties: {
+        data_sets: { type: ["array", "null"], items: { type: "string" } },
+      },
+    } as any
+
+    const result = ProviderTransform.schema(geminiModel, schema) as any
+
+    expect(result.properties.data_sets.type).toBe("array")
+    expect(result.properties.data_sets.anyOf).toBeUndefined()
+    expect(result.properties.data_sets.nullable).toBe(true)
+    expect(result.properties.data_sets.items).toEqual({ type: "string" })
+  })
+
+  test("keeps items and bounds on a nullable array of fixed length", () => {
+    const schema = {
+      type: "object",
+      properties: {
+        center: {
+          type: ["array", "null"],
+          items: { type: "number", format: "double" },
+          minItems: 2,
+          maxItems: 2,
+        },
+      },
+    } as any
+
+    const result = ProviderTransform.schema(geminiModel, schema) as any
+
+    expect(result.properties.center.type).toBe("array")
+    expect(result.properties.center.anyOf).toBeUndefined()
+    expect(result.properties.center.nullable).toBe(true)
+    expect(result.properties.center.items).toEqual({ type: "number", format: "double" })
+    expect(result.properties.center.minItems).toBe(2)
+    expect(result.properties.center.maxItems).toBe(2)
+  })
+
+  test("keeps properties on a nullable object", () => {
+    const schema = {
+      type: "object",
+      properties: {
+        config: {
+          type: ["object", "null"],
+          properties: { name: { type: "string" } },
+        },
+      },
+    } as any
+
+    const result = ProviderTransform.schema(geminiModel, schema) as any
+
+    expect(result.properties.config.type).toBe("object")
+    expect(result.properties.config.anyOf).toBeUndefined()
+    expect(result.properties.config.nullable).toBe(true)
+    expect(result.properties.config.properties).toEqual({ name: { type: "string" } })
   })
 
   test("collapses an all-null type array to type null", () => {
