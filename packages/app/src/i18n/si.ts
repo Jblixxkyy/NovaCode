@@ -946,11 +946,6 @@ export const dict: Record<string, string> = {
   "settings.general.row.toolTitleColor.description": "සැසිවල මෙවලම් මාතෘකාවල පැහැය අභිරුචිකරණය කරන්න",
   "settings.general.row.groupTitleColor.title": "Group title color",
   "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
-  "settings.general.row.followup.title": "පසු විපරම් හැසිරීම",
-  "settings.general.row.followup.description":
-    "පසු විපරම් ප්‍රේරක ක්ෂණිකව ගමන් කරනවාද නැතිනම් පෝලිමක රැඳී සිටිනවාද යන්න තෝරන්න",
-  "settings.general.row.followup.option.queue": "පෝලිමේ",
-  "settings.general.row.followup.option.steer": "මෙහෙයවන්න",
   "settings.general.row.showFileTree.title": "ගොනු ගස",
   "settings.general.row.showFileTree.description": "සැසි තුළ ගොනු ගස් පැනලය පෙන්වන්න",
   "settings.general.row.showNavigation.title": "සංචාලන පාලන",

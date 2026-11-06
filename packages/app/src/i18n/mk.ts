@@ -954,11 +954,6 @@ export const dict = {
   "settings.general.row.toolTitleColor.description": "Приспособете ја бојата на насловите на алатките во сесиите",
   "settings.general.row.groupTitleColor.title": "Group title color",
   "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
-  "settings.general.row.followup.title": "Последователно однесување",
-  "settings.general.row.followup.description":
-    "Изберете дали следењето ќе ве поттикне да се управува веднаш или да чекате во редица",
-  "settings.general.row.followup.option.queue": "Ред",
-  "settings.general.row.followup.option.steer": "Управувај",
   "settings.general.row.showFileTree.title": "Датотека",
   "settings.general.row.showFileTree.description": "Прикажи го панелот за стебло на датотеки во сесии",
   "settings.general.row.showNavigation.title": "Контроли за навигација",

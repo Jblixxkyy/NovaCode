@@ -959,11 +959,6 @@ export const dict = {
   "settings.general.row.toolTitleColor.description": "Personalitzeu el color dels títols de les eines a les sessions",
   "settings.general.row.groupTitleColor.title": "Group title color",
   "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
-  "settings.general.row.followup.title": "Comportament de seguiment",
-  "settings.general.row.followup.description":
-    "Trieu si les indicacions de seguiment es dirigeixen immediatament o esperen en una cua",
-  "settings.general.row.followup.option.queue": "Cua",
-  "settings.general.row.followup.option.steer": "Dirigeix",
   "settings.general.row.showFileTree.title": "Arbre de fitxers",
   "settings.general.row.showFileTree.description": "Mostra el tauler de l'arbre de fitxers a les sessions",
   "settings.general.row.showNavigation.title": "Controls de navegació",

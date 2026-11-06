@@ -858,11 +858,6 @@ export const dict = {
   "settings.general.row.toolTitleColor.description": "セッション内のツールタイトルの色をカスタマイズします",
   "settings.general.row.groupTitleColor.title": "Group title color",
   "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
-  "settings.general.row.followup.title": "フォローアップの動作",
-  "settings.general.row.followup.description":
-    "フォローアッププロンプトを即座に実行するか、キューで待機させるかを選択します",
-  "settings.general.row.followup.option.queue": "キューに追加",
-  "settings.general.row.followup.option.steer": "即座に実行 (Steer)",
   "settings.general.row.showFileTree.title": "ファイルツリー",
   "settings.general.row.showFileTree.description": "セッションにファイルツリーパネルを表示します",
   "settings.general.row.showNavigation.title": "ナビゲーションコントロール",

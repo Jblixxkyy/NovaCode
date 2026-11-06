@@ -960,11 +960,6 @@ export const dict = {
   "settings.general.row.toolTitleColor.description": "Sessiyalarda alət başlıqlarının rəngini fərdiləşdirin",
   "settings.general.row.groupTitleColor.title": "Group title color",
   "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
-  "settings.general.row.followup.title": "Sonrakı sorğuların davranışı",
-  "settings.general.row.followup.description":
-    "Sonrakı sorğuların dərhal yönləndirilməsini və ya növbədə gözləməsini seçin",
-  "settings.general.row.followup.option.queue": "Növbə",
-  "settings.general.row.followup.option.steer": "Yönləndir",
   "settings.general.row.showFileTree.title": "Fayl ağacı",
   "settings.general.row.showFileTree.description": "Seanslarda fayl ağacı panelini göstərin",
   "settings.general.row.showNavigation.title": "Naviqasiya nəzarətləri",

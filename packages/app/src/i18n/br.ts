@@ -873,11 +873,6 @@ export const dict = {
   "settings.general.row.toolTitleColor.description": "Personalize a cor dos títulos das ferramentas nas sessões",
   "settings.general.row.groupTitleColor.title": "Group title color",
   "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
-  "settings.general.row.followup.title": "Comportamento de acompanhamento",
-  "settings.general.row.followup.description":
-    "Escolha se os prompts de acompanhamento orientam imediatamente ou esperam na fila",
-  "settings.general.row.followup.option.queue": "Fila",
-  "settings.general.row.followup.option.steer": "Orientar",
   "settings.general.row.showFileTree.title": "Árvore de arquivos",
   "settings.general.row.showFileTree.description": "Mostrar o painel da árvore de arquivos nas sessões",
   "settings.general.row.showNavigation.title": "Controles de navegação",

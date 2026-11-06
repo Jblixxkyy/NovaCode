@@ -98,20 +98,21 @@ const WorkspaceHeader = (props: {
   setEditor: WorkspaceSidebarContext["setEditor"]
   projectId?: string
   newSession?: () => void
+  active?: Accessor<boolean>
 }): JSX.Element => (
   <div class="flex items-center gap-1 min-w-0 flex-1">
     <div class="flex items-center justify-center shrink-0 size-6">
-      <Show when={props.busy()} fallback={<Icon name="branch" size="small" />}>
+      <Show when={props.busy()} fallback={<Icon name="branch" size="small" class={props.active?.() ? "text-text-interactive-base" : ""} />}>
         <Spinner class="size-[15px]" />
       </Show>
     </div>
-    <span class="text-14-medium text-text-base shrink-0">
+    <span class={`text-14-medium shrink-0 ${props.active?.() ? "text-text-interactive-base font-semibold" : "text-text-base"}`}>
       {props.local() ? props.language.t("workspace.type.local") : props.language.t("workspace.type.sandbox")} :
     </span>
     <Show
       when={!props.local()}
       fallback={
-        <span class="text-14-medium text-text-base min-w-0 truncate">
+        <span class={`text-14-medium min-w-0 truncate ${props.active?.() ? "text-text-strong font-semibold" : "text-text-base"}`}>
           {props.branch() ?? getFilename(props.directory)}
         </span>
       }
@@ -125,12 +126,15 @@ const WorkspaceHeader = (props: {
           props.renameWorkspace(props.directory, trimmed, props.projectId, props.branch())
           props.setEditor("value", props.workspaceValue())
         }}
-        class="text-14-medium text-text-base min-w-0 truncate"
-        displayClass="text-14-medium text-text-base min-w-0 truncate"
+        class={`text-14-medium min-w-0 truncate ${props.active?.() ? "text-text-strong font-semibold" : "text-text-base"}`}
+        displayClass={`text-14-medium min-w-0 truncate ${props.active?.() ? "text-text-strong font-semibold" : "text-text-base"}`}
         editing={props.workspaceEditActive()}
         stopPropagation={false}
         openOnDblClick={false}
       />
+    </Show>
+    <Show when={props.active?.()}>
+      <div class="size-1.5 rounded-full bg-text-interactive-base shrink-0 ml-1" />
     </Show>
     {props.newSession ? (
       <IconButtonV2
@@ -366,6 +370,7 @@ export const SortableWorkspace = (props: {
       setEditor={props.ctx.setEditor}
       newSession={() => navigate(`/${slug()}/session`)}
       projectId={props.project.id}
+      active={active}
     />
   )
 
@@ -401,9 +406,13 @@ export const SortableWorkspace = (props: {
                 when={workspaceEditActive()}
                 fallback={
                   <Collapsible.Trigger
-                    class={`flex items-center justify-between w-full pl-2 py-1.5 rounded-md hover:bg-surface-raised-base-hover transition-[padding] duration-200 ${
+                    class={`flex items-center justify-between w-full pl-2 py-1.5 rounded-md hover:bg-surface-raised-base-hover transition-[padding,background-color] duration-200 ${
                       menu.open ? "pr-16" : "pr-2"
-                    } group-hover/workspace:pr-16 group-focus-within/workspace:pr-16`}
+                    } group-hover/workspace:pr-16 group-focus-within/workspace:pr-16 ${
+                      active()
+                        ? "bg-surface-raised-base text-text-strong font-medium border-l-2 border-text-interactive-base pl-1.5"
+                        : ""
+                    }`}
                     data-action="workspace-toggle"
                     data-workspace={base64Encode(props.directory)}
                   >
@@ -412,9 +421,13 @@ export const SortableWorkspace = (props: {
                 }
               >
                 <div
-                  class={`flex items-center justify-between w-full pl-2 py-1.5 rounded-md transition-[padding] duration-200 ${
+                  class={`flex items-center justify-between w-full pl-2 py-1.5 rounded-md transition-[padding,background-color] duration-200 ${
                     menu.open ? "pr-16" : "pr-2"
-                  } group-hover/workspace:pr-16 group-focus-within/workspace:pr-16`}
+                  } group-hover/workspace:pr-16 group-focus-within/workspace:pr-16 ${
+                    active()
+                      ? "bg-surface-raised-base text-text-strong font-medium border-l-2 border-text-interactive-base pl-1.5"
+                      : ""
+                  }`}
                 >
                   {header()}
                 </div>

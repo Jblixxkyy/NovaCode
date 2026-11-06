@@ -1030,11 +1030,6 @@ export const dict = {
   "settings.general.row.toolTitleColor.description": "Sesuaikan warna judul alat di sesi",
   "settings.general.row.groupTitleColor.title": "Group title color",
   "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
-  "settings.general.row.followup.title": "Perilaku lanjutan",
-  "settings.general.row.followup.description":
-    "Pilih apakah prompt lanjutan segera mengarahkan atau menunggu dalam antrean",
-  "settings.general.row.followup.option.queue": "Antrean",
-  "settings.general.row.followup.option.steer": "Arahkan",
   "settings.general.row.showFileTree.title": "Pohon berkas",
   "settings.general.row.showFileTree.description": "Tampilkan panel pohon berkas di sesi",
   "settings.general.row.showNavigation.title": "Kontrol navigasi",

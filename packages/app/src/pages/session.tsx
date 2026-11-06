@@ -1751,30 +1751,15 @@ export default function Page() {
     return followupMutation.variables?.id
   })
 
-  const [delivery, setDelivery] = createSignal<"steer" | "queue">(settings.general.followup())
-  const deliveryMode = createMemo(() => {
-    const id = params.id
-    if (!id) return "steer" as const
-    if (!busy(id) || composer.blocked() || isChildSession()) return "steer" as const
-    return delivery()
-  })
-  const deliveryUI = createMemo(() => {
-    const id = params.id
-    if (!id) return undefined
-    if (!busy(id) || composer.blocked() || isChildSession()) return undefined
-    return {
-      current: deliveryMode,
-      onSelect: (mode: string) => {
-        if (mode === "steer" || mode === "queue") setDelivery(mode)
-      },
-    }
-  })
-
+  // Enter while the session is busy queues the follow-up locally; Ctrl/Cmd+Enter
+  // bypasses the queue and steers immediately (handled in the prompt input).
   const queueEnabled = createMemo(() => {
     const id = params.id
     if (!id) return false
-    return deliveryMode() === "queue" && busy(id) && !composer.blocked() && !isChildSession()
+    return busy(id) && !composer.blocked() && !isChildSession()
   })
+
+  const [deliveryMode, setDeliveryMode] = createSignal("steer")
 
   const followupText = (item: FollowupDraft) => {
     const text = item.prompt
@@ -1828,6 +1813,13 @@ export default function Page() {
       prompt: item.prompt,
       context: item.context,
     })
+  }
+
+  const removeFollowup = (id: string) => {
+    const sessionID = params.id
+    if (!sessionID) return
+    setFollowup("items", sessionID, (items) => (items ?? []).filter((entry) => entry.id !== id))
+    setFollowup("failed", sessionID, (value) => (value === id ? undefined : value))
   }
 
   const clearFollowupEdit = () => {
@@ -2167,6 +2159,7 @@ export default function Page() {
                     sending: sendingFollowup(),
                     onSend: (id) => void sendFollowup(params.id!, id, { manual: true }),
                     onEdit: editFollowup,
+                    onRemove: removeFollowup,
                   }
                 : undefined,
             revert: () =>
@@ -2247,13 +2240,14 @@ export default function Page() {
                       onEditLoaded: clearFollowupEdit,
                       shouldQueue: queueEnabled,
                       onQueue: queueFollowup,
+                      delivery: {
+                        current: () => deliveryMode(),
+                        onSelect: (mode) => setDeliveryMode(mode),
+                      },
                       onAbort: () => {
                         const id = params.id
                         if (!id) return
                         setFollowup("paused", id, true)
-                      },
-                      get delivery() {
-                        return deliveryUI()
                       },
                     })
                     return <PromptInputV2Composer controller={controller} borderUnderlay />

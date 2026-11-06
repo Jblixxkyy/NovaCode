@@ -1,4 +1,4 @@
-import { Component, Show, createMemo, createResource } from "solid-js"
+import { Component, Show, createMemo, createResource, createSignal } from "solid-js"
 import { createMediaQuery } from "@solid-primitives/media"
 import { ButtonV2 } from "@novacode-ai/ui/v2/button-v2"
 import { SelectV2 } from "@novacode-ai/ui/v2/select-v2"
@@ -7,8 +7,16 @@ import { TextInputV2 } from "@novacode-ai/ui/v2/text-input-v2"
 import { useDialog } from "@novacode-ai/ui/context/dialog"
 import { useLanguage } from "@/context/language"
 import { usePlatform } from "@/context/platform"
+import { useServerSync } from "@/context/server-sync"
 import { useUpdaterAction } from "../updater-action"
 import { useSettings } from "@/context/settings"
+import { pathKey } from "@/utils/path-key"
+import { showToast } from "@/utils/toast"
+import {
+  connectedMcpServerNames,
+  reconnectableMcpServerNames,
+  reconnectedMcpServerNames,
+} from "@/utils/mcp-toggle"
 import { ExternalLink } from "../external-link"
 import { SettingsListV2 } from "./parts/list"
 import { SettingsRowV2 } from "./parts/row"
@@ -476,6 +484,101 @@ export const SettingsGeneralV2: Component<{
     </div>
   )
 
+  const McpSection = () => {
+    const serverSync = useServerSync()
+    const [busy, setBusy] = createSignal(false)
+    // Keep this directory's MCP statuses live while the section is shown, so
+    // the switch acts on fresh data (same store the status popover reads).
+    const statuses = createMemo(() => {
+      const directory = props.directory
+      if (!directory) return {}
+      return serverSync().child(directory, { mcp: true, bootstrap: false })[0].mcp ?? {}
+    })
+
+    const toggleAll = async (checked: boolean) => {
+      const directory = props.directory
+      if (!directory || busy()) return
+      setBusy(true)
+      try {
+        const key = pathKey(directory)
+        const current = statuses()
+        if (checked) {
+          // Turn back on exactly the servers this switch turned off. A server
+          // the user disabled by hand in the popover is not on the list, so
+          // it stays off.
+          const remembered = settings.general.mcpDisabledByToggle()[key] ?? []
+          const toReconnect = reconnectableMcpServerNames(remembered, current)
+          const alreadyBack = reconnectedMcpServerNames(remembered, current)
+          const remaining = remembered.filter(
+            (name) => !toReconnect.includes(name) && !alreadyBack.includes(name),
+          )
+          for (const name of toReconnect) {
+            try {
+              await serverSync().mcp.toggle(directory, name)
+            } catch (error) {
+              remaining.push(name)
+              showToast({
+                variant: "error",
+                title: language.t("common.requestFailed"),
+                description: error instanceof Error ? error.message : String(error),
+              })
+            }
+          }
+          settings.general.setMcpDisabledByToggle({
+            ...settings.general.mcpDisabledByToggle(),
+            [key]: remaining,
+          })
+          settings.general.setMcpEnabled(true)
+        } else {
+          // Turn off every server that is currently connected, one popover
+          // toggle call per server, and remember them for turning back on.
+          const names = connectedMcpServerNames(current)
+          const disconnected: string[] = []
+          for (const name of names) {
+            try {
+              await serverSync().mcp.toggle(directory, name)
+              disconnected.push(name)
+            } catch (error) {
+              showToast({
+                variant: "error",
+                title: language.t("common.requestFailed"),
+                description: error instanceof Error ? error.message : String(error),
+              })
+            }
+          }
+          settings.general.setMcpDisabledByToggle({
+            ...settings.general.mcpDisabledByToggle(),
+            [key]: disconnected,
+          })
+          settings.general.setMcpEnabled(false)
+        }
+      } finally {
+        setBusy(false)
+      }
+    }
+
+    return (
+      <div class="settings-v2-section">
+        <h3 class="settings-v2-section-title">{language.t("settings.general.section.mcp")}</h3>
+
+        <SettingsListV2>
+          <SettingsRowV2
+            title={language.t("settings.general.row.mcpEnabled.title")}
+            description={language.t("settings.general.row.mcpEnabled.description")}
+          >
+            <div data-action="settings-mcp-enabled">
+              <Switch
+                checked={settings.general.mcpEnabled()}
+                disabled={busy() || !props.directory}
+                onChange={(checked) => void toggleAll(checked)}
+              />
+            </div>
+          </SettingsRowV2>
+        </SettingsListV2>
+      </div>
+    )
+  }
+
   const AdvancedSection = () => (
     <div class="settings-v2-section">
       <h3 class="settings-v2-section-title">{language.t("settings.general.section.advanced")}</h3>
@@ -645,6 +748,8 @@ export const SettingsGeneralV2: Component<{
         <FeedSection />
 
         <SidebarSection />
+
+        <McpSection />
 
         <AppearanceSection controller={appearance} />
 

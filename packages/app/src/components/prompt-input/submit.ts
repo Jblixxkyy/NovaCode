@@ -315,7 +315,7 @@ export function createPromptSubmit(input: PromptSubmitInput) {
     })
   }
 
-  const handleSubmit = async (event: Event) => {
+  const handleSubmit = async (event: Event, opts?: { forceSteer?: boolean }) => {
     event.preventDefault()
 
     const target = prompt.capture()
@@ -479,7 +479,9 @@ export function createPromptSubmit(input: PromptSubmitInput) {
       return true
     }
 
-    if (!isNewSession && mode === "normal" && input.shouldQueue?.()) {
+    // Ctrl/Cmd+Enter while busy steers immediately; plain Enter follows the
+    // queue setting (queue while busy). forceSteer bypasses the queue branch.
+    if (!opts?.forceSteer && !isNewSession && mode === "normal" && input.shouldQueue?.()) {
       input.onQueue?.(draft)
       clearContext(submission.target())
       clearInput()

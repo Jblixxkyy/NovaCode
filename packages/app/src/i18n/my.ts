@@ -963,11 +963,6 @@ export const dict = {
   "settings.general.row.toolTitleColor.description": "ဆက်ရှင်များတွင် ကိရိယာ ခေါင်းစဉ်များ၏ အရောင်ကို စိတ်ကြိုက်ပြင်ဆင်ပါ",
   "settings.general.row.groupTitleColor.title": "Group title color",
   "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
-  "settings.general.row.followup.title": "နောက်ဆက်တွဲအပြုအမူ",
-  "settings.general.row.followup.description":
-    "နောက်ဆက်တွဲအချက်မှာ ချက်ချင်းပဲ့ကိုင်သလား သို့မဟုတ် တန်းစီစောင့်ဆိုင်းခြင်းရှိမရှိကို ရွေးပါ။",
-  "settings.general.row.followup.option.queue": "တန်းစီ",
-  "settings.general.row.followup.option.steer": "ခုတ်မောင်းပါ။",
   "settings.general.row.showFileTree.title": "ဖိုင်သစ်",
   "settings.general.row.showFileTree.description": "စက်ရှင်များတွင် ဖိုင်သစ်အကန့်ကို ပြပါ။",
   "settings.general.row.showNavigation.title": "လမ်းညွှန်မှု ထိန်းချုပ်မှုများ",

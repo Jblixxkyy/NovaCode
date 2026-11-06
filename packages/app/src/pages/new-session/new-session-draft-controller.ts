@@ -1,5 +1,5 @@
 import { useSearchParams } from "@solidjs/router"
-import { createEffect, untrack } from "solid-js"
+import { createEffect, createSignal, untrack } from "solid-js"
 import { usePromptInputV2Controller } from "@/components/prompt-input-v2"
 import { useComments } from "@/context/comments"
 import { useLocal } from "@/context/local"
@@ -28,6 +28,7 @@ export function createNewSessionDraftController(workspace: { worktree: () => str
     model,
   })
   const projectControls = createPromptProjectControls()
+  const [deliveryMode, setDeliveryMode] = createSignal("steer")
   const input = usePromptInputV2Controller({
     get controls() {
       return controls()
@@ -37,6 +38,10 @@ export function createNewSessionDraftController(workspace: { worktree: () => str
     },
     onNewSessionWorktreeReset: workspace.resetWorktree,
     onSubmit: comments.clear,
+    delivery: {
+      current: () => deliveryMode(),
+      onSelect: (mode) => setDeliveryMode(mode),
+    },
   })
 
   createEffect(() => {

@@ -960,11 +960,6 @@ export const dict = {
   "settings.general.row.toolTitleColor.description": "سیشنوں میں ٹول عنوانات کا رنگ حسب ضرورت بنائیں",
   "settings.general.row.groupTitleColor.title": "Group title color",
   "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
-  "settings.general.row.followup.title": "فالو اپ کا طرز عمل",
-  "settings.general.row.followup.description":
-    "منتخب کریں کہ آیا فالو اپ فوری طور پر آگے بڑھتا ہے یا قطار میں انتظار کرتا ہے۔",
-  "settings.general.row.followup.option.queue": "قطار",
-  "settings.general.row.followup.option.steer": "فوری رہنمائی",
   "settings.general.row.showFileTree.title": "فائل ٹری",
   "settings.general.row.showFileTree.description": "سیشن میں فائل ٹری پینل دکھائیں۔",
   "settings.general.row.showNavigation.title": "نیویگیشن کنٹرولز",

@@ -23,7 +23,6 @@ export interface Settings {
   general: {
     autoSave: boolean
     releaseNotes: boolean
-    followup: "queue" | "steer"
     showFileTree: boolean
     showNavigation: boolean
     showSearch: boolean
@@ -34,6 +33,8 @@ export interface Settings {
     editToolPartsExpanded: boolean
     showCustomAgents: boolean
     autoCollapseSidebarSessions: boolean
+    mcpEnabled: boolean
+    mcpDisabledByToggle: Record<string, string[]>
     mobileTitlebarPosition: "top" | "bottom"
     newLayoutDesigns?: boolean
     layoutTransitionEligible?: boolean
@@ -200,7 +201,6 @@ const defaultSettings: Settings = {
   general: {
     autoSave: true,
     releaseNotes: true,
-    followup: "steer",
     showFileTree: false,
     showNavigation: false,
     showSearch: false,
@@ -211,6 +211,8 @@ const defaultSettings: Settings = {
     editToolPartsExpanded: false,
     showCustomAgents: false,
     autoCollapseSidebarSessions: false,
+    mcpEnabled: true,
+    mcpDisabledByToggle: {},
     mobileTitlebarPosition: "top",
   },
   appearance: {
@@ -393,10 +395,6 @@ export const { use: useSettings, provider: SettingsProvider } = createSimpleCont
         setReleaseNotes(value: boolean) {
           setStore("general", "releaseNotes", value)
         },
-        followup: withFallback(() => store.general?.followup, defaultSettings.general.followup),
-        setFollowup(value: "queue" | "steer") {
-          setStore("general", "followup", value)
-        },
         showFileTree,
         setShowFileTree(value: boolean) {
           setStore("general", "showFileTree", value)
@@ -448,6 +446,17 @@ export const { use: useSettings, provider: SettingsProvider } = createSimpleCont
         ),
         setAutoCollapseSidebarSessions(value: boolean) {
           setStore("general", "autoCollapseSidebarSessions", value)
+        },
+        mcpEnabled: withFallback(() => store.general?.mcpEnabled, defaultSettings.general.mcpEnabled),
+        setMcpEnabled(value: boolean) {
+          setStore("general", "mcpEnabled", value)
+        },
+        mcpDisabledByToggle: withFallback(
+          () => store.general?.mcpDisabledByToggle,
+          defaultSettings.general.mcpDisabledByToggle,
+        ),
+        setMcpDisabledByToggle(value: Record<string, string[]>) {
+          setStore("general", "mcpDisabledByToggle", value)
         },
         mobileTitlebarPosition: withFallback(
           () => store.general?.mobileTitlebarPosition,

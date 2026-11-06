@@ -958,11 +958,6 @@ export const dict = {
   "settings.general.row.toolTitleColor.description": "Сешн дэх багажний гарчгийн өнгийг өөрчлөх",
   "settings.general.row.groupTitleColor.title": "Group title color",
   "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
-  "settings.general.row.followup.title": "Дагаж мөрдөх зан үйл",
-  "settings.general.row.followup.description":
-    "Дагах сануулгууд шууд чиглүүлэх үү эсвэл дараалалд хүлээх үү гэдгийг сонгоно уу",
-  "settings.general.row.followup.option.queue": "Дараалал",
-  "settings.general.row.followup.option.steer": "Удирдах",
   "settings.general.row.showFileTree.title": "Файлын мод",
   "settings.general.row.showFileTree.description": "Файлын модны самбарыг сессээр харуул",
   "settings.general.row.showNavigation.title": "Навигацийн удирдлага",

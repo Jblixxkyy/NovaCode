@@ -954,11 +954,6 @@ export const dict = {
   "settings.general.row.toolTitleColor.description": "Prilagodite barvo naslovov orodij v sejah",
   "settings.general.row.groupTitleColor.title": "Group title color",
   "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
-  "settings.general.row.followup.title": "Nadaljnje vedenje",
-  "settings.general.row.followup.description":
-    "Izberite, ali se nadaljnji pozivi usmerjajo takoj ali čakajo v čakalni vrsti",
-  "settings.general.row.followup.option.queue": "Čakalna vrsta",
-  "settings.general.row.followup.option.steer": "Krmariti",
   "settings.general.row.showFileTree.title": "Drevo datotek",
   "settings.general.row.showFileTree.description": "Pokaži podokno drevesa datotek v sejah",
   "settings.general.row.showNavigation.title": "Navigacijske kontrole",

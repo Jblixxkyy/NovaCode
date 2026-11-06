@@ -958,11 +958,6 @@ export const dict = {
   "settings.general.row.toolTitleColor.description": "Sessiyalardagi asbob sarlavhalarining rangini sozlang",
   "settings.general.row.groupTitleColor.title": "Group title color",
   "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
-  "settings.general.row.followup.title": "Kuzatuv xatti-harakati",
-  "settings.general.row.followup.description":
-    "Kuzatuv soʻrovlari darhol boshqarilishini yoki navbatda kutishini tanlang",
-  "settings.general.row.followup.option.queue": "Navbat",
-  "settings.general.row.followup.option.steer": "Boshqarmoq",
   "settings.general.row.showFileTree.title": "Fayl daraxti",
   "settings.general.row.showFileTree.description": "Seanslarda fayl daraxti panelini ko'rsatish",
   "settings.general.row.showNavigation.title": "Navigatsiya boshqaruvlari",

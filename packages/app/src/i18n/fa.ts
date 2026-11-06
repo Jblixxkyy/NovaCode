@@ -947,11 +947,6 @@ export const dict = {
   "settings.general.row.toolTitleColor.description": "رنگ عناوین ابزارها را در جلسات سفارشی کنید",
   "settings.general.row.groupTitleColor.title": "Group title color",
   "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
-  "settings.general.row.followup.title": "رفتار پیگیری",
-  "settings.general.row.followup.description":
-    "انتخاب کنید که آیا درخواست پیگیری فوراً هدایت می شود یا در یک صف منتظر می ماند",
-  "settings.general.row.followup.option.queue": "صف",
-  "settings.general.row.followup.option.steer": "هدایت کنید",
   "settings.general.row.showFileTree.title": "درخت فایل",
   "settings.general.row.showFileTree.description": "پانل درخت فایل را در جلسات نمایش دهید",
   "settings.general.row.showNavigation.title": "کنترل های ناوبری",

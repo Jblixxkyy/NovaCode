@@ -954,11 +954,6 @@ export const dict = {
   "settings.general.row.toolTitleColor.description": "Personalizați culoarea titlurilor instrumentelor în sesiuni",
   "settings.general.row.groupTitleColor.title": "Group title color",
   "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
-  "settings.general.row.followup.title": "Comportament follow-up",
-  "settings.general.row.followup.description":
-    "Alege dacă solicitările follow-up se execută imediat sau așteaptă în coadă",
-  "settings.general.row.followup.option.queue": "Coadă",
-  "settings.general.row.followup.option.steer": "Execută imediat",
   "settings.general.row.showFileTree.title": "Arbore fișiere",
   "settings.general.row.showFileTree.description": "Afișează panoul cu arborele de fișiere în sesiuni",
   "settings.general.row.showNavigation.title": "Controale navigare",

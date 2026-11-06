@@ -765,11 +765,6 @@ export const dict = {
   "settings.general.row.toolTitleColor.description": "Die Farbe der Tool-Titel in Sitzungen anpassen",
   "settings.general.row.groupTitleColor.title": "Group title color",
   "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
-  "settings.general.row.followup.title": "Verhalten bei Folgeeingaben",
-  "settings.general.row.followup.description":
-    "Wählen Sie, ob Folgeeingaben die laufende Sitzung sofort steuern oder in einer Warteschlange warten",
-  "settings.general.row.followup.option.queue": "Warteschlange",
-  "settings.general.row.followup.option.steer": "Steuern",
   "settings.general.row.showFileTree.title": "Dateibaum",
   "settings.general.row.showFileTree.description": "Dateibaum in Sitzungen anzeigen",
   "settings.general.row.showNavigation.title": "Navigationssteuerung",

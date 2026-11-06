@@ -944,11 +944,6 @@ export const dict = {
   "settings.general.row.toolTitleColor.description": "Oturumlardaki araç başlıklarının rengini özelleştir",
   "settings.general.row.groupTitleColor.title": "Group title color",
   "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
-  "settings.general.row.followup.title": "Takip davranışı",
-  "settings.general.row.followup.description":
-    "Takip istemlerinin hemen yönlendirilmesini mi yoksa sırada beklemesini mi istediğinizi seçin",
-  "settings.general.row.followup.option.queue": "Sıra",
-  "settings.general.row.followup.option.steer": "Yönlendir",
   "settings.general.row.showFileTree.title": "Dosya ağacı",
   "settings.general.row.showFileTree.description": "Oturumlarda dosya ağacı panelini göster",
   "settings.general.row.showNavigation.title": "Gezinme denetimleri",

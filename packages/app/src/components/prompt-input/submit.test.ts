@@ -596,3 +596,73 @@ describe("prompt submit worktree selection", () => {
     expect(optimisticSeeded).toEqual([true])
   })
 })
+
+describe("prompt submit delivery while busy", () => {
+  test("queues the draft when shouldQueue is true", async () => {
+    params = { id: "session-1" }
+    const queued: unknown[] = []
+
+    const submit = createPromptSubmit({
+      prompt,
+      info: () => ({ id: "session-1" }),
+      imageAttachments: () => [],
+      commentCount: () => 0,
+      autoAccept: () => false,
+      mode: () => "normal",
+      working: () => true,
+      editor: () => undefined,
+      queueScroll: () => undefined,
+      promptLength: (value) => value.reduce((sum, part) => sum + ("content" in part ? part.content.length : 0), 0),
+      addToHistory: () => undefined,
+      resetHistoryNavigation: () => undefined,
+      setMode: () => undefined,
+      setPopover: () => undefined,
+      shouldQueue: () => true,
+      onQueue: (draft) => {
+        queued.push(draft)
+      },
+      onSubmit: () => undefined,
+    })
+
+    await submit.handleSubmit({ preventDefault: () => undefined } as unknown as Event)
+    await Bun.sleep(0)
+
+    expect(queued).toHaveLength(1)
+    expect(sentPrompts).toEqual([])
+    expect(optimistic).toEqual([])
+  })
+
+  test("forceSteer bypasses the queue and sends immediately", async () => {
+    params = { id: "session-1" }
+    const queued: unknown[] = []
+
+    const submit = createPromptSubmit({
+      prompt,
+      info: () => ({ id: "session-1" }),
+      imageAttachments: () => [],
+      commentCount: () => 0,
+      autoAccept: () => false,
+      mode: () => "normal",
+      working: () => true,
+      editor: () => undefined,
+      queueScroll: () => undefined,
+      promptLength: (value) => value.reduce((sum, part) => sum + ("content" in part ? part.content.length : 0), 0),
+      addToHistory: () => undefined,
+      resetHistoryNavigation: () => undefined,
+      setMode: () => undefined,
+      setPopover: () => undefined,
+      shouldQueue: () => true,
+      onQueue: (draft) => {
+        queued.push(draft)
+      },
+      onSubmit: () => undefined,
+    })
+
+    await submit.handleSubmit({ preventDefault: () => undefined } as unknown as Event, { forceSteer: true })
+    await Bun.sleep(0)
+
+    expect(queued).toEqual([])
+    expect(sentPrompts).toEqual(["/repo/main"])
+    expect(optimistic).toHaveLength(1)
+  })
+})

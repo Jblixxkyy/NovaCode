@@ -310,6 +310,7 @@ export const dict = {
   "prompt.attachment.remove": "Remove attachment",
   "prompt.action.send": "Send",
   "prompt.action.stop": "Stop",
+  "prompt.action.queue": "Queue",
 
   "prompt.toast.pasteUnsupported.title": "Unsupported attachment",
   "prompt.toast.pasteUnsupported.description": "Only images, PDFs, or text files can be attached here.",
@@ -766,6 +767,7 @@ export const dict = {
   "session.followupDock.summary.other": "{{count}} queued messages",
   "session.followupDock.sendNow": "Send now",
   "session.followupDock.edit": "Edit",
+  "session.followupDock.remove": "Remove queued message",
   "session.followupDock.collapse": "Collapse queued messages",
   "session.followupDock.expand": "Expand queued messages",
   "session.revertDock.summary.one": "{{count}} rolled back message",
@@ -1021,6 +1023,7 @@ export const dict = {
   "settings.general.section.feed": "Feed",
   "settings.general.section.sidebar": "Sidebar",
   "settings.general.section.display": "Display",
+  "settings.general.section.mcp": "MCP",
 
   "settings.general.row.language.title": "Language",
   "settings.general.row.language.description": "Change the display language for NovaCode",
@@ -1047,10 +1050,6 @@ export const dict = {
   "settings.general.row.groupTitleColor.title": "Group title color",
   "settings.general.row.groupTitleColor.description":
     "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
-  "settings.general.row.followup.title": "Follow-up behavior",
-  "settings.general.row.followup.description": "Choose whether follow-up prompts steer immediately or wait in a queue",
-  "settings.general.row.followup.option.queue": "Queue",
-  "settings.general.row.followup.option.steer": "Steer",
   "settings.general.row.showFileTree.title": "File tree",
   "settings.general.row.showFileTree.description": "Show the file tree panel in sessions",
   "settings.general.row.showNavigation.title": "Navigation controls",
@@ -1078,6 +1077,9 @@ export const dict = {
   "settings.general.row.sidebarAutoCollapse.title": "Auto-collapse sidebar sessions",
   "settings.general.row.sidebarAutoCollapse.description":
     "Collapse workspace sessions in the sidebar, keeping only the current workspace expanded",
+  "settings.general.row.mcpEnabled.title": "MCP servers",
+  "settings.general.row.mcpEnabled.description":
+    "When off, all connected MCP servers are disconnected. When on, the servers this switch turned off are reconnected",
   "settings.general.row.newInterface.title": "New layout",
   "settings.general.row.newInterface.badge": "New",
   "settings.general.row.newInterface.description":

@@ -940,11 +940,6 @@ export const dict = {
   "settings.general.row.toolTitleColor.description": "Настройте цвет заголовков инструментов в сессиях",
   "settings.general.row.groupTitleColor.title": "Group title color",
   "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
-  "settings.general.row.followup.title": "Поведение уточняющих вопросов",
-  "settings.general.row.followup.description":
-    "Выберите, отправлять ли уточняющие вопросы сразу или помещать их в очередь",
-  "settings.general.row.followup.option.queue": "Очередь",
-  "settings.general.row.followup.option.steer": "Направлять",
   "settings.general.row.showFileTree.title": "Дерево файлов",
   "settings.general.row.showFileTree.description": "Показывать панель дерева файлов в сессиях",
   "settings.general.row.showNavigation.title": "Элементы навигации",

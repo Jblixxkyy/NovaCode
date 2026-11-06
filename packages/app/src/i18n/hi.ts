@@ -958,11 +958,6 @@ export const dict = {
   "settings.general.row.toolTitleColor.description": "सत्रों में टूल शीर्षकों का रंग अनुकूलित करें",
   "settings.general.row.groupTitleColor.title": "Group title color",
   "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
-  "settings.general.row.followup.title": "अनुवर्ती व्यवहार",
-  "settings.general.row.followup.description":
-    "चुनें कि क्या अनुवर्ती प्रॉम्प्ट तुरंत आगे बढ़ेगा या कतार में प्रतीक्षा करेगा",
-  "settings.general.row.followup.option.queue": "कतार",
-  "settings.general.row.followup.option.steer": "तुरंत निर्देश दें",
   "settings.general.row.showFileTree.title": "फ़ाइल वृक्ष",
   "settings.general.row.showFileTree.description": "सेशन में फ़ाइल ट्री पैनल दिखाएँ",
   "settings.general.row.showNavigation.title": "नेविगेशन नियंत्रण",

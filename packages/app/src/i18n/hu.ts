@@ -959,11 +959,6 @@ export const dict = {
   "settings.general.row.toolTitleColor.description": "A munkamenetekben lévő eszközcímek színének testreszabása",
   "settings.general.row.groupTitleColor.title": "Group title color",
   "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
-  "settings.general.row.followup.title": "Nyomon követési viselkedés",
-  "settings.general.row.followup.description":
-    "Válassza ki, hogy a nyomon követési felszólítások azonnal irányítsák, vagy várakozzanak a sorban",
-  "settings.general.row.followup.option.queue": "Sor",
-  "settings.general.row.followup.option.steer": "Tinó",
   "settings.general.row.showFileTree.title": "Fájlfa",
   "settings.general.row.showFileTree.description": "A fájlfa panel megjelenítése a munkamenetekben",
   "settings.general.row.showNavigation.title": "Navigációs vezérlők",

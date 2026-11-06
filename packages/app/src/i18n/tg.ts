@@ -955,11 +955,6 @@ export const dict = {
   "settings.general.row.toolTitleColor.description": "Ранги сарлавҳаҳои абзорҳоро дар сессияҳо танзим кунед",
   "settings.general.row.groupTitleColor.title": "Group title color",
   "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
-  "settings.general.row.followup.title": "Рафтори пайгирӣ",
-  "settings.general.row.followup.description":
-    "Интихоб кунед, ки паёмҳои пайгирӣ фавран идора мешаванд ё дар навбат интизор мешаванд",
-  "settings.general.row.followup.option.queue": "Навбат",
-  "settings.general.row.followup.option.steer": "Роҳбарӣ кардан",
   "settings.general.row.showFileTree.title": "Дарахти файл",
   "settings.general.row.showFileTree.description": "Панели дарахти файлро дар сессияҳо нишон диҳед",
   "settings.general.row.showNavigation.title": "Назорати навигатсионӣ",

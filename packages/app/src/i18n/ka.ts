@@ -949,11 +949,6 @@ export const dict = {
   "settings.general.row.toolTitleColor.description": "მოირგეთ ხელსაწყოების სათაურების ფერი სესიებში",
   "settings.general.row.groupTitleColor.title": "Group title color",
   "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
-  "settings.general.row.followup.title": "შემდეგი ქცევა",
-  "settings.general.row.followup.description":
-    "აირჩიეთ, შემდგომი დაკვირვების მოთხოვნა მყისიერად იხელმძღვანელეთ თუ დაელოდეთ რიგში",
-  "settings.general.row.followup.option.queue": "რიგი",
-  "settings.general.row.followup.option.steer": "მმართველი",
   "settings.general.row.showFileTree.title": "ფაილის ხე",
   "settings.general.row.showFileTree.description": "ფაილის ხის პანელის ჩვენება სესიებში",
   "settings.general.row.showNavigation.title": "ნავიგაციის კონტროლი",

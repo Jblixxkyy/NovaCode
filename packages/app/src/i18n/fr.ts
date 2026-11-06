@@ -878,11 +878,6 @@ export const dict = {
   "settings.general.row.toolTitleColor.description": "Personnalisez la couleur des titres d'outils dans les sessions",
   "settings.general.row.groupTitleColor.title": "Group title color",
   "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
-  "settings.general.row.followup.title": "Comportement des messages de suivi",
-  "settings.general.row.followup.description":
-    "Choisissez si les messages de suivi orientent immédiatement l'agent ou sont placés dans une file d'attente",
-  "settings.general.row.followup.option.queue": "File d'attente",
-  "settings.general.row.followup.option.steer": "Orienter",
   "settings.general.row.showFileTree.title": "Arborescence des fichiers",
   "settings.general.row.showFileTree.description": "Afficher le panneau d'arborescence des fichiers dans les sessions",
   "settings.general.row.showNavigation.title": "Commandes de navigation",

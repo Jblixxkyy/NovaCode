@@ -961,11 +961,6 @@ export const dict = {
   "settings.general.row.toolTitleColor.description": "Προσαρμόστε το χρώμα των τίτλων των εργαλείων στις συνεδρίες",
   "settings.general.row.groupTitleColor.title": "Group title color",
   "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
-  "settings.general.row.followup.title": "Συμπεριφορά παρακολούθησης",
-  "settings.general.row.followup.description":
-    "Επιλέξτε εάν οι επακόλουθες προτροπές κατευθύνονται αμέσως ή περιμένετε σε μια ουρά",
-  "settings.general.row.followup.option.queue": "Ουρά",
-  "settings.general.row.followup.option.steer": "Καθοδήγηση",
   "settings.general.row.showFileTree.title": "Δέντρο αρχείων",
   "settings.general.row.showFileTree.description": "Εμφάνιση του πίνακα δέντρου αρχείων σε περιόδους λειτουργίας",
   "settings.general.row.showNavigation.title": "Στοιχεία ελέγχου πλοήγησης",

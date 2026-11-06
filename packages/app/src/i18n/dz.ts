@@ -967,11 +967,6 @@ export const dict: Record<string, string> = {
   "settings.general.row.toolTitleColor.description": "ལཱ་སྒྲིག་ནང་ལག་ཆའི་མགོ་མིང་གི་ཚོས་གཞི་སྲོལ་སྒྲིག་འབད།",
   "settings.general.row.groupTitleColor.title": "Group title color",
   "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
-  "settings.general.row.followup.title": "རྗེས་སུ་འབྲངས་པའི་སྤྱོད་ལམ།",
-  "settings.general.row.followup.description":
-    "རྗེས་འཇུག་འབོད་བརྡ་ཚུ་ དེ་འཕྲོ་ལས་ སྒུལ་ནི་ཨིན་ན་ ཡང་ན་ གྱལ་ནང་བསྒུག་སྡོད་ནི་ཨིན་ན་ གདམ་ཁ་རྐྱབས།",
-  "settings.general.row.followup.option.queue": "གྱལ",
-  "settings.general.row.followup.option.steer": "སྒུལ་ཤུགས།",
   "settings.general.row.showFileTree.title": "ཡིག་སྣོད་ཤིང་།",
   "settings.general.row.showFileTree.description": "ལཱ་ཡུན་ཚུ་ནང་ཡིག་སྣོད་ཤིང་གི་པེ་ནཱལ་སྟོན།",
   "settings.general.row.showNavigation.title": "འགྲུལ་བསྐྱོད་ཚད་འཛིན་ཚུ།",

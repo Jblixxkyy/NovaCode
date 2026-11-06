@@ -956,11 +956,6 @@ export const dict = {
   "settings.general.row.toolTitleColor.description": "Персонализирайте цвета на заглавията на инструментите в сесиите",
   "settings.general.row.groupTitleColor.title": "Group title color",
   "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
-  "settings.general.row.followup.title": "Последващо поведение",
-  "settings.general.row.followup.description":
-    "Изберете дали последващите подкани да се управляват незабавно или да чакат на опашка",
-  "settings.general.row.followup.option.queue": "Опашка",
-  "settings.general.row.followup.option.steer": "Насочвайте",
   "settings.general.row.showFileTree.title": "Файлово дърво",
   "settings.general.row.showFileTree.description": "Показване на панела на файловото дърво в сесии",
   "settings.general.row.showNavigation.title": "Контроли за навигация",

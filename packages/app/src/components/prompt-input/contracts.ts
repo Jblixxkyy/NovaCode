@@ -54,4 +54,8 @@ export interface PromptInputProps {
   onQueue?: (draft: FollowupDraft) => void
   onAbort?: () => void
   onSubmit?: () => void
+  delivery?: {
+    current: () => string
+    onSelect: (mode: string) => void
+  }
 }

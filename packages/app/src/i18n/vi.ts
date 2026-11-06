@@ -961,11 +961,6 @@ export const dict = {
   "settings.general.row.toolTitleColor.description": "Tùy chỉnh màu tiêu đề công cụ trong phiên",
   "settings.general.row.groupTitleColor.title": "Group title color",
   "settings.general.row.groupTitleColor.description": "Customise the color of group titles in sessions. Unset falls back to the tool title color.",
-  "settings.general.row.followup.title": "Cách xử lý lời nhắc tiếp theo",
-  "settings.general.row.followup.description":
-    "Chọn để lời nhắc tiếp theo điều hướng phiên ngay lập tức hoặc chờ trong hàng đợi",
-  "settings.general.row.followup.option.queue": "Xếp hàng",
-  "settings.general.row.followup.option.steer": "Điều hướng",
   "settings.general.row.showFileTree.title": "Cây tệp",
   "settings.general.row.showFileTree.description": "Hiển thị bảng cây tệp trong phiên",
   "settings.general.row.showNavigation.title": "Điều khiển điều hướng",

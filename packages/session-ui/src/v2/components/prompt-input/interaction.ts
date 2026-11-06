@@ -34,14 +34,10 @@ export type PromptInputV2ViewConfig = {
   agent?: PromptInputV2SelectControl
   model?: PromptInputV2SelectControl
   variant?: PromptInputV2SelectControl
-  delivery?: {
-    current: Accessor<string>
-    onSelect: (mode: string) => void
-  }
   submit: {
     stopping: Accessor<boolean>
     working?: Accessor<boolean>
-    onSubmit: () => void
+    onSubmit: (opts?: { forceSteer?: boolean }) => void
     onStop: () => void
   }
   shell?: {
@@ -361,8 +357,8 @@ export function createPromptInputV2Controller(input: {
     closeShell() {
       dispatch({ type: "mode.normal" })
     },
-    submit() {
-      input.view.submit.onSubmit()
+    submit(opts?: { forceSteer?: boolean }) {
+      input.view.submit.onSubmit(opts)
       dispatch({ type: "popover.close" })
     },
     stop() {
