@@ -80,7 +80,7 @@ export function PromptInputV2(props: PromptInputV2Props) {
         type="file"
         multiple
         accept="image/png,image/jpeg,image/gif,image/webp,application/pdf,text/*,application/json,application/ld+json,application/toml,application/x-toml,application/x-yaml,application/xml,application/yaml,.c,.cc,.cjs,.conf,.cpp,.css,.csv,.cts,.env,.go,.gql,.graphql,.h,.hh,.hpp,.htm,.html,.ini,.java,.js,.json,.jsx,.log,.md,.mdx,.mjs,.mts,.py,.rb,.rs,.sass,.scss,.sh,.sql,.toml,.ts,.tsx,.txt,.xml,.yaml,.yml,.zsh"
-        class="hidden"
+        class="fixed top-0 left-0 w-[1px] h-[1px] opacity-0"
         onChange={(event) => {
           const list = event.currentTarget.files
           if (list) props.controller.addAttachments(Array.from(list))
@@ -174,7 +174,10 @@ export function PromptInputV2(props: PromptInputV2Props) {
               if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
                 event.preventDefault()
                 if (event.repeat) return
-                props.controller.submit()
+                // Ctrl/Cmd+Enter sends now (steer); plain Enter follows the
+                // queue behavior while the session is busy.
+                const steer = (event.ctrlKey || event.metaKey) && !event.altKey
+                props.controller.submit(steer ? { forceSteer: true } : undefined)
               }
             }}
             onKeyUp={updateCursor}
@@ -253,42 +256,16 @@ export function PromptInputV2(props: PromptInputV2Props) {
                 </Show>
               )}
             </Show>
-            <Show when={view.delivery}>
-              <div class="flex items-center rounded-lg border border-v2-border-border-base bg-v2-background-bg-base p-[3px]">
-                <button
-                  type="button"
-                  class="rounded-md px-2 py-[3px] text-[11px] font-medium leading-none transition-colors"
-                  classList={{
-                    "bg-v2-background-bg-contrast text-v2-text-text-base shadow-[var(--v2-elevation-button-contrast)]":
-                      view.delivery!.current() === "steer",
-                    "text-v2-text-text-muted hover:text-v2-text-text-base":
-                      view.delivery!.current() !== "steer",
-                  }}
-                  onClick={() => view.delivery!.onSelect("steer")}
-                >
-                  Steer
-                </button>
-                <button
-                  type="button"
-                  class="rounded-md px-2 py-[3px] text-[11px] font-medium leading-none transition-colors"
-                  classList={{
-                    "bg-v2-background-bg-contrast text-v2-text-text-base shadow-[var(--v2-elevation-button-contrast)]":
-                      view.delivery!.current() === "queue",
-                    "text-v2-text-text-muted hover:text-v2-text-text-base":
-                      view.delivery!.current() !== "queue",
-                  }}
-                  onClick={() => view.delivery!.onSelect("queue")}
-                >
-                  Queue
-                </button>
-              </div>
-            </Show>
           </div>
           <PromptInputV2SubmitButton
             mode={state.mode}
             stopping={view.submit.stopping()}
             disabled={!props.controller.canSubmit()}
-            sendLabel={i18n.t("ui.promptInput.send")}
+            sendLabel={
+              view.submit.working?.() && !view.submit.stopping()
+                ? i18n.t("ui.promptInput.queue")
+                : i18n.t("ui.promptInput.send")
+            }
             stopLabel={i18n.t("ui.promptInput.stop")}
             onSubmit={props.controller.submit}
             onStop={props.controller.stop}

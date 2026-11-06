@@ -95,6 +95,24 @@ const restart: Platform["restart"] = async () => {
   window.location.reload()
 }
 
+const readClipboardImage: Platform["readClipboardImage"] = async () => {
+  if (!navigator.clipboard?.read) return null
+  try {
+    const items = await navigator.clipboard.read()
+    for (const item of items) {
+      for (const type of item.types) {
+        if (type.startsWith("image/")) {
+          const blob = await item.getType(type)
+          if (blob) return new File([blob], "paste.png", { type })
+        }
+      }
+    }
+  } catch {
+    return null
+  }
+  return null
+}
+
 const root = document.getElementById("root")
 if (!(root instanceof HTMLElement) && import.meta.env.DEV) {
   throw new Error(getRootNotFoundError())
@@ -128,6 +146,7 @@ const platform: Platform = {
   openExternal,
   restart,
   notify,
+  readClipboardImage,
   getDefaultServer: async () => {
     const stored = readDefaultServerUrl()
     return stored ? ServerConnection.Key.make(stored) : null

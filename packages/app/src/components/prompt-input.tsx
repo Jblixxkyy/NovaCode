@@ -294,6 +294,15 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
       )
     }
 
+    if (working()) {
+      return (
+        <div class="flex items-center gap-2">
+          <span>{language.t("prompt.action.queue")}</span>
+          <Icon name="enter" size="small" class="text-icon-base" />
+        </div>
+      )
+    }
+
     return (
       <div class="flex items-center gap-2">
         <span>{language.t("prompt.action.send")}</span>
@@ -1375,6 +1384,14 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     }
 
     // Note: Shift+Enter is handled earlier, before IME check
+    // Ctrl/Cmd+Enter sends now (steer) even while the session is busy,
+    // bypassing the queue that plain Enter uses.
+    if ((event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey && event.key === "Enter") {
+      event.preventDefault()
+      if (event.repeat) return
+      void handleSubmit(event, { forceSteer: true })
+      return
+    }
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault()
       if (event.repeat) return
@@ -1566,7 +1583,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
               type="file"
               multiple
               accept={ACCEPTED_FILE_TYPES.join(",")}
-              class="hidden"
+              class="fixed top-0 left-0 w-[1px] h-[1px] opacity-0"
               onChange={(e) => {
                 const list = e.currentTarget.files
                 if (list) void addAttachments(Array.from(list))
