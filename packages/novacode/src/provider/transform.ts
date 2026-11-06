@@ -1604,16 +1604,22 @@ export function schema(model: Provider.Model, schema: JSONSchema7): JSONSchema7 
       }
 
       // Gemini requires a single `type`, not a JSON Schema type array such as
-      // `["number","string"]` (emitted by some MCP servers). Plain `@ai-sdk/google`
+      // `["array","null"]` (emitted by some MCP servers). Plain `@ai-sdk/google`
       // rewrites these into an `anyOf` of single-type schemas, but OpenAI-compatible
       // transports (e.g. GitHub Copilot proxying to Gemini) forward them verbatim
       // and the backend rejects the array form. Mirror the SDK: split non-null
-      // types into `anyOf`, and lift `null` into `nullable`.
+      // types into `anyOf`, and lift `null` into `nullable`. With a single
+      // non-null type, collapse to that type instead: building an `anyOf`
+      // would strand type-specific keywords (`items`, `properties`, ...) on
+      // the parent while the `anyOf` branch has none, which Gemini rejects.
       if (Array.isArray(result.type)) {
         const hasNull = result.type.includes("null")
         const nonNull = result.type.filter((entry: unknown) => entry !== "null")
         if (nonNull.length === 0) {
           result.type = "null"
+        } else if (nonNull.length === 1) {
+          result.type = nonNull[0]
+          if (hasNull) result.nullable = true
         } else {
           delete result.type
           result.anyOf = nonNull.map((entry: unknown) => ({ type: entry }))
